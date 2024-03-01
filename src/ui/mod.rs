@@ -1,5 +1,5 @@
-mod input_manager;
-pub use input_manager::SequenceManager;
+pub mod input;
+pub use input::InputManager;
 
 pub mod screen;
 
