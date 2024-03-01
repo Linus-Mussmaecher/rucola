@@ -17,7 +17,7 @@ impl Note {
         file.read_to_string(&mut content)?;
 
         let tag_regex = Regex::new(r"(\#[^\s\#]+)\s").unwrap();
-        let link_regex = Regex::new(r"\[\[([^\[\]]+)\]\]").unwrap();
+        let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]").unwrap();
 
         Ok(Self {
             tags: tag_regex

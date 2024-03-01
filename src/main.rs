@@ -4,7 +4,10 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::{CrosstermBackend, Terminal};
-use std::io::{stdout, Result};
+use std::{
+    collections::HashMap,
+    io::{stdout, Result},
+};
 
 mod data;
 mod ui;
@@ -12,15 +15,10 @@ mod ui;
 /// The main state of the application.
 struct App {
     screen: Box<dyn ui::Screen>,
+    index: HashMap<String, data::Note>,
 }
 
 fn main() -> Result<()> {
-    println!(
-        "{:?}",
-        data::Note::from_file(
-            std::fs::File::open("/home/linus/Coppermind/Math/Lie-Ableitung.md").unwrap()
-        )
-    );
     // All the Ratatui boilerplate.
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
@@ -30,6 +28,7 @@ fn main() -> Result<()> {
     // Initialize state
     let mut app = App {
         screen: Box::new(ui::screen::TestScreen::new()),
+        index: data::create_index(std::path::Path::new("/home/linus/Coppermind/")),
     };
 
     // Initialize input handler
