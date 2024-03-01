@@ -19,6 +19,8 @@ struct App {
 }
 
 fn main() -> Result<()> {
+    // TODO: Panic hooks
+    // TODO: Error handling
     // All the Ratatui boilerplate.
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
@@ -26,9 +28,12 @@ fn main() -> Result<()> {
     terminal.clear()?;
 
     // Initialize state
+
+    let index = data::create_index(std::path::Path::new("/home/linus/Coppermind/"));
+
     let mut app = App {
-        screen: Box::new(ui::screen::TestScreen::new()),
-        index: data::create_index(std::path::Path::new("/home/linus/Coppermind/")),
+        screen: Box::new(ui::screen::MainScreen::new(index.clone())),
+        index,
     };
 
     // Initialize input handler
