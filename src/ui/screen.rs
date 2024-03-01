@@ -1,7 +1,5 @@
-use crossterm::event::KeyCode;
-
 mod main_screen;
-use crate::ui::input_manager;
+use crate::ui::input;
 use ratatui::{widgets::Block, Frame};
 
 /// A trait that is implemented by different screens within the application.
@@ -9,20 +7,18 @@ pub trait Screen {
     /// Draws the screen to the frame (taking all the available space).
     fn draw(&self, frame: &mut Frame);
 
-    /// Informs the screen of user inputs and possibly modifies the content based on this and past inputs.
-    fn handle_input(&mut self, key: KeyCode) -> Option<Box<dyn Screen>>;
+    /// Informs the screen of user messages and possibly modifies the content.
+    fn update(&mut self, msg: input::Message) -> Option<input::Message>;
 }
 
 pub struct TestScreen {
     thing: String,
-    manager: input_manager::SequenceManager,
 }
 
 impl TestScreen {
     pub fn new() -> Self {
         Self {
             thing: String::new(),
-            manager: input_manager::SequenceManager::new(),
         }
     }
 }
@@ -51,19 +47,11 @@ impl Screen for TestScreen {
         );
     }
 
-    fn handle_input(&mut self, key: KeyCode) -> Option<Box<dyn Screen>> {
-        if !self.manager.register(&key) {
-            if key == KeyCode::Enter {
-                self.thing = format!(
-                    "{}{}",
-                    self.thing,
-                    self.manager.get_sequence().iter().collect::<String>()
-                );
-                self.manager.reset_sequence();
-            }
-            if key == KeyCode::Backspace {
-                self.thing.clear();
-            }
+    fn update(&mut self, msg: input::Message) -> Option<input::Message> {
+        match msg {
+            input::Message::GotoEnd => self.thing.push('1'),
+            input::Message::Clear => self.thing.clear(),
+            m => return Some(m),
         }
         None
     }

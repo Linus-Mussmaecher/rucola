@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, KeyCode, KeyEventKind},
+    event::{self, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -15,6 +15,12 @@ struct App {
 }
 
 fn main() -> Result<()> {
+    println!(
+        "{:?}",
+        data::Note::from_file(
+            std::fs::File::open("/home/linus/Coppermind/Math/Lie-Ableitung.md").unwrap()
+        )
+    );
     // All the Ratatui boilerplate.
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
@@ -26,7 +32,10 @@ fn main() -> Result<()> {
         screen: Box::new(ui::screen::TestScreen::new()),
     };
 
-    loop {
+    // Initialize input handler
+    let mut handler = ui::InputManager::default();
+
+    'main: loop {
         // Draw the current screen.
         terminal.draw(|frame| {
             app.screen.draw(frame);
@@ -37,17 +46,22 @@ fn main() -> Result<()> {
             if let event::Event::Key(key) = event::read()? {
                 // Check for key preses
                 if key.kind == KeyEventKind::Press {
-                    // Inform the current screen.
-                    app.screen.handle_input(key.code);
-                    // Then quit the application.
-                    if key.code == KeyCode::Char('q') {
-                        break;
+                    // Register input and get message.
+                    let mut maybe_message = handler.register(key.code);
+                    while let Some(msg) = maybe_message {
+                        // Inform the current screen.
+                        maybe_message = app.screen.update(msg);
+                        // Check for quits and screen changes
+                        if let Some(ui::input::Message::Quit) = maybe_message {
+                            break 'main;
+                        }
                     }
                 }
             }
         }
     }
 
+    //Ratatui boilerplate
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
