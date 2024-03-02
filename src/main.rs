@@ -6,6 +6,7 @@ use crossterm::{
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::{
     collections::HashMap,
+    fmt::Pointer,
     io::{stdout, Result},
 };
 
@@ -32,7 +33,7 @@ fn main() -> Result<()> {
     let index = data::create_index(std::path::Path::new("/home/linus/Coppermind/"));
 
     let mut app = App {
-        screen: Box::new(ui::screen::MainScreen::new(index.clone())),
+        screen: Box::new(ui::screen::SelectScreen::new(index.clone())),
         index,
     };
 
@@ -42,7 +43,10 @@ fn main() -> Result<()> {
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame| {
-            app.screen.draw(frame);
+            let area = frame.size();
+            let buf = frame.buffer_mut();
+
+            app.screen.draw(area, buf);
         })?;
 
         // Inform the current screen of events
