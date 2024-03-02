@@ -1,5 +1,6 @@
 mod note;
 
+use eyre::Context;
 use std::{collections::HashMap, env, fs::File, path::Path};
 use walkdir;
 
@@ -9,9 +10,7 @@ pub use note::Note;
 ///  - An entry for every '.md' file in the directory or any subdirectories
 ///  - The key will be the file name, without the file extension, in lowercase and with spaces replaced by dashes
 ///  - The value will be an instance of Note containing metadata of the file.
-pub fn create_index(directory: &Path) -> HashMap<String, Note> {
-    //TODO: Errors
-
+pub fn create_index(directory: &Path) -> color_eyre::Result<HashMap<String, Note>> {
     let mut index = HashMap::new();
 
     for e in walkdir::WalkDir::new(directory)
@@ -42,12 +41,12 @@ pub fn create_index(directory: &Path) -> HashMap<String, Note> {
                         .unwrap_or("No path")
                         .to_owned(),
                 )
-                .unwrap(),
+                .wrap_err_with(|| "Attempting to index all markdown files.")?,
             );
         }
     }
 
-    index
+    Ok(index)
 }
 
 /// Checks if the given dir entry is 'hidden', i.e. not the root of a search and prefixed by a dot.

@@ -4,11 +4,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::{CrosstermBackend, Terminal};
-use std::{
-    collections::HashMap,
-    fmt::Pointer,
-    io::{stdout, Result},
-};
+use std::{collections::HashMap, io::stdout};
 
 mod data;
 mod ui;
@@ -19,14 +15,10 @@ struct App {
     index: HashMap<String, data::Note>,
 }
 
-fn main() -> Result<()> {
-    // TODO: Panic hooks
-    // TODO: Error handling
-    // All the Ratatui boilerplate.
-    stdout().execute(EnterAlternateScreen)?;
-    enable_raw_mode()?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    terminal.clear()?;
+fn main() -> color_eyre::Result<()> {
+    // Initialize terminal
+
+    let mut terminal = init_hooks_and_terminal()?;
 
     // Initialize state
 
@@ -38,7 +30,10 @@ fn main() -> Result<()> {
     };
 
     // Initialize input handler
+
     let mut handler = ui::InputManager::default();
+
+    // Main loop
 
     'main: loop {
         // Draw the current screen.
@@ -69,7 +64,36 @@ fn main() -> Result<()> {
         }
     }
 
-    //Ratatui boilerplate
+    //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
+    restore_terminal()
+}
+
+fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
+
+    // Step 1: Set panic hooks (ratatui tutorial boilerplate)
+
+    let (panic, error) = color_eyre::config::HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = restore_terminal();
+        panic(info);
+    }));
+
+    // Step 2: Initialize terminal
+
+    stdout().execute(EnterAlternateScreen)?;
+    enable_raw_mode()?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    terminal.clear()?;
+    Ok(terminal)
+}
+
+fn restore_terminal -> color_eyre::Result<()>{
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
