@@ -23,20 +23,21 @@ impl super::Screen for SelectScreen {
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
-        // TODO: Layouting
-        // TODO: Draw signature as in tutorial
-        // TODO: Stateful list
-        let ar1 = ratatui::layout::Rect {
-            y: area.height / 4,
-            height: area.height * 3 / 4,
-            ..area
-        };
-        let ar2 = ratatui::layout::Rect {
-            height: area.height / 4,
-            ..area
-        };
+        let vertical = Layout::vertical([
+            Constraint::Percentage(30),
+            Constraint::Min(3),
+            Constraint::Percentage(70),
+        ]);
+        let [info_area, _search_area, list_area] = vertical.areas(area);
 
-        let vec = self.index.clone().into_keys().collect::<Vec<String>>();
+        // TODO: Stateful list
+
+        let vec = self
+            .index
+            .clone()
+            .into_values()
+            .map(|v| v.name)
+            .collect::<Vec<String>>();
 
         let mut state = ListState::default();
 
@@ -47,12 +48,12 @@ impl super::Screen for SelectScreen {
             .repeat_highlight_symbol(true)
             .direction(ListDirection::BottomToTop);
 
-        StatefulWidget::render(list, ar1, buf, &mut state);
+        StatefulWidget::render(list, list_area, buf, &mut state);
 
         Widget::render(
             ratatui::widgets::Paragraph::new(format!("Lots of info"))
                 .block(Block::bordered().title("Statistics")),
-            ar2,
+            info_area,
             buf,
         );
     }
