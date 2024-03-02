@@ -12,3 +12,6 @@ mathjax = "0.1.1"
 ratatui = "0.26.1"
 regex = "1.10.3"
 walkdir = "2.5.0"
+eyre = "0.6.12"
+color-eyre = "0.5.7"
+

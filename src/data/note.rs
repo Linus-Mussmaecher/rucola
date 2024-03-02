@@ -13,14 +13,19 @@ pub struct Note {
 }
 
 impl Note {
-    pub fn from_file(mut file: File, name: String, path: String) -> std::io::Result<Self> {
-        //TODO: error handling
+    pub fn from_file(mut file: File, name: String, path: String) -> color_eyre::Result<Self> {
+        // Read content of markdown(plaintext) file
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
-        let tag_regex = Regex::new(r"(\#[^\s\#]+)\s").unwrap();
-        let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]").unwrap();
+        // Create regexes to match tags and links
 
+        // Anything starting with a single #, then all non-whitespace chars until a whitespace
+        let tag_regex = Regex::new(r"(\#[^\s\#]+)\s")?;
+        // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
+        let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]")?;
+
+        // Extract data
         Ok(Self {
             name,
             path,
