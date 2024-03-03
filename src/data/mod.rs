@@ -1,7 +1,7 @@
 mod note;
 
 use eyre::Context;
-use std::{collections::HashMap, env, fs::File, path::Path};
+use std::{collections::HashMap, fs::File, path::Path};
 use walkdir;
 
 pub use note::Note;
