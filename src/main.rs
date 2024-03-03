@@ -22,7 +22,7 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize state
 
-    let index = data::create_index(std::path::Path::new("/home/linus/Coppermind/"));
+    let index = data::create_index(std::path::Path::new("/home/linus/Coppermind/"))?;
 
     let mut app = App {
         screen: Box::new(ui::screen::SelectScreen::new(index.clone())),
@@ -69,7 +69,6 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
-
     // Step 1: Set panic hooks (ratatui tutorial boilerplate)
 
     let (panic, error) = color_eyre::config::HookBuilder::default().into_hooks();
@@ -93,7 +92,7 @@ fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backen
     Ok(terminal)
 }
 
-fn restore_terminal -> color_eyre::Result<()>{
+fn restore_terminal() -> color_eyre::Result<()> {
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
