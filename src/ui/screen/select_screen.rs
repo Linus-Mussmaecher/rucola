@@ -1,25 +1,29 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::data::Note;
 use ratatui::{prelude::*, widgets::*};
 
 pub struct SelectScreen {
-    index: HashMap<String, Note>,
+    index: Rc<HashMap<String, Note>>,
+    names: Vec<String>,
 }
 
 impl SelectScreen {
-    pub fn new(index: HashMap<String, Note>) -> Self {
-        Self { index }
+    pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
+        Self {
+            names: index
+                .values()
+                .map(|v| v.name.clone())
+                .collect::<Vec<String>>(),
+            index: index,
+        }
     }
 }
 
 impl super::Screen for SelectScreen {
     fn update(&mut self, msg: crate::ui::input::Message) -> Option<crate::ui::input::Message> {
-        match msg {
-            crate::ui::input::Message::Clear => self.index.clear(),
-            m => return Some(m),
-        }
-        None
+        Some(msg)
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
@@ -32,16 +36,10 @@ impl super::Screen for SelectScreen {
 
         // TODO: Stateful list
 
-        let vec = self
-            .index
-            .clone()
-            .into_values()
-            .map(|v| v.name)
-            .collect::<Vec<String>>();
 
         let mut state = ListState::default();
 
-        let list = List::new(vec)
+        let list = List::new(self.names.clone())
             .block(Block::bordered().title("Notes"))
             .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
             .highlight_symbol(">>")
