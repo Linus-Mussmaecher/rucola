@@ -1,10 +1,13 @@
 mod note;
+pub use note::Note;
+
+mod note_statistics;
+pub use note_statistics::Filter;
+pub use note_statistics::NoteStatistics;
 
 use eyre::Context;
 use std::{collections::HashMap, fs::File, path::Path};
 use walkdir;
-
-pub use note::Note;
 
 /// Reads a passed directory recursively, returning a hashmap containing
 ///  - An entry for every '.md' file in the directory or any subdirectories
