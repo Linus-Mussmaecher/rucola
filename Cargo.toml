@@ -6,12 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.80"
+# General TUI
 crossterm = "0.27.0"
-mathjax = "0.1.1"
 ratatui = "0.26.1"
+# Parsing
 regex = "1.10.3"
 walkdir = "2.5.0"
+# Error handling
 eyre = "0.6.12"
 color-eyre = "0.5.7"
+# Rendering
+# mathjax = "0.1.1"
 

@@ -4,7 +4,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::{CrosstermBackend, Terminal};
-use std::{collections::HashMap, io::stdout};
+use std::{collections::HashMap, io::stdout, rc::Rc};
 
 mod data;
 mod ui;
@@ -12,7 +12,7 @@ mod ui;
 /// The main state of the application.
 struct App {
     screen: Box<dyn ui::Screen>,
-    index: HashMap<String, data::Note>,
+    index: Rc<HashMap<String, data::Note>>,
 }
 
 fn main() -> color_eyre::Result<()> {
@@ -22,7 +22,9 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize state
 
-    let index = data::create_index(std::path::Path::new("/home/linus/Coppermind/"))?;
+    let index = Rc::new(data::create_index(std::path::Path::new(
+        "/home/linus/Coppermind/",
+    ))?);
 
     let mut app = App {
         screen: Box::new(ui::screen::SelectScreen::new(index.clone())),
