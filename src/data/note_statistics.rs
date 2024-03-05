@@ -6,23 +6,25 @@ use std::collections::HashMap;
 pub struct NoteStatistics {
     /// The total amount of words in the notes.
     /// What is a word and what not mirrors the definition from Note.words.
-    word_count_total: usize,
+    pub word_count_total: usize,
     /// The total amount of characters, including whitespace, in the notes.
-    char_count_total: usize,
+    pub char_count_total: usize,
     /// The total amount of notes tracked.
-    note_count_total: usize,
+    pub note_count_total: usize,
     /// The total amount of _unique_ tags tracked.
-    tag_count_total: usize,
+    pub tag_count_total: usize,
     /// The total amount of (non-unique) links between notes. Does not count external links.
-    link_count_total: usize,
+    pub link_count_total: usize,
     /// A vec of all tags used, along with the amount of notes under that tag. Sorted by descending usage by default.
-    tag_usage: Vec<(String, usize)>,
+    pub tag_usage: Vec<(String, usize)>,
     /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.)
-    inlinks: Vec<(String, usize)>,
+    pub inlinks: Vec<(String, usize)>,
+
     /// A vec of all note names, along with the amount of characters in the respective note.
-    chars: Vec<(String, usize)>,
+    pub words: Vec<(String, usize)>,
+
     /// A vec of all notes that have neither outgoing nor incoming links.
-    orphans: Vec<String>,
+    pub orphans: Vec<String>,
 }
 
 impl NoteStatistics {
@@ -33,7 +35,7 @@ impl NoteStatistics {
             .iter()
             .filter(|entry| {
                 // Check if any or all the tags specified in the filter are in the note.
-                let mut any_tag = false;
+                let mut any_tag = filter.tags.is_empty();
                 let mut all_tags = true;
                 for tag in filter.tags.iter() {
                     if entry.1.tags.contains(tag) {
@@ -44,7 +46,7 @@ impl NoteStatistics {
                 }
 
                 // Check if any or all of the words specified in the filter are in the note title.
-                let mut any_word = false;
+                let mut any_word = filter.title_words.is_empty();
                 let mut all_words = true;
                 for word in filter.title_words.iter() {
                     if entry.1.name.contains(word) {
@@ -103,12 +105,20 @@ impl NoteStatistics {
             // Take the sum of the length of links-lists from each individual note.
             link_count_total: filtered_index.values().map(|note| note.links.len()).sum(),
             // This is what the tag map was created for - just collect it into a vec and sort that.
-            tag_usage: tags.into_iter().collect(),
-            // Use filtered index and reduce the note to just the char count while cloning the name
-            chars: filtered_index
-                .iter()
-                .map(|(&a, &b)| (a.clone(), b.characters))
-                .collect(),
+            tag_usage: {
+                let mut tags_vec: Vec<(String, usize)> = tags.into_iter().collect();
+                tags_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+                tags_vec
+            },
+            // Use filtered index and reduce the note to just the word count while cloning the name
+            words: {
+                let mut chars_vec: Vec<(String, usize)> = filtered_index
+                    .iter()
+                    .map(|(_, &b)| (b.name.clone(), b.words))
+                    .collect();
+                chars_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+                chars_vec
+            },
             // Use the filted index, take only those with no links and clone the name
             orphans: filtered_index
                 .iter()
@@ -116,10 +126,18 @@ impl NoteStatistics {
                     // needs to have no outgoing links and no incoming links i.e. no entry in the inlinks table
                     b.links.len() == 0 && inlinks.get(&a.to_lowercase().replace(" ", "-")).is_none()
                 })
-                .map(|(&a, _)| a.clone())
+                .map(|(_, &b)| b.name.clone())
                 .collect(),
             // This is what the inlinks map was created for - just collect and sort it.
-            inlinks: inlinks.into_iter().collect(),
+            inlinks: {
+                let mut inlinks_vec: Vec<(String, usize)> = filtered_index
+                    .iter()
+                    .map(|(&id, note)| (note.name.clone(), inlinks.get(id).copied().unwrap_or(0)))
+                    .collect();
+                inlinks_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+
+                inlinks_vec
+            },
         }
     }
 }
