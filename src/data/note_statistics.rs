@@ -107,7 +107,7 @@ impl NoteStatistics {
             // This is what the tag map was created for - just collect it into a vec and sort that.
             tag_usage: {
                 let mut tags_vec: Vec<(String, usize)> = tags.into_iter().collect();
-                tags_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+                tags_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
                 tags_vec
             },
             // Use filtered index and reduce the note to just the word count while cloning the name
@@ -116,7 +116,7 @@ impl NoteStatistics {
                     .iter()
                     .map(|(_, &b)| (b.name.clone(), b.words))
                     .collect();
-                chars_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+                chars_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
                 chars_vec
             },
             // Use the filted index, take only those with no links and clone the name
@@ -134,7 +134,7 @@ impl NoteStatistics {
                     .iter()
                     .map(|(&id, note)| (note.name.clone(), inlinks.get(id).copied().unwrap_or(0)))
                     .collect();
-                inlinks_vec.sort_by(|(_, val1), (_, val2)| val2.partial_cmp(val1).unwrap());
+                inlinks_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
 
                 inlinks_vec
             },

@@ -1,5 +1,4 @@
 use crate::data::{Filter, Note, NoteStatistics};
-use color_eyre::{owo_colors::OwoColorize, SectionExt};
 use ratatui::{
     prelude::*,
     widgets::{self, *},
@@ -24,7 +23,9 @@ impl StatsScreen {
         }
     }
 
-    pub fn filter(&mut self, filter: Filter) {}
+    pub fn filter(&mut self, filter: Filter) {
+        self.stats = NoteStatistics::new_with_filters(&self.index, filter);
+    }
 }
 
 impl super::Screen for StatsScreen {
