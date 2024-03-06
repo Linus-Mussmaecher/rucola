@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::data::Note;
+use crossterm::event::KeyEvent;
 use ratatui::{prelude::*, widgets::*};
 
 pub struct SelectScreen {
@@ -22,8 +23,8 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, msg: crate::ui::input::Message) -> Option<crate::ui::input::Message> {
-        Some(msg)
+    fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
+        None
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
@@ -35,7 +36,6 @@ impl super::Screen for SelectScreen {
         let [info_area, _search_area, list_area] = vertical.areas(area);
 
         // TODO: Stateful list
-
 
         let mut state = ListState::default();
 

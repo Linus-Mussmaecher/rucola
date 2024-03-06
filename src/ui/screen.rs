@@ -1,3 +1,4 @@
+use crossterm::event::KeyEvent;
 use ratatui::{buffer, layout};
 
 mod select_screen;
@@ -14,5 +15,5 @@ pub trait Screen {
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer);
 
     /// Informs the screen of user messages and possibly modifies the content.
-    fn update(&mut self, msg: input::Message) -> Option<input::Message>;
+    fn update(&mut self, key: KeyEvent) -> Option<input::Message>;
 }

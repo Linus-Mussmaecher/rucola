@@ -21,7 +21,7 @@ impl Note {
         // Create regexes to match tags and links
 
         // Anything starting with a single #, then all non-whitespace chars until a whitespace
-        let tag_regex = Regex::new(r"(\#[^\s\#]+)\s")?;
+        let tag_regex = Regex::new(r"(\s|^)(\#[^\s\#]+)")?;
         // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
         let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]")?;
 
@@ -32,9 +32,9 @@ impl Note {
             tags: tag_regex
                 .captures_iter(&content)
                 .filter_map(|c| {
-                    c.extract::<1>()
+                    c.extract::<2>()
                         .1
-                        .first()
+                        .get(1)
                         .and_then(|ss| Some(String::from(*ss)))
                 })
                 .collect(),
