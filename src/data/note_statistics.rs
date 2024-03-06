@@ -49,7 +49,12 @@ impl NoteStatistics {
                 let mut any_word = filter.title_words.is_empty();
                 let mut all_words = true;
                 for word in filter.title_words.iter() {
-                    if entry.1.name.contains(word) {
+                    if entry
+                        .1
+                        .name
+                        .to_lowercase()
+                        .contains(&word.to_lowercase().to_string())
+                    {
                         any_word = true;
                     } else {
                         all_words = false;
@@ -146,11 +151,11 @@ impl NoteStatistics {
 #[derive(Debug, Default, Clone)]
 pub struct Filter {
     /// Wether or not all specified tags must be contained in the note in order to match the filter, or only any (=at least one) of them.
-    all_tags: bool,
+    pub all_tags: bool,
     /// The tags to filter by, hash included.
-    tags: Vec<String>,
+    pub tags: Vec<String>,
     /// Wether or not all specified words must be contained in the note title in order to match the filter, or only any (=at least one) of them.
-    all_title_words: bool,
+    pub all_title_words: bool,
     /// The words to search the note title for. No fuzzy matching, must fit completetely.
-    title_words: Vec<String>,
+    pub title_words: Vec<String>,
 }

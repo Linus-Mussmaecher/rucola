@@ -31,10 +31,6 @@ fn main() -> color_eyre::Result<()> {
         index,
     };
 
-    // Initialize input handler
-
-    let mut handler = ui::InputManager::default();
-
     // Main loop
 
     'main: loop {
@@ -52,14 +48,10 @@ fn main() -> color_eyre::Result<()> {
                 // Check for key preses
                 if key.kind == KeyEventKind::Press {
                     // Register input and get message.
-                    let mut maybe_message = handler.register(key.code);
-                    while let Some(msg) = maybe_message {
-                        // Inform the current screen.
-                        maybe_message = app.screen.update(msg);
-                        // Check for quits and screen changes
-                        if let Some(ui::input::Message::Quit) = maybe_message {
-                            break 'main;
-                        }
+                    app.screen.update(key);
+
+                    if let event::KeyCode::Char('q') = key.code {
+                        break 'main;
                     }
                 }
             }

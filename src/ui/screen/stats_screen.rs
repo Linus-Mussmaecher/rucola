@@ -1,17 +1,21 @@
 use crate::data::{Filter, Note, NoteStatistics};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     prelude::*,
     widgets::{self, *},
 };
 use std::{collections::HashMap, rc::Rc};
+use tui_textarea::TextArea;
 
 /// The Stats screen shows the user statistical information about their notes
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct StatsScreen {
     /// A reference to the index of all notes
     index: Rc<HashMap<String, Note>>,
     /// The currently displayed statistics
     stats: NoteStatistics,
+    /// The text area to type in filters.
+    text_area: TextArea<'static>,
 }
 
 impl StatsScreen {
@@ -19,28 +23,59 @@ impl StatsScreen {
     pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
         Self {
             stats: NoteStatistics::new_with_filters(&index, Filter::default()),
-            index: index,
+            index,
+
+            text_area: {
+                let mut a = TextArea::default();
+                a.set_block(Block::bordered().title("Filter".bold()));
+                a
+            },
         }
     }
 
+    /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     pub fn filter(&mut self, filter: Filter) {
         self.stats = NoteStatistics::new_with_filters(&self.index, filter);
     }
 }
 
 impl super::Screen for StatsScreen {
-    fn update(&mut self, msg: crate::ui::input::Message) -> Option<crate::ui::input::Message> {
-        Some(msg)
+    fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
+        if KeyCode::Enter == key.code {
+            // On enter -> Filter
+            // We should only have one line, read that one
+            if let Some(line) = self.text_area.lines().first() {
+                let mut filter = Filter::default();
+
+                // Go through words
+                for word in line.split_whitespace() {
+                    if word.starts_with('#') {
+                        // words with a hash count as a tag
+                        filter.tags.push(word.to_string());
+                    } else {
+                        // other words are searched for in the title
+                        filter.title_words.push(word.to_string());
+                    }
+                }
+                // apply filter to displayed statistic
+                self.filter(filter);
+            }
+        } else {
+            // Else -> Pass on to the text area
+            self.text_area.input(key);
+        }
+
+        None
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
         // Vertical layout
 
         let vertical = Layout::vertical([
+            Constraint::Length(3),
             Constraint::Length(5),
-            Constraint::Length(17),
-            Constraint::Length(17),
-            Constraint::Min(5),
+            Constraint::Min(17),
+            Constraint::Min(17),
         ]);
 
         //  === General stats ===
@@ -53,7 +88,7 @@ impl super::Screen for StatsScreen {
             Constraint::Min(0),
         ];
 
-        let [general_stats_area, bar_charts1_area, bar_charts2_area, filter_area] =
+        let [filter_area, general_stats_area, bar_charts1_area, bar_charts2_area] =
             vertical.areas(area);
 
         let strings = [
@@ -103,7 +138,6 @@ impl super::Screen for StatsScreen {
                     .tag_usage
                     .iter()
                     .map(|(name, value)| (name.as_str(), *value as u64))
-                    .take(8)
                     .collect::<Vec<(&str, u64)>>(),
             )
             .max(
@@ -128,7 +162,6 @@ impl super::Screen for StatsScreen {
                     .words
                     .iter()
                     .map(|(name, value)| (name.as_str(), *value as u64))
-                    .take(8)
                     .collect::<Vec<(&str, u64)>>(),
             )
             .max(
@@ -158,7 +191,6 @@ impl super::Screen for StatsScreen {
                     .inlinks
                     .iter()
                     .map(|(name, value)| (name.as_str(), *value as u64))
-                    .take(8)
                     .collect::<Vec<(&str, u64)>>(),
             )
             .max(
@@ -183,23 +215,21 @@ impl super::Screen for StatsScreen {
                     .orphans
                     .iter()
                     .map(|name| (name.as_str(), 0))
-                    .take(8)
                     .collect::<Vec<(&str, u64)>>(),
             )
             .max(10);
 
         // Filter area
-
-        let filter = widgets::Paragraph::new("Here you will be able to filter notes, one day.")
-            .block(Block::bordered().title("Filter".bold()));
+        let filter_input = self.text_area.widget();
 
         // === Rendering ===
+
+        Widget::render(filter_input, filter_area, buf);
 
         Widget::render(general_stats, general_stats_area, buf);
         Widget::render(bc11, bc11_area, buf);
         Widget::render(bc12, bc12_area, buf);
         Widget::render(bc21, bc21_area, buf);
         Widget::render(bc22, bc22_area, buf);
-        Widget::render(filter, filter_area, buf);
     }
 }
