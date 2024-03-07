@@ -51,6 +51,14 @@ fn main() -> color_eyre::Result<()> {
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
                             ui::input::Message::Quit => break 'main,
+                            ui::input::Message::SwitchSelect => {
+                                app.screen =
+                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()))
+                            }
+                            ui::input::Message::SwitchStats => {
+                                app.screen =
+                                    Box::new(ui::screen::StatsScreen::new(app.index.clone()))
+                            }
                         }
                     }
                 }
