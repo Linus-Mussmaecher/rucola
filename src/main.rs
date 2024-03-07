@@ -48,10 +48,10 @@ fn main() -> color_eyre::Result<()> {
                 // Check for key preses
                 if key.kind == KeyEventKind::Press {
                     // Register input and get message.
-                    app.screen.update(key);
-
-                    if let event::KeyCode::Char('q') = key.code {
-                        break 'main;
+                    if let Some(msg) = app.screen.update(key) {
+                        match msg {
+                            ui::input::Message::Quit => break 'main,
+                        }
                     }
                 }
             }
