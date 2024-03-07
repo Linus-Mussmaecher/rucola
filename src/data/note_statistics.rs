@@ -17,14 +17,13 @@ pub struct NoteStatistics {
     pub link_count_total: usize,
     /// A vec of all tags used, along with the amount of notes under that tag. Sorted by descending usage by default.
     pub tag_usage: Vec<(String, usize)>,
-    /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.)
+    /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.) Considers only those notes matching the filter.
     pub inlinks: Vec<(String, usize)>,
+    /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.) Considers all notes, regardless of filter.
+    pub inlinks_global: Vec<(String, usize)>,
 
     /// A vec of all note names, along with the amount of characters in the respective note.
     pub words: Vec<(String, usize)>,
-
-    /// A vec of all notes that have neither outgoing nor incoming links.
-    pub orphans: Vec<String>,
 }
 
 impl NoteStatistics {
@@ -83,6 +82,7 @@ impl NoteStatistics {
         }
 
         // Create a new hash map with note names and the amount they are linked to from other notes.
+        // Considers only those notes that match the filter.
         let mut inlinks = HashMap::new();
         for (_, note) in filtered_index.iter() {
             // for every link found within a note
@@ -93,6 +93,23 @@ impl NoteStatistics {
                     Some(val) => *val += 1,
                     None => {
                         inlinks.insert(link.clone(), 1 as usize);
+                    }
+                }
+            }
+        }
+
+        // Create a new hash map with note names and the amount they are linked to from other notes.
+        // Always considers all notes.
+        let mut inlinks_global = HashMap::new();
+        for (_, note) in index.iter() {
+            // for every link found within a note
+            for link in note.links.iter() {
+                // either create a new entry in the hash map or increment an existing entry by one.
+                // Note that this does count self-links
+                match inlinks_global.get_mut(link) {
+                    Some(val) => *val += 1,
+                    None => {
+                        inlinks_global.insert(link.clone(), 1 as usize);
                     }
                 }
             }
@@ -124,15 +141,6 @@ impl NoteStatistics {
                 chars_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
                 chars_vec
             },
-            // Use the filted index, take only those with no links and clone the name
-            orphans: filtered_index
-                .iter()
-                .filter(|(&a, &b)| {
-                    // needs to have no outgoing links and no incoming links i.e. no entry in the inlinks table
-                    b.links.len() == 0 && inlinks.get(&a.to_lowercase().replace(" ", "-")).is_none()
-                })
-                .map(|(_, &b)| b.name.clone())
-                .collect(),
             // This is what the inlinks map was created for - just collect and sort it.
             inlinks: {
                 let mut inlinks_vec: Vec<(String, usize)> = filtered_index
@@ -142,6 +150,20 @@ impl NoteStatistics {
                 inlinks_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
 
                 inlinks_vec
+            },
+            inlinks_global: {
+                let mut inlinks_global_vec: Vec<(String, usize)> = filtered_index
+                    .iter()
+                    .map(|(&id, note)| {
+                        (
+                            note.name.clone(),
+                            inlinks_global.get(id).copied().unwrap_or(0),
+                        )
+                    })
+                    .collect();
+                inlinks_global_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
+
+                inlinks_global_vec
             },
         }
     }

@@ -7,6 +7,13 @@ use ratatui::{
 use std::{collections::HashMap, rc::Rc};
 use tui_textarea::TextArea;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum StatsMode {
+    Main,
+    Filter,
+    Menu,
+}
+
 /// The Stats screen shows the user statistical information about their notes
 #[derive(Clone)]
 pub struct StatsScreen {
@@ -16,6 +23,8 @@ pub struct StatsScreen {
     stats: NoteStatistics,
     /// The text area to type in filters.
     text_area: TextArea<'static>,
+    /// Current input mode
+    mode: StatsMode,
 }
 
 impl StatsScreen {
@@ -24,45 +33,74 @@ impl StatsScreen {
         Self {
             stats: NoteStatistics::new_with_filters(&index, Filter::default()),
             index,
-
             text_area: {
                 let mut a = TextArea::default();
                 a.set_block(Block::bordered().title("Filter".bold()));
                 a
             },
+            mode: StatsMode::Main,
+        }
+    }
+
+    /// Check the current values of the text area, create filter from it and apply it
+    fn filter_by_area(&mut self) {
+        // We should only have one line, read that one
+        if let Some(line) = self.text_area.lines().first() {
+            let mut filter = Filter::default();
+
+            // Go through words
+            for word in line.split_whitespace() {
+                if word.starts_with('#') {
+                    // words with a hash count as a tag
+                    filter.tags.push(word.to_string());
+                } else {
+                    // other words are searched for in the title
+                    filter.title_words.push(word.to_string());
+                }
+            }
+            // apply filter to displayed statistic
+            self.filter(filter);
         }
     }
 
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
-    pub fn filter(&mut self, filter: Filter) {
+    fn filter(&mut self, filter: Filter) {
         self.stats = NoteStatistics::new_with_filters(&self.index, filter);
     }
 }
 
 impl super::Screen for StatsScreen {
     fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
-        if KeyCode::Enter == key.code {
-            // On enter -> Filter
-            // We should only have one line, read that one
-            if let Some(line) = self.text_area.lines().first() {
-                let mut filter = Filter::default();
-
-                // Go through words
-                for word in line.split_whitespace() {
-                    if word.starts_with('#') {
-                        // words with a hash count as a tag
-                        filter.tags.push(word.to_string());
-                    } else {
-                        // other words are searched for in the title
-                        filter.title_words.push(word.to_string());
-                    }
+        match self.mode {
+            StatsMode::Main => match key.code {
+                KeyCode::Char('f') => {
+                    self.mode = StatsMode::Filter;
                 }
-                // apply filter to displayed statistic
-                self.filter(filter);
+                KeyCode::Char('c') => {
+                    self.text_area.select_all();
+                    self.text_area.cut();
+                    self.filter(Filter::default());
+                }
+                KeyCode::Char('q') => return Some(crate::ui::input::Message::Quit),
+                _ => {}
+            },
+            StatsMode::Filter => {
+                match key.code {
+                    KeyCode::Esc => {
+                        self.mode = StatsMode::Main;
+                    }
+                    KeyCode::Enter => {
+                        // On enter -> Filter
+                        self.filter_by_area();
+                        self.mode = StatsMode::Main;
+                    }
+                    _ => {
+                        // Else -> Pass on to the text area
+                        self.text_area.input_without_shortcuts(key);
+                    }
+                };
             }
-        } else {
-            // Else -> Pass on to the text area
-            self.text_area.input(key);
+            StatsMode::Menu => todo!(),
         }
 
         None
@@ -203,7 +241,7 @@ impl super::Screen for StatsScreen {
 
         let bc22 = BarChart::default()
             .direction(Direction::Horizontal)
-            .block(Block::bordered().title("Orphans".bold()))
+            .block(Block::bordered().title("Most linked files (global)".bold()))
             .bar_width(1)
             .bar_gap(1)
             .bar_style(Style::new().blue())
@@ -212,12 +250,18 @@ impl super::Screen for StatsScreen {
             .data(
                 &self
                     .stats
-                    .orphans
+                    .inlinks_global
                     .iter()
-                    .map(|name| (name.as_str(), 0))
+                    .map(|(name, value)| (name.as_str(), *value as u64))
                     .collect::<Vec<(&str, u64)>>(),
             )
-            .max(10);
+            .max(
+                self.stats
+                    .inlinks_global
+                    .first()
+                    .map(|(_, val)| *val as u64 + 10)
+                    .unwrap_or(10),
+            );
 
         // Filter area
         let filter_input = self.text_area.widget();
