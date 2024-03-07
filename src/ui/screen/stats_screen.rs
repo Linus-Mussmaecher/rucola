@@ -11,7 +11,6 @@ use tui_textarea::TextArea;
 enum StatsMode {
     Main,
     Filter,
-    Menu,
 }
 
 /// The Stats screen shows the user statistical information about their notes
@@ -71,36 +70,47 @@ impl StatsScreen {
 
 impl super::Screen for StatsScreen {
     fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
+        // Check for mode
         match self.mode {
+            // Main mode: Switch to modes, general command
             StatsMode::Main => match key.code {
+                // F: Go to filter mode
                 KeyCode::Char('f') => {
                     self.mode = StatsMode::Filter;
                 }
+                // C: Clear filter
                 KeyCode::Char('c') => {
                     self.text_area.select_all();
                     self.text_area.cut();
                     self.filter(Filter::default());
                 }
+                // Q: Quit application
                 KeyCode::Char('q') => return Some(crate::ui::input::Message::Quit),
+                // S: Select screen
+                KeyCode::Char('s') => return Some(crate::ui::input::Message::SwitchSelect),
+                // R: Reload
+                KeyCode::Char('r') => return Some(crate::ui::input::Message::SwitchStats),
                 _ => {}
             },
+            // Filter mode: Type in filter values
             StatsMode::Filter => {
                 match key.code {
+                    // Escape: Back to main mode
                     KeyCode::Esc => {
                         self.mode = StatsMode::Main;
                     }
+                    // Enter: Apply filter, back to main mode
                     KeyCode::Enter => {
-                        // On enter -> Filter
                         self.filter_by_area();
                         self.mode = StatsMode::Main;
                     }
+                    // All other key events are passed on to the text area
                     _ => {
                         // Else -> Pass on to the text area
                         self.text_area.input_without_shortcuts(key);
                     }
                 };
             }
-            StatsMode::Menu => todo!(),
         }
 
         None

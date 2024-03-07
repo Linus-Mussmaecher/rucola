@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::data::Note;
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
 pub struct SelectScreen {
@@ -24,6 +24,11 @@ impl SelectScreen {
 
 impl super::Screen for SelectScreen {
     fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
+        match key.code {
+            KeyCode::Char('s') => return Some(crate::ui::input::Message::SwitchStats),
+            KeyCode::Char('q') => return Some(crate::ui::input::Message::Quit),
+            _ => {}
+        }
         None
     }
 

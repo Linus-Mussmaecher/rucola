@@ -3,4 +3,8 @@
 pub enum Message {
     /// Quit the application
     Quit,
+    /// Switch to select screen
+    SwitchSelect,
+    /// Switch to stats screen
+    SwitchStats,
 }
