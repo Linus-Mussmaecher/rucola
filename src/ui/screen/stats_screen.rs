@@ -122,8 +122,8 @@ impl super::Screen for StatsScreen {
         let vertical = Layout::vertical([
             Constraint::Length(3),
             Constraint::Length(5),
-            Constraint::Min(17),
-            Constraint::Min(17),
+            Constraint::Min(6),
+            Constraint::Min(6),
         ]);
 
         //  === General stats ===
