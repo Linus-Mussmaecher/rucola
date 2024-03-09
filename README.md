@@ -8,12 +8,7 @@
 
 
 Giraffe is a terminal user interface (TUI) that displays markdown files right in your terminal.
-Its main usecase is browsing and viewing a large folder structure of interlinked markdown files and - in conjunction with a text editor such as [Helix] or [Neovim] - serve as a replacemnt for note taking and knowledge base apps such as [Obsidian] or [Notion], but fully open-source and without leaving your terminal.
-
-[Helix](https://helix-editor.com)
-[Neovim](https://neovim.io)
-[Obsidian](https://obsidian.md)
-[Notion](https://notion.so)
+Its main usecase is browsing and viewing a large folder structure of interlinked markdown files and - in conjunction with a text editor such as [Helix](https://helix-editor.com) or [Neovim](https://neovim.io) - serve as a replacemnt for note taking and knowledge base apps such as [Obsidian](https://obsidian.md) or [Notion](https://notion.so), but fully open-source and without leaving your terminal.
 
 ## Features
 
