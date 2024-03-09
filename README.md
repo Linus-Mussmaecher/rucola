@@ -4,11 +4,11 @@
 ![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/giraffe/continuous-testing.yml?label=tests&style=flat-square)
 ![commits](https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/giraffe?style=flat-square)
 [![tech1](https://img.shields.io/badge/-Rust-000000?logo=rust&style=flat-square)](https://www.rust-lang.org/)
-[![tech2](https://img.shields.io/badge/-Ratatui-000000?logo=gnome-terminal&style=flat-square)](httsp://ratatui.rs)
+[![tech2](https://img.shields.io/badge/-Ratatui-000000?logo=gnome-terminal&style=flat-square)](https://ratatui.rs)
 
 
 Giraffe is a terminal user interface (TUI) that displays markdown files right in your terminal.
-Its main usecase is browsing and viewing a large folder structure of interlinked markdown files and - in conjunction with a text editor such as [Helix](https://helix-editor.com) or [Neovim](https://neovim.io) - serve as a replacemnt for note taking and knowledge base apps such as [Obsidian](https://obsidian.md) or [Notion](https://notion.so), but fully open-source and without leaving your terminal.
+Its main usecase is browsing and viewing a large folder structure of interlinked markdown files and - in conjunction with a text editor such as [Helix](https://helix-editor.com) or [Neovim](https://neovim.io) - serve as a replacement for note taking and knowledge base apps such as [Obsidian](https://obsidian.md) or [Notion](https://notion.so), but fully open-source and without leaving your terminal.
 
 ## Features
 
@@ -16,7 +16,7 @@ Giraffe is still heavily work-in-progress and not finished.
 This list serves as a TODO-list of target features, not features implemented yet.
 As soon as giraffe is in a usable state with core features implemented, this list will be split in available features and a TODO-list.
 
-Helix features multiple screens to browse your markdown files.
+Giraffe features multiple screens to browse your markdown files.
 
 ### Statistics Screen
 
