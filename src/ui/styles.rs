@@ -23,7 +23,7 @@ impl Default for Styles {
                 .add_modifier(Modifier::BOLD),
             hotkey_style: Style::new()
                 .fg(ratatui::style::Color::Blue)
-                .add_modifier(Modifier::BOLD),
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
             text_style: Style::new(),
             selected_style: Style::new()
                 .bg(ratatui::style::Color::LightBlue)
