@@ -31,43 +31,66 @@ pub struct SelectScreen {
     mode: SelectMode,
     /// The styles used on this screen.
     styles: Styles,
+    /// UI mode wether the user wants to filter for all tags or any tags.
+    all_tags: bool,
 }
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
     pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
         let styles = Styles::default();
-        Self {
+        let mut res = Self {
             local_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
             global_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
             index,
-            text_area: {
-                let mut area = TextArea::default();
-                Self::style_text_area(&mut area, styles);
-                area
-            },
+            text_area: TextArea::default(),
             mode: SelectMode::Select,
             styles,
-        }
+            all_tags: false,
+        };
+
+        res.style_text_area();
+
+        res
     }
 
     /// Styling of TextArea extracted from constructor to keep it clean.
-    fn style_text_area(area: &mut TextArea, styles: Styles) {
+    fn style_text_area(&mut self) {
         // The actual title
         let title_top = block::Title::from(Line::from(vec![
-            Span::styled("F", styles.hotkey_style),
-            Span::styled("ilter", styles.title_style),
+            Span::styled("F", self.styles.hotkey_style),
+            Span::styled("ilter", self.styles.title_style),
         ]));
 
         // The hotkey instructions at the bottom.
         let instructions = block::Title::from(Line::from(vec![
-            Span::styled("C", styles.hotkey_style),
-            Span::styled("lear filter", styles.text_style),
+            Span::styled("C", self.styles.hotkey_style),
+            Span::styled("lear filter", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
 
-        area.set_block(Block::bordered().title(title_top).title(instructions));
+        let instructions_bot = block::Title::from(Line::from(vec![
+            Span::styled(
+                if self.all_tags { "All " } else { "Any " },
+                self.styles.text_style,
+            ),
+            Span::styled("T", self.styles.hotkey_style),
+            Span::styled("ags", self.styles.text_style),
+        ]))
+        .alignment(Alignment::Right)
+        .position(block::Position::Bottom);
+
+        self.text_area.set_style(self.styles.input_style);
+        self.text_area
+            .set_cursor_line_style(self.styles.input_style);
+
+        self.text_area.set_block(
+            Block::bordered()
+                .title(title_top)
+                .title(instructions)
+                .title(instructions_bot),
+        );
     }
 
     /// Check the current values of the text area, create filter from it and apply it
@@ -86,6 +109,9 @@ impl SelectScreen {
                     filter.title_words.push(word.to_string());
                 }
             }
+            // check for any or all tags
+            filter.all_tags = self.all_tags;
+
             // apply filter to displayed statistic
             self.filter(filter);
         }
@@ -119,6 +145,12 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('s') => return Some(crate::ui::input::Message::SwitchStats),
                 // R: Reload
                 KeyCode::Char('r') => return Some(crate::ui::input::Message::SwitchSelect),
+                // T: Change all/any words requirement
+                KeyCode::Char('t') => {
+                    self.all_tags = !self.all_tags;
+                    self.filter_by_area();
+                    self.style_text_area();
+                }
                 _ => {}
             },
             // Filter mode: Type in filter values
@@ -245,8 +277,70 @@ impl super::Screen for SelectScreen {
             .column_spacing(1)
             .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
-        // Filter area
+        // === Filter area ===
+        // Mostly styled on creation
         let filter_input = self.text_area.widget();
+
+        // === Table Area ===
+
+        let notes_table_widths = [
+            Constraint::Min(25),
+            Constraint::Length(8),
+            Constraint::Length(8),
+            Constraint::Length(8),
+            Constraint::Length(8),
+            Constraint::Length(8),
+        ];
+
+        let notes_rows = self
+            .local_stats
+            .filtered_ids
+            .iter()
+            .take(table_area.height as usize)
+            .map(|id| {
+                self.index.get(id).map(|note| {
+                    Row::new(vec![
+                        note.name.clone(),
+                        format!("{:7}", note.words),
+                        format!("{:7}", note.characters),
+                        format!("{:7}", note.links.len()),
+                        "Test".to_string(),
+                        "Test2".to_string(),
+                    ])
+                })
+            })
+            .flatten()
+            .collect::<Vec<Row>>();
+
+        let table = Table::new(notes_rows, notes_table_widths)
+            .column_spacing(1)
+            .header(Row::new(vec![
+                Line::from(vec![
+                    Span::styled("N", self.styles.hotkey_style),
+                    Span::styled("ame", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("W", self.styles.hotkey_style),
+                    Span::styled("ords", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("C", self.styles.hotkey_style),
+                    Span::styled("hars", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("O", self.styles.hotkey_style),
+                    Span::styled("ut", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("G", self.styles.hotkey_style),
+                    Span::styled("lobalIn", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("L", self.styles.hotkey_style),
+                    Span::styled("ocalIn", self.styles.title_style),
+                ]),
+            ]))
+            .block(Block::bordered().title("Notes".set_style(self.styles.title_style)));
 
         // === Rendering ===
 
@@ -254,5 +348,7 @@ impl super::Screen for SelectScreen {
 
         Widget::render(global_stats, global_stats_area, buf);
         Widget::render(local_stats, local_stats_area, buf);
+
+        Widget::render(table, table_area, buf);
     }
 }

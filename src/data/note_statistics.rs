@@ -24,6 +24,8 @@ pub struct NoteStatistics {
 
     /// A vec of all note names, along with the amount of characters in the respective note.
     pub words: Vec<(String, usize)>,
+    /// A HashMap of all notes matching the given filter used to create this struct.
+    pub filtered_ids: Vec<String>,
 }
 
 impl NoteStatistics {
@@ -46,7 +48,6 @@ impl NoteStatistics {
 
                 // Check if any or all of the words specified in the filter are in the note title.
                 let mut any_word = filter.title_words.is_empty();
-                let mut all_words = true;
                 for word in filter.title_words.iter() {
                     if entry
                         .1
@@ -55,14 +56,11 @@ impl NoteStatistics {
                         .contains(&word.to_lowercase().to_string())
                     {
                         any_word = true;
-                    } else {
-                        all_words = false;
                     }
                 }
 
                 // Compare with the filter settings
-                (filter.all_tags && all_tags || any_tag)
-                    && (filter.all_title_words && all_words || any_word)
+                (filter.all_tags && all_tags || !filter.all_tags && any_tag) && any_word
             })
             .collect::<HashMap<&String, &Note>>();
 
@@ -165,6 +163,7 @@ impl NoteStatistics {
 
                 inlinks_global_vec
             },
+            filtered_ids: filtered_index.into_keys().cloned().collect(),
         }
     }
 }
@@ -176,8 +175,6 @@ pub struct Filter {
     pub all_tags: bool,
     /// The tags to filter by, hash included.
     pub tags: Vec<String>,
-    /// Wether or not all specified words must be contained in the note title in order to match the filter, or only any (=at least one) of them.
-    pub all_title_words: bool,
     /// The words to search the note title for. No fuzzy matching, must fit completetely.
     pub title_words: Vec<String>,
 }
