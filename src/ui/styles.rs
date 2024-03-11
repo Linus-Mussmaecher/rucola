@@ -5,6 +5,8 @@ use ratatui::style::{Modifier, Style};
 pub struct Styles {
     /// For titles of boxes.
     pub title_style: Style,
+    /// For table headers etc.
+    pub subtitle_style: Style,
     /// For letters that indicate a hotkey within a title.
     pub hotkey_style: Style,
     /// For normal text.
@@ -21,6 +23,7 @@ impl Default for Styles {
             title_style: Style::new()
                 .fg(ratatui::style::Color::Cyan)
                 .add_modifier(Modifier::BOLD),
+            subtitle_style: Style::new().fg(ratatui::style::Color::LightCyan),
             hotkey_style: Style::new()
                 .fg(ratatui::style::Color::Blue)
                 .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
