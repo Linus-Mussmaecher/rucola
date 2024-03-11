@@ -21,8 +21,10 @@ enum SelectMode {
 pub struct SelectScreen {
     /// A reference to the index of all notes
     index: Rc<HashMap<String, Note>>,
-    /// The currently displayed statistics
-    stats: NoteStatistics,
+    /// The currently displayed statistics for all notes.
+    local_stats: NoteStatistics,
+    /// The currently displayed statistics for all notes matching the current filter.
+    global_stats: NoteStatistics,
     /// The text area to type in filters.
     text_area: TextArea<'static>,
     /// Current input mode
@@ -36,19 +38,36 @@ impl SelectScreen {
     pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
         let styles = Styles::default();
         Self {
-            stats: NoteStatistics::new_with_filters(&index, Filter::default()),
+            local_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
+            global_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
             index,
             text_area: {
-                let mut a = TextArea::default();
-                a.set_block(Block::bordered().title(Line::from(vec![
-                    Span::styled("F", styles.hotkey_style),
-                    Span::styled("ilter", styles.title_style),
-                ])));
-                a
+                let mut area = TextArea::default();
+                Self::style_text_area(&mut area, styles);
+                area
             },
             mode: SelectMode::Select,
             styles,
         }
+    }
+
+    /// Styling of TextArea extracted from constructor to keep it clean.
+    fn style_text_area(area: &mut TextArea, styles: Styles) {
+        // The actual title
+        let title_top = block::Title::from(Line::from(vec![
+            Span::styled("F", styles.hotkey_style),
+            Span::styled("ilter", styles.title_style),
+        ]));
+
+        // The hotkey instructions at the bottom.
+        let instructions = block::Title::from(Line::from(vec![
+            Span::styled("C", styles.hotkey_style),
+            Span::styled("lear filter", styles.text_style),
+        ]))
+        .alignment(Alignment::Right)
+        .position(block::Position::Top);
+
+        area.set_block(Block::bordered().title(title_top).title(instructions));
     }
 
     /// Check the current values of the text area, create filter from it and apply it
@@ -74,7 +93,7 @@ impl SelectScreen {
 
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     fn filter(&mut self, filter: Filter) {
-        self.stats = NoteStatistics::new_with_filters(&self.index, filter);
+        self.local_stats = NoteStatistics::new_with_filters(&self.index, filter);
     }
 }
 
@@ -85,11 +104,11 @@ impl super::Screen for SelectScreen {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
                 // F: Go to filter mode
-                KeyCode::Char('f') => {
+                KeyCode::Char('f') | KeyCode::Char('F') => {
                     self.mode = SelectMode::Filter;
                 }
                 // C: Clear filter
-                KeyCode::Char('c') => {
+                KeyCode::Char('c') | KeyCode::Char('C') => {
                     self.text_area.select_all();
                     self.text_area.cut();
                     self.filter(Filter::default());
@@ -130,50 +149,101 @@ impl super::Screen for SelectScreen {
         // Vertical layout
 
         let vertical = Layout::vertical([
-            Constraint::Length(3),
             Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(3),
             Constraint::Min(6),
         ]);
 
-        //  === General stats ===
+        let [global_stats_area, local_stats_area, filter_area, table_area] = vertical.areas(area);
 
-        let general_stats_widths = [
+        let stats_widths = [
             Constraint::Length(20),
-            Constraint::Length(10),
+            Constraint::Length(16),
             Constraint::Length(20),
-            Constraint::Length(10),
+            Constraint::Length(16),
             Constraint::Min(0),
         ];
 
-        let [filter_area, general_stats_area, table_area] = vertical.areas(area);
+        //  === Global stats ===
 
-        let strings = [
-            self.stats.note_count_total.to_string(),
-            self.stats.word_count_total.to_string(),
-            self.stats.tag_count_total.to_string(),
-            self.stats.char_count_total.to_string(),
-            self.stats.link_count_total.to_string(),
+        let global_strings = [
+            format!("{:7}", self.global_stats.note_count_total),
+            format!("{:7}", self.global_stats.word_count_total),
+            format!("{:7}", self.global_stats.tag_count_total),
+            format!("{:7}", self.global_stats.char_count_total),
+            format!("{:7}", self.global_stats.link_count_total),
         ];
 
-        let general_stats_rows = [
+        let global_stats_rows = [
             Row::new(vec![
                 "Total notes:",
-                &strings[0],
+                &global_strings[0],
                 "Total words: ",
-                &strings[1],
+                &global_strings[1],
             ]),
             Row::new(vec![
                 "Total unique tags:",
-                &strings[2],
+                &global_strings[2],
                 "Total characters: ",
-                &strings[3],
+                &global_strings[3],
             ]),
-            Row::new(vec!["Total links:", &strings[4], "", ""]),
+            Row::new(vec!["Total links:", &global_strings[4], "", ""]),
         ];
 
-        let general_stats = widgets::Table::new(general_stats_rows, general_stats_widths)
+        let global_stats = widgets::Table::new(global_stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Total Statistics".set_style(self.styles.title_style)));
+            .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
+
+        //  === Local stats ===
+
+        let local_strings = [
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.note_count_total,
+                self.local_stats.note_count_total * 100 / self.global_stats.note_count_total
+            ),
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.word_count_total,
+                self.local_stats.word_count_total * 100 / self.global_stats.word_count_total
+            ),
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.tag_count_total,
+                self.local_stats.tag_count_total * 100 / self.global_stats.tag_count_total
+            ),
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.char_count_total,
+                self.local_stats.char_count_total * 100 / self.global_stats.char_count_total
+            ),
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.link_count_total,
+                self.local_stats.link_count_total * 100 / self.global_stats.link_count_total
+            ),
+        ];
+
+        let local_stats_rows = [
+            Row::new(vec![
+                "Total notes:",
+                &local_strings[0],
+                "Total words: ",
+                &local_strings[1],
+            ]),
+            Row::new(vec![
+                "Total unique tags:",
+                &local_strings[2],
+                "Total characters: ",
+                &local_strings[3],
+            ]),
+            Row::new(vec!["Total links:", &local_strings[4], "", ""]),
+        ];
+
+        let local_stats = widgets::Table::new(local_stats_rows, stats_widths)
+            .column_spacing(1)
+            .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
         // Filter area
         let filter_input = self.text_area.widget();
@@ -182,6 +252,7 @@ impl super::Screen for SelectScreen {
 
         Widget::render(filter_input, filter_area, buf);
 
-        Widget::render(general_stats, general_stats_area, buf);
+        Widget::render(global_stats, global_stats_area, buf);
+        Widget::render(local_stats, local_stats_area, buf);
     }
 }
