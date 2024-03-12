@@ -18,15 +18,25 @@ As soon as giraffe is in a usable state with core features implemented, this lis
 
 Giraffe features multiple screens to browse your markdown files.
 
-### Statistics Screen
-
- - Shows total statistics of the target folder, such as total word count, links and tags.
- - Shows ranked and scrollable lists of largest and most linked files and most used tags.
- - Filterable by tag and title.
-
 ### Selection Screen
 
- - Shows a list of notes and allows selection of a single node via a title-based fuzzy search or a global search in note contents.
+ - Shows a list of all notes that is scrollable
+ - List can be filtered by
+  - Tags (all words of the filter string beginning with '#' are considered tags. Of these, either any or all, as by the user's choice, must be matched by the notes)
+  - Title (must contain all words of the filter string not beginning with '#').
+ - Shows the following statistics for each note in the list
+  - Words
+  - Characters
+  - Total amount of outgoing links
+  - Total amount of incoming links from all notes (_global inlinks_)
+  - Total amount of incoming links from other notes matching the filter (_local inlinks_)
+ - Also shows _global_ and _local_ statistics for all notes 
+  - Total amount of notes
+  - Total amount of unique tags
+  - Total word count
+  - Total character count
+  - Total amount of outgoing links
+  - Total amount of incoming links
 
 ### Viewing Screen
 The main mode of giraffe.
