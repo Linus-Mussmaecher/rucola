@@ -11,10 +11,22 @@ use ratatui::{
 use std::{collections::HashMap, rc::Rc};
 use tui_textarea::TextArea;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 enum SelectMode {
+    #[default]
     Select,
     Filter,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+enum SortingMode {
+    #[default]
+    Name,
+    Words,
+    Chars,
+    OutLinks,
+    GlobalInLinks,
+    LocalInLinks,
 }
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
@@ -33,6 +45,8 @@ pub struct SelectScreen {
     styles: Styles,
     /// UI mode wether the user wants to filter for all tags or any tags.
     all_tags: bool,
+    /// Ui mode for the chosen sorting variant
+    sorting: SortingMode,
 }
 
 impl SelectScreen {
@@ -47,9 +61,12 @@ impl SelectScreen {
             mode: SelectMode::Select,
             styles,
             all_tags: false,
+            sorting: SortingMode::Name,
         };
 
         res.style_text_area();
+
+        res.sort();
 
         res
     }
@@ -121,6 +138,35 @@ impl SelectScreen {
     fn filter(&mut self, filter: Filter) {
         self.local_stats = NoteStatistics::new_with_filters(&self.index, filter);
     }
+
+    /// Sorts the note display according to the current sorting mode.
+    fn sort(&mut self) {
+        if self.sorting == SortingMode::Name {
+            // Name: Sort-string by name
+            self.local_stats
+                .filtered_ids
+                .sort_by_cached_key(|(id, _, _)| self.index.get(id).map(|note| &note.name));
+        } else {
+            // all others are usize and can be done in one thing
+            self.local_stats.filtered_ids.sort_by_cached_key(
+                |(id, global_inlinks, local_inlinks)| {
+                    if let Some(note) = self.index.get(id) {
+                        match self.sorting {
+                            // This should not appear
+                            SortingMode::Name => 0,
+                            SortingMode::Words => note.words,
+                            SortingMode::Chars => note.characters,
+                            SortingMode::OutLinks => note.links.len(),
+                            SortingMode::GlobalInLinks => *global_inlinks,
+                            SortingMode::LocalInLinks => *local_inlinks,
+                        }
+                    } else {
+                        0
+                    }
+                },
+            )
+        }
+    }
 }
 
 impl super::Screen for SelectScreen {
@@ -150,6 +196,30 @@ impl super::Screen for SelectScreen {
                     self.all_tags = !self.all_tags;
                     self.filter_by_area();
                     self.style_text_area();
+                }
+                KeyCode::Char('n') => {
+                    self.sorting = SortingMode::Name;
+                    self.sort();
+                }
+                KeyCode::Char('w') => {
+                    self.sorting = SortingMode::Words;
+                    self.sort();
+                }
+                KeyCode::Char('a') => {
+                    self.sorting = SortingMode::Chars;
+                    self.sort();
+                }
+                KeyCode::Char('o') => {
+                    self.sorting = SortingMode::OutLinks;
+                    self.sort();
+                }
+                KeyCode::Char('g') => {
+                    self.sorting = SortingMode::GlobalInLinks;
+                    self.sort();
+                }
+                KeyCode::Char('l') => {
+                    self.sorting = SortingMode::LocalInLinks;
+                    self.sort();
                 }
                 _ => {}
             },
@@ -297,15 +367,15 @@ impl super::Screen for SelectScreen {
             .filtered_ids
             .iter()
             .take(table_area.height as usize)
-            .map(|id| {
+            .map(|(id, global_inlinks, local_inlinks)| {
                 self.index.get(id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
                         format!("{:7}", note.words),
                         format!("{:7}", note.characters),
                         format!("{:7}", note.links.len()),
-                        "Test".to_string(),
-                        "Test2".to_string(),
+                        format!("{:7}", global_inlinks),
+                        format!("{:7}", local_inlinks),
                     ])
                 })
             })
@@ -324,8 +394,9 @@ impl super::Screen for SelectScreen {
                     Span::styled("ords", self.styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("C", self.styles.hotkey_style),
-                    Span::styled("hars", self.styles.title_style),
+                    Span::styled("Ch", self.styles.title_style),
+                    Span::styled("a", self.styles.hotkey_style),
+                    Span::styled("rs", self.styles.title_style),
                 ]),
                 Line::from(vec![
                     Span::styled("O", self.styles.hotkey_style),

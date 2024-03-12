@@ -15,17 +15,9 @@ pub struct NoteStatistics {
     pub tag_count_total: usize,
     /// The total amount of (non-unique) links between notes. Does not count external links.
     pub link_count_total: usize,
-    /// A vec of all tags used, along with the amount of notes under that tag. Sorted by descending usage by default.
-    pub tag_usage: Vec<(String, usize)>,
-    /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.) Considers only those notes matching the filter.
-    pub inlinks: Vec<(String, usize)>,
-    /// A vec of all note names, along with the total amount of links in other notes pointing to this note (or a heading in it.) Considers all notes, regardless of filter.
-    pub inlinks_global: Vec<(String, usize)>,
-
-    /// A vec of all note names, along with the amount of characters in the respective note.
-    pub words: Vec<(String, usize)>,
     /// A HashMap of all notes matching the given filter used to create this struct.
-    pub filtered_ids: Vec<String>,
+    /// Provided alongside are their inlinks (global) and inlinks (local, i.e. of notes also matching the filter).
+    pub filtered_ids: Vec<(String, usize, usize)>,
 }
 
 impl NoteStatistics {
@@ -124,46 +116,16 @@ impl NoteStatistics {
             tag_count_total: tags.len(),
             // Take the sum of the length of links-lists from each individual note.
             link_count_total: filtered_index.values().map(|note| note.links.len()).sum(),
-            // This is what the tag map was created for - just collect it into a vec and sort that.
-            tag_usage: {
-                let mut tags_vec: Vec<(String, usize)> = tags.into_iter().collect();
-                tags_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
-                tags_vec
-            },
-            // Use filtered index and reduce the note to just the word count while cloning the name
-            words: {
-                let mut chars_vec: Vec<(String, usize)> = filtered_index
-                    .iter()
-                    .map(|(_, &b)| (b.name.clone(), b.words))
-                    .collect();
-                chars_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
-                chars_vec
-            },
-            // This is what the inlinks map was created for - just collect and sort it.
-            inlinks: {
-                let mut inlinks_vec: Vec<(String, usize)> = filtered_index
-                    .iter()
-                    .map(|(&id, note)| (note.name.clone(), inlinks.get(id).copied().unwrap_or(0)))
-                    .collect();
-                inlinks_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
-
-                inlinks_vec
-            },
-            inlinks_global: {
-                let mut inlinks_global_vec: Vec<(String, usize)> = filtered_index
-                    .iter()
-                    .map(|(&id, note)| {
-                        (
-                            note.name.clone(),
-                            inlinks_global.get(id).copied().unwrap_or(0),
-                        )
-                    })
-                    .collect();
-                inlinks_global_vec.sort_unstable_by_key(|(_, b)| std::cmp::Reverse(*b));
-
-                inlinks_global_vec
-            },
-            filtered_ids: filtered_index.into_keys().cloned().collect(),
+            filtered_ids: filtered_index
+                .into_keys()
+                .map(|id| {
+                    (
+                        id.clone(),
+                        inlinks_global.get(id).copied().unwrap_or(0),
+                        inlinks.get(id).copied().unwrap_or(0),
+                    )
+                })
+                .collect(),
         }
     }
 }
