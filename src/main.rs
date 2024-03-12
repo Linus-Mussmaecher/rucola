@@ -27,7 +27,7 @@ fn main() -> color_eyre::Result<()> {
     ))?);
 
     let mut app = App {
-        screen: Box::new(ui::screen::StatsScreen::new(index.clone())),
+        screen: Box::new(ui::screen::SelectScreen::new(index.clone())),
         index,
     };
 
@@ -57,7 +57,7 @@ fn main() -> color_eyre::Result<()> {
                             }
                             ui::input::Message::SwitchStats => {
                                 app.screen =
-                                    Box::new(ui::screen::StatsScreen::new(app.index.clone()))
+                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()))
                             }
                         }
                     }
