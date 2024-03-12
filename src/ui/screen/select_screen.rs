@@ -47,6 +47,8 @@ pub struct SelectScreen {
     all_tags: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
+    /// Reversed sorting
+    sorting_rev: bool,
 }
 
 impl SelectScreen {
@@ -62,11 +64,10 @@ impl SelectScreen {
             styles,
             all_tags: false,
             sorting: SortingMode::Name,
+            sorting_rev: false,
         };
 
         res.style_text_area();
-
-        res.sort();
 
         res
     }
@@ -137,10 +138,22 @@ impl SelectScreen {
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     fn filter(&mut self, filter: Filter) {
         self.local_stats = NoteStatistics::new_with_filters(&self.index, filter);
+        self.sort(None);
     }
 
-    /// Sorts the note display according to the current sorting mode.
-    fn sort(&mut self) {
+    /// Sets a new sorting mode if requested.
+    /// Then sorts the note display according to the current sorting mode.
+    fn sort(&mut self, new_mode: Option<SortingMode>) {
+        // if a new sorting mode was requested
+        if let Some(new_mode) = new_mode {
+            if new_mode == self.sorting {
+                // if the new sorting mode is also the old one, reverse the sorting
+                self.sorting_rev = !self.sorting_rev;
+            } else {
+                // else, apply the new mode but leave the reversed sorting as is
+                self.sorting = new_mode;
+            }
+        }
         if self.sorting == SortingMode::Name {
             // Name: Sort-string by name
             self.local_stats
@@ -166,6 +179,10 @@ impl SelectScreen {
                 },
             )
         }
+
+        if self.sorting_rev {
+            self.local_stats.filtered_ids.reverse();
+        }
     }
 }
 
@@ -176,50 +193,42 @@ impl super::Screen for SelectScreen {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
                 // F: Go to filter mode
-                KeyCode::Char('f') | KeyCode::Char('F') => {
+                KeyCode::Char('f' | 'F') => {
                     self.mode = SelectMode::Filter;
                 }
                 // C: Clear filter
-                KeyCode::Char('c') | KeyCode::Char('C') => {
+                KeyCode::Char('c' | 'C') => {
                     self.text_area.select_all();
                     self.text_area.cut();
                     self.filter(Filter::default());
                 }
                 // Q: Quit application
-                KeyCode::Char('q') => return Some(crate::ui::input::Message::Quit),
-                // S: Select screen
-                KeyCode::Char('s') => return Some(crate::ui::input::Message::SwitchStats),
+                KeyCode::Char('q' | 'Q') => return Some(crate::ui::input::Message::Quit),
                 // R: Reload
-                KeyCode::Char('r') => return Some(crate::ui::input::Message::SwitchSelect),
+                KeyCode::Char('r' | 'R') => return Some(crate::ui::input::Message::SwitchSelect),
                 // T: Change all/any words requirement
-                KeyCode::Char('t') => {
+                KeyCode::Char('t' | 'T') => {
                     self.all_tags = !self.all_tags;
                     self.filter_by_area();
                     self.style_text_area();
                 }
-                KeyCode::Char('n') => {
-                    self.sorting = SortingMode::Name;
-                    self.sort();
+                KeyCode::Char('n' | 'N') => {
+                    self.sort(Some(SortingMode::Name));
                 }
-                KeyCode::Char('w') => {
-                    self.sorting = SortingMode::Words;
-                    self.sort();
+                KeyCode::Char('w' | 'W') => {
+                    self.sort(Some(SortingMode::Words));
                 }
-                KeyCode::Char('a') => {
-                    self.sorting = SortingMode::Chars;
-                    self.sort();
+                KeyCode::Char('a' | 'A') => {
+                    self.sort(Some(SortingMode::Chars));
                 }
-                KeyCode::Char('o') => {
-                    self.sorting = SortingMode::OutLinks;
-                    self.sort();
+                KeyCode::Char('o' | 'O') => {
+                    self.sort(Some(SortingMode::OutLinks));
                 }
-                KeyCode::Char('g') => {
-                    self.sorting = SortingMode::GlobalInLinks;
-                    self.sort();
+                KeyCode::Char('g' | 'G') => {
+                    self.sort(Some(SortingMode::GlobalInLinks));
                 }
-                KeyCode::Char('l') => {
-                    self.sorting = SortingMode::LocalInLinks;
-                    self.sort();
+                KeyCode::Char('l' | 'L') => {
+                    self.sort(Some(SortingMode::LocalInLinks));
                 }
                 _ => {}
             },
@@ -274,23 +283,29 @@ impl super::Screen for SelectScreen {
             format!("{:7}", self.global_stats.word_count_total),
             format!("{:7}", self.global_stats.tag_count_total),
             format!("{:7}", self.global_stats.char_count_total),
-            format!("{:7}", self.global_stats.link_count_total),
+            format!("{:7}", self.global_stats.outlinks_total),
+            format!("{:7}", self.global_stats.global_inlinks_total),
         ];
 
         let global_stats_rows = [
             Row::new(vec![
                 "Total notes:",
                 &global_strings[0],
-                "Total words: ",
+                "Total words:",
                 &global_strings[1],
             ]),
             Row::new(vec![
                 "Total unique tags:",
                 &global_strings[2],
-                "Total characters: ",
+                "Total characters:",
                 &global_strings[3],
             ]),
-            Row::new(vec!["Total links:", &global_strings[4], "", ""]),
+            Row::new(vec![
+                "Outgoing links:",
+                &global_strings[4],
+                "Incoming links:",
+                &global_strings[5],
+            ]),
         ];
 
         let global_stats = widgets::Table::new(global_stats_rows, stats_widths)
@@ -322,8 +337,14 @@ impl super::Screen for SelectScreen {
             ),
             format!(
                 "{:7} ({:02}%)",
-                self.local_stats.link_count_total,
-                self.local_stats.link_count_total * 100 / self.global_stats.link_count_total
+                self.local_stats.outlinks_total,
+                self.local_stats.outlinks_total * 100 / self.global_stats.outlinks_total
+            ),
+            format!(
+                "{:7} ({:02}%)",
+                self.local_stats.global_inlinks_total,
+                self.local_stats.global_inlinks_total * 100
+                    / self.global_stats.global_inlinks_total
             ),
         ];
 
@@ -331,16 +352,21 @@ impl super::Screen for SelectScreen {
             Row::new(vec![
                 "Total notes:",
                 &local_strings[0],
-                "Total words: ",
+                "Total words:",
                 &local_strings[1],
             ]),
             Row::new(vec![
                 "Total unique tags:",
                 &local_strings[2],
-                "Total characters: ",
+                "Total characters:",
                 &local_strings[3],
             ]),
-            Row::new(vec!["Total links:", &local_strings[4], "", ""]),
+            Row::new(vec![
+                "Outgoing links:",
+                &local_strings[4],
+                "Incoming links:",
+                &local_strings[5],
+            ]),
         ];
 
         let local_stats = widgets::Table::new(local_stats_rows, stats_widths)

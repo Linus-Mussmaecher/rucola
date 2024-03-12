@@ -55,10 +55,6 @@ fn main() -> color_eyre::Result<()> {
                                 app.screen =
                                     Box::new(ui::screen::SelectScreen::new(app.index.clone()))
                             }
-                            ui::input::Message::SwitchStats => {
-                                app.screen =
-                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()))
-                            }
                         }
                     }
                 }

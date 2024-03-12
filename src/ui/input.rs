@@ -5,6 +5,4 @@ pub enum Message {
     Quit,
     /// Switch to select screen
     SwitchSelect,
-    /// Switch to stats screen
-    SwitchStats,
 }

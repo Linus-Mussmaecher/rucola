@@ -13,8 +13,10 @@ pub struct NoteStatistics {
     pub note_count_total: usize,
     /// The total amount of _unique_ tags tracked.
     pub tag_count_total: usize,
-    /// The total amount of (non-unique) links between notes. Does not count external links.
-    pub link_count_total: usize,
+    /// The total amount of (non-unique) outgoing links withing notes. Does not count external links.
+    pub outlinks_total: usize,
+    /// The total amount of (globally) incoming links to matched notes.
+    pub global_inlinks_total: usize,
     /// A HashMap of all notes matching the given filter used to create this struct.
     /// Provided alongside are their inlinks (global) and inlinks (local, i.e. of notes also matching the filter).
     pub filtered_ids: Vec<(String, usize, usize)>,
@@ -115,7 +117,14 @@ impl NoteStatistics {
             // Take the created tag-usage map and check its length.
             tag_count_total: tags.len(),
             // Take the sum of the length of links-lists from each individual note.
-            link_count_total: filtered_index.values().map(|note| note.links.len()).sum(),
+            outlinks_total: filtered_index.values().map(|note| note.links.len()).sum(),
+            // Sum over the hashmap
+            global_inlinks_total: filtered_index
+                .keys()
+                .map(|id| inlinks_global.get(*id))
+                .flatten()
+                .sum(),
+            // Collect the ids in the index and their global/local inlinks
             filtered_ids: filtered_index
                 .into_keys()
                 .map(|id| {
