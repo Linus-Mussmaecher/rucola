@@ -29,7 +29,7 @@ impl Default for Styles {
                 .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
             text_style: Style::new(),
             selected_style: Style::new()
-                .bg(ratatui::style::Color::LightBlue)
+                .bg(ratatui::style::Color::LightCyan)
                 .add_modifier(Modifier::BOLD),
             input_style: Style::new().add_modifier(Modifier::ITALIC),
         }

@@ -31,18 +31,28 @@ enum SortingMode {
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
 pub struct SelectScreen {
+    // === Displayed Data ===
     /// A reference to the index of all notes
     index: Rc<HashMap<String, Note>>,
     /// The currently displayed statistics for all notes.
     local_stats: NoteStatistics,
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: NoteStatistics,
+    /// The styles used on this screen.
+    styles: Styles,
+
+    // === UI (state) ===
     /// The text area to type in filters.
     text_area: TextArea<'static>,
     /// Current input mode
     mode: SelectMode,
-    /// The styles used on this screen.
-    styles: Styles,
+    /// Current state of the list
+    ///
+    /// This is saved as a simple usize from which the ListState to use with ratatui is constructed in immediate mode.
+    /// This allows us to convert only the neccessary notes to ListItems and save some time.
+    selected: usize,
+
+    // === UI options ===
     /// UI mode wether the user wants to filter for all tags or any tags.
     all_tags: bool,
     /// Ui mode for the chosen sorting variant
@@ -65,6 +75,7 @@ impl SelectScreen {
             all_tags: false,
             sorting: SortingMode::Name,
             sorting_rev: false,
+            selected: 0,
         };
 
         res.style_text_area();
@@ -180,9 +191,13 @@ impl SelectScreen {
             )
         }
 
+        // Potentially reverse sorting
         if self.sorting_rev {
             self.local_stats.filtered_ids.reverse();
         }
+
+        // Always select the first element whenever a resort is triggered.
+        self.selected = 0;
     }
 }
 
@@ -224,11 +239,24 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('o' | 'O') => {
                     self.sort(Some(SortingMode::OutLinks));
                 }
-                KeyCode::Char('g' | 'G') => {
+                KeyCode::Char('g') => {
                     self.sort(Some(SortingMode::GlobalInLinks));
                 }
                 KeyCode::Char('l' | 'L') => {
                     self.sort(Some(SortingMode::LocalInLinks));
+                }
+                // Selection
+                KeyCode::Char('j' | 'J') => {
+                    self.selected = self
+                        .selected
+                        .saturating_add(1)
+                        .min(self.local_stats.filtered_ids.len() - 1);
+                }
+                KeyCode::Char('k' | 'K') => {
+                    self.selected = self.selected.saturating_sub(1);
+                }
+                KeyCode::Char('G') => {
+                    self.selected = 0;
                 }
                 _ => {}
             },
@@ -388,10 +416,20 @@ impl super::Screen for SelectScreen {
             Constraint::Length(8),
         ];
 
+        let top_ind = self.selected.saturating_sub(5);
+
+        let mut state = TableState::new()
+            .with_offset(0)
+            .with_selected(match self.mode {
+                SelectMode::Select => Some(self.selected - top_ind),
+                SelectMode::Filter => None,
+            });
+
         let notes_rows = self
             .local_stats
             .filtered_ids
             .iter()
+            .skip(top_ind)
             .take(table_area.height as usize)
             .map(|(id, global_inlinks, local_inlinks)| {
                 self.index.get(id).map(|note| {
@@ -437,6 +475,7 @@ impl super::Screen for SelectScreen {
                     Span::styled("ocalIn", self.styles.title_style),
                 ]),
             ]))
+            .highlight_style(self.styles.selected_style)
             .block(Block::bordered().title("Notes".set_style(self.styles.title_style)));
 
         // === Rendering ===
@@ -446,6 +485,6 @@ impl super::Screen for SelectScreen {
         Widget::render(global_stats, global_stats_area, buf);
         Widget::render(local_stats, local_stats_area, buf);
 
-        Widget::render(table, table_area, buf);
+        StatefulWidget::render(table, table_area, buf, &mut state)
     }
 }
