@@ -11,7 +11,9 @@ mod ui;
 
 /// The main state of the application.
 struct App {
+    /// The currently displayed UI screen.
     screen: Box<dyn ui::Screen>,
+    /// All notes managed by the application, keyed by their ID.
     index: Rc<HashMap<String, data::Note>>,
 }
 
@@ -53,7 +55,7 @@ fn main() -> color_eyre::Result<()> {
                             ui::input::Message::Quit => break 'main,
                             ui::input::Message::SwitchSelect => {
                                 app.screen =
-                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()))
+                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()));
                             }
                         }
                     }
@@ -91,6 +93,7 @@ fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backen
 }
 
 fn restore_terminal() -> color_eyre::Result<()> {
+    // Step -1: More ratatuio boilerplate that happens on a panic to make sure the terminal remains usable
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
