@@ -5,8 +5,7 @@ mod note_statistics;
 pub use note_statistics::Filter;
 pub use note_statistics::NoteStatistics;
 
-use eyre::Context;
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::HashMap, path::Path};
 use walkdir;
 
 /// Turns a file name into its id in the following steps:

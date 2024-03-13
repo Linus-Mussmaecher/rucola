@@ -246,17 +246,30 @@ impl super::Screen for SelectScreen {
                     self.sort(Some(SortingMode::LocalInLinks));
                 }
                 // Selection
+                // Down
                 KeyCode::Char('j' | 'J') => {
                     self.selected = self
                         .selected
                         .saturating_add(1)
                         .min(self.local_stats.filtered_ids.len() - 1);
                 }
+                // Up
                 KeyCode::Char('k' | 'K') => {
                     self.selected = self.selected.saturating_sub(1);
                 }
+                // To the start
                 KeyCode::Char('G') => {
                     self.selected = 0;
+                }
+                // Open selected item
+                KeyCode::Enter => {
+                    if let Some((id, _, _)) = self.local_stats.filtered_ids.get(self.selected) {
+                        if let Some(note) = self.index.get(id) {
+                            return Some(crate::ui::input::Message::SwitchDisplay(
+                                note.path.clone(),
+                            ));
+                        }
+                    }
                 }
                 _ => {}
             },

@@ -25,7 +25,7 @@ impl super::Screen for DisplayScreen {
         area: ratatui::prelude::layout::Rect,
         buf: &mut ratatui::prelude::buffer::Buffer,
     ) {
-        let content = Paragraph::new(self.content.clone());
+        let content = Paragraph::new(self.content.clone()).wrap(Wrap { trim: true });
 
         Widget::render(content, area, buf);
     }
