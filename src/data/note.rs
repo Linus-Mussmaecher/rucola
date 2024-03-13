@@ -1,5 +1,6 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, path::Path};
 
+use eyre::{Context, ContextCompat};
 use regex::Regex;
 
 #[derive(Clone, Debug)]
@@ -13,7 +14,11 @@ pub struct Note {
 }
 
 impl Note {
-    pub fn from_file(mut file: File, name: String, path: String) -> color_eyre::Result<Self> {
+    /// Opens the file from the given path (if possible) and extracts metadata.
+    pub fn from_path(path: &Path) -> color_eyre::Result<Self> {
+        // Open the file.
+        let mut file = File::open(path).with_context(|| "When trying to load a note file.")?;
+
         // Read content of markdown(plaintext) file
         let mut content = String::new();
         file.read_to_string(&mut content)?;
@@ -25,10 +30,12 @@ impl Note {
         // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
         let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]")?;
 
-        // Extract data
         Ok(Self {
-            name,
-            path,
+            name: path
+                .file_name()
+                .map(|s| s.to_string_lossy().replace(".md", ""))
+                .unwrap_or_else(|| "".to_string()),
+            path: path.to_string_lossy().to_string(),
             tags: tag_regex
                 .captures_iter(&content)
                 .filter_map(|c| {
