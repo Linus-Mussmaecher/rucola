@@ -1,16 +1,20 @@
-use std::{fs::File, io::Read, path::Path};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
-use eyre::{Context, ContextCompat};
+use eyre::Context;
 use regex::Regex;
 
 #[derive(Clone, Debug)]
 pub struct Note {
     pub name: String,
-    pub path: String,
     pub tags: Vec<String>,
     pub links: Vec<String>,
     pub words: usize,
     pub characters: usize,
+    pub path: PathBuf,
 }
 
 impl Note {
@@ -31,11 +35,14 @@ impl Note {
         let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]")?;
 
         Ok(Self {
+            // Name: Remove file extension
             name: path
                 .file_name()
                 .map(|s| s.to_string_lossy().replace(".md", ""))
                 .unwrap_or_else(|| "".to_string()),
-            path: path.to_string_lossy().to_string(),
+            // Path: Already given - convert to owned version.
+            path: path.to_path_buf(),
+            // Tags: Use the regex to extract a list of captures, then convert them to strings
             tags: tag_regex
                 .captures_iter(&content)
                 .filter_map(|c| {
@@ -45,6 +52,7 @@ impl Note {
                         .and_then(|ss| Some(String::from(*ss)))
                 })
                 .collect(),
+            // Links: Use the regex to extract a list of captures, then convert them to strings
             links: link_regex
                 .captures_iter(&content)
                 .filter_map(|c| {
@@ -54,7 +62,10 @@ impl Note {
                         .and_then(|ss| Some(String::from(*ss).to_lowercase().replace(" ", "-")))
                 })
                 .collect(),
+            // Words: Split at whitespace, grouping multiple consecutive instances of whitespace together.
+            // See definition of `split_whitespace` for criteria.
             words: content.split_whitespace().count(),
+            // Characters: Simply use the length of the string.
             characters: content.len(),
         })
     }
