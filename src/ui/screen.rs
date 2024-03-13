@@ -4,6 +4,9 @@ use ratatui::{buffer, layout};
 mod select_screen;
 pub use select_screen::SelectScreen;
 
+mod display_screen;
+pub use display_screen::DisplayScreen;
+
 use crate::ui::input;
 
 /// A trait that is implemented by different screens within the application.
