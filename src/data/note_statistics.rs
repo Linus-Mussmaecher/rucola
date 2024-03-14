@@ -1,9 +1,11 @@
+use fuzzy_matcher::FuzzyMatcher;
+
 use super::note::Note;
 use std::collections::HashMap;
 
 /// A data struct containing statistical information about a (subset of a) user's notes.
 #[derive(Debug, Clone)]
-pub struct NoteStatistics {
+pub struct EnvironmentStats {
     /// The total amount of words in the notes.
     /// What is a word and what not mirrors the definition from Note.words.
     pub word_count_total: usize,
@@ -18,17 +20,20 @@ pub struct NoteStatistics {
     /// The total amount of (globally) incoming links to matched notes.
     pub global_inlinks_total: usize,
     /// A HashMap of all notes matching the given filter used to create this struct.
-    /// Provided alongside are their inlinks (global) and inlinks (local, i.e. of notes also matching the filter).
-    pub filtered_ids: Vec<(String, usize, usize)>,
+    /// Provided alongside are their fuzzy match score, inlinks (global) and inlinks (local, i.e. of notes also matching the filter).
+    pub filtered_ids: Vec<(String, i64, usize, usize)>,
 }
 
-impl NoteStatistics {
+impl EnvironmentStats {
     /// Creates a new set of statistics from the subset of the passed index that matches the given filter.
     pub fn new_with_filters(index: &HashMap<String, Note>, filter: Filter) -> Self {
+        // Create fuzzy matcher
+        let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
+
         // Filter the index
         let filtered_index = index
             .iter()
-            .filter(|entry| {
+            .filter_map(|entry| {
                 // Check if any or all the tags specified in the filter are in the note.
                 let mut any_tag = filter.tags.is_empty();
                 let mut all_tags = true;
@@ -40,27 +45,21 @@ impl NoteStatistics {
                     }
                 }
 
-                // Check if any or all of the words specified in the filter are in the note title.
-                let mut any_word = filter.title_words.is_empty();
-                for word in filter.title_words.iter() {
-                    if entry
-                        .1
-                        .name
-                        .to_lowercase()
-                        .contains(&word.to_lowercase().to_string())
-                    {
-                        any_word = true;
-                    }
+                if !(filter.all_tags && all_tags || !filter.all_tags && any_tag) {
+                    return None;
                 }
 
-                // Compare with the filter settings
-                (filter.all_tags && all_tags || !filter.all_tags && any_tag) && any_word
+                // Check if the rest of the filter fuzzy matches the note title.
+
+                matcher
+                    .fuzzy_match(&entry.1.name, &filter.title)
+                    .map(|score| (entry.0, (entry.1, score)))
             })
-            .collect::<HashMap<&String, &Note>>();
+            .collect::<HashMap<&String, (&Note, i64)>>();
 
         // Create a new hash map with tags and their usage
         let mut tags = HashMap::new();
-        for (_, note) in filtered_index.iter() {
+        for (_, (note, _)) in filtered_index.iter() {
             // for every tag found in a note
             for tag in note.tags.iter() {
                 // either create a new entry in the hash map or increment an existing entry by one
@@ -76,7 +75,7 @@ impl NoteStatistics {
         // Create a new hash map with note names and the amount they are linked to from other notes.
         // Considers only those notes that match the filter.
         let mut inlinks = HashMap::new();
-        for (_, note) in filtered_index.iter() {
+        for (_, (note, _)) in filtered_index.iter() {
             // for every link found within a note
             for link in note.links.iter() {
                 // either create a new entry in the hash map or increment an existing entry by one.
@@ -109,15 +108,21 @@ impl NoteStatistics {
 
         Self {
             // Sum up all word counts of notes
-            word_count_total: filtered_index.values().map(|note| note.words).sum(),
+            word_count_total: filtered_index.values().map(|(note, _)| note.words).sum(),
             // Sum up all char counts of notes.
-            char_count_total: filtered_index.values().map(|note| note.characters).sum(),
+            char_count_total: filtered_index
+                .values()
+                .map(|(note, _)| note.characters)
+                .sum(),
             // Simply take the lenght of the (filtered) index.
             note_count_total: filtered_index.len(),
             // Take the created tag-usage map and check its length.
             tag_count_total: tags.len(),
             // Take the sum of the length of links-lists from each individual note.
-            outlinks_total: filtered_index.values().map(|note| note.links.len()).sum(),
+            outlinks_total: filtered_index
+                .values()
+                .map(|(note, _)| note.links.len())
+                .sum(),
             // Sum over the hashmap
             global_inlinks_total: filtered_index
                 .keys()
@@ -126,10 +131,11 @@ impl NoteStatistics {
                 .sum(),
             // Collect the ids in the index and their global/local inlinks
             filtered_ids: filtered_index
-                .into_keys()
-                .map(|id| {
+                .into_iter()
+                .map(|(id, (_, score))| {
                     (
                         id.clone(),
+                        score,
                         inlinks_global.get(id).copied().unwrap_or(0),
                         inlinks.get(id).copied().unwrap_or(0),
                     )
@@ -146,6 +152,6 @@ pub struct Filter {
     pub all_tags: bool,
     /// The tags to filter by, hash included.
     pub tags: Vec<String>,
-    /// The words to search the note title for. No fuzzy matching, must fit completetely.
-    pub title_words: Vec<String>,
+    /// The words to search the note title for. Will be fuzzy matched with the note title.
+    pub title: String,
 }
