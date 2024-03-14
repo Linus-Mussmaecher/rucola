@@ -1,5 +1,5 @@
 use crate::{
-    data::{Filter, Note, NoteStatistics},
+    data::{EnvironmentStats, Filter, Note},
     ui::Styles,
 };
 use crossterm::event::{KeyCode, KeyEvent};
@@ -27,6 +27,7 @@ enum SortingMode {
     OutLinks,
     GlobalInLinks,
     LocalInLinks,
+    Score,
 }
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
@@ -35,9 +36,9 @@ pub struct SelectScreen {
     /// A reference to the index of all notes
     index: Rc<HashMap<String, Note>>,
     /// The currently displayed statistics for all notes.
-    local_stats: NoteStatistics,
+    local_stats: EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
-    global_stats: NoteStatistics,
+    global_stats: EnvironmentStats,
     /// The styles used on this screen.
     styles: Styles,
 
@@ -57,8 +58,8 @@ pub struct SelectScreen {
     all_tags: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
-    /// Reversed sorting
-    sorting_rev: bool,
+    /// Sort ascedingly
+    sorting_asc: bool,
 }
 
 impl SelectScreen {
@@ -66,15 +67,15 @@ impl SelectScreen {
     pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
         let styles = Styles::default();
         let mut res = Self {
-            local_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
-            global_stats: NoteStatistics::new_with_filters(&index, Filter::default()),
+            local_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
+            global_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
             styles,
             all_tags: false,
             sorting: SortingMode::Name,
-            sorting_rev: false,
+            sorting_asc: false,
             selected: 0,
         };
 
@@ -122,58 +123,70 @@ impl SelectScreen {
         );
     }
 
-    /// Check the current values of the text area, create filter from it and apply it
-    fn filter_by_area(&mut self) {
+    /// Creates a filter from the current content of the text area.
+    fn filter_from_input(&self) -> Filter {
         // We should only have one line, read that one
         if let Some(line) = self.text_area.lines().first() {
             let mut filter = Filter::default();
+            // default filter is this line with all white space removed
+            filter.title = line.chars().filter(|c| !c.is_whitespace()).collect();
 
             // Go through words
             for word in line.split_whitespace() {
                 if word.starts_with('#') {
                     // words with a hash count as a tag
                     filter.tags.push(word.to_string());
-                } else {
-                    // other words are searched for in the title
-                    filter.title_words.push(word.to_string());
+                    // and remove it from the title to match
+                    filter.title = filter.title.replace(&word, "");
                 }
             }
+
             // check for any or all tags
             filter.all_tags = self.all_tags;
 
-            // apply filter to displayed statistic
-            self.filter(filter);
+            filter
+        } else {
+            Filter::default()
         }
     }
 
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
+    /// Every filtering neccessarily triggers a non-stable resort.
     fn filter(&mut self, filter: Filter) {
-        self.local_stats = NoteStatistics::new_with_filters(&self.index, filter);
-        self.sort(None);
+        self.local_stats = EnvironmentStats::new_with_filters(&self.index, filter);
+        self.sorting_asc = false;
+        self.sorting = SortingMode::Score;
+        self.sort();
     }
 
-    /// Sets a new sorting mode if requested.
-    /// Then sorts the note display according to the current sorting mode.
-    fn sort(&mut self, new_mode: Option<SortingMode>) {
-        // if a new sorting mode was requested
-        if let Some(new_mode) = new_mode {
-            if new_mode == self.sorting {
-                // if the new sorting mode is also the old one, reverse the sorting
-                self.sorting_rev = !self.sorting_rev;
-            } else {
-                // else, apply the new mode but leave the reversed sorting as is
+    /// Sets a new sorting mode and direction.
+    /// If it did not match the old one, triggers a resort.
+    fn set_mode_and_maybe_sort(&mut self, new_mode: impl Into<Option<SortingMode>>, new_asc: bool) {
+        // if the sorting mode has changed, resort
+        if let Some(new_mode) = new_mode.into() {
+            if new_mode != self.sorting {
                 self.sorting = new_mode;
+                self.sort();
             }
         }
+        // if the asc has changed, reverse
+        if new_asc != self.sorting_asc {
+            self.sorting_asc = new_asc;
+            self.local_stats.filtered_ids.reverse();
+        }
+    }
+
+    /// Sorts the note display according to the current sorting mode.
+    fn sort(&mut self) {
         if self.sorting == SortingMode::Name {
             // Name: Sort-string by name
             self.local_stats
                 .filtered_ids
-                .sort_by_cached_key(|(id, _, _)| self.index.get(id).map(|note| &note.name));
+                .sort_by_cached_key(|(id, _, _, _)| self.index.get(id).map(|note| &note.name));
         } else {
             // all others are usize and can be done in one thing
             self.local_stats.filtered_ids.sort_by_cached_key(
-                |(id, global_inlinks, local_inlinks)| {
+                |(id, score, global_inlinks, local_inlinks)| {
                     if let Some(note) = self.index.get(id) {
                         match self.sorting {
                             // This should not appear
@@ -183,6 +196,7 @@ impl SelectScreen {
                             SortingMode::OutLinks => note.links.len(),
                             SortingMode::GlobalInLinks => *global_inlinks,
                             SortingMode::LocalInLinks => *local_inlinks,
+                            SortingMode::Score => *score as usize,
                         }
                     } else {
                         0
@@ -192,7 +206,7 @@ impl SelectScreen {
         }
 
         // Potentially reverse sorting
-        if self.sorting_rev {
+        if !self.sorting_asc {
             self.local_stats.filtered_ids.reverse();
         }
 
@@ -219,31 +233,33 @@ impl super::Screen for SelectScreen {
                 }
                 // Q: Quit application
                 KeyCode::Char('q' | 'Q') => return Some(crate::ui::input::Message::Quit),
-                // R: Reload
-                KeyCode::Char('r' | 'R') => return Some(crate::ui::input::Message::SwitchSelect),
                 // T: Change all/any words requirement
                 KeyCode::Char('t' | 'T') => {
                     self.all_tags = !self.all_tags;
-                    self.filter_by_area();
+                    self.filter(self.filter_from_input());
                     self.style_text_area();
                 }
+                // R: Reverse sorting
+                KeyCode::Char('s' | 'S') => {
+                    self.set_mode_and_maybe_sort(None, !self.sorting_asc);
+                }
                 KeyCode::Char('n' | 'N') => {
-                    self.sort(Some(SortingMode::Name));
+                    self.set_mode_and_maybe_sort(SortingMode::Name, true);
                 }
                 KeyCode::Char('w' | 'W') => {
-                    self.sort(Some(SortingMode::Words));
+                    self.set_mode_and_maybe_sort(SortingMode::Words, false);
                 }
                 KeyCode::Char('a' | 'A') => {
-                    self.sort(Some(SortingMode::Chars));
+                    self.set_mode_and_maybe_sort(SortingMode::Chars, false);
                 }
                 KeyCode::Char('o' | 'O') => {
-                    self.sort(Some(SortingMode::OutLinks));
+                    self.set_mode_and_maybe_sort(SortingMode::OutLinks, false);
                 }
                 KeyCode::Char('g') => {
-                    self.sort(Some(SortingMode::GlobalInLinks));
+                    self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
                 }
                 KeyCode::Char('l' | 'L') => {
-                    self.sort(Some(SortingMode::LocalInLinks));
+                    self.set_mode_and_maybe_sort(SortingMode::LocalInLinks, false);
                 }
                 // Selection
                 // Down
@@ -263,7 +279,7 @@ impl super::Screen for SelectScreen {
                 }
                 // Open selected item
                 KeyCode::Enter => {
-                    if let Some((id, _, _)) = self.local_stats.filtered_ids.get(self.selected) {
+                    if let Some((id, _, _, _)) = self.local_stats.filtered_ids.get(self.selected) {
                         if let Some(note) = self.index.get(id) {
                             return Some(crate::ui::input::Message::SwitchDisplay(
                                 note.path.clone(),
@@ -276,19 +292,15 @@ impl super::Screen for SelectScreen {
             // Filter mode: Type in filter values
             SelectMode::Filter => {
                 match key.code {
-                    // Escape: Back to main mode
-                    KeyCode::Esc => {
+                    // Escape or Enter: Back to main mode
+                    KeyCode::Esc | KeyCode::Enter => {
                         self.mode = SelectMode::Select;
                     }
-                    // Enter: Apply filter, back to main mode
-                    KeyCode::Enter => {
-                        self.filter_by_area();
-                        self.mode = SelectMode::Select;
-                    }
-                    // All other key events are passed on to the text area
+                    // All other key events are passed on to the text area, then the filter is immediately applied
                     _ => {
                         // Else -> Pass on to the text area
                         self.text_area.input_without_shortcuts(key);
+                        self.filter(self.filter_from_input());
                     }
                 };
             }
@@ -444,7 +456,7 @@ impl super::Screen for SelectScreen {
             .iter()
             .skip(top_ind)
             .take(table_area.height as usize)
-            .map(|(id, global_inlinks, local_inlinks)| {
+            .map(|(id, _score, global_inlinks, local_inlinks)| {
                 self.index.get(id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
@@ -458,6 +470,21 @@ impl super::Screen for SelectScreen {
             })
             .flatten()
             .collect::<Vec<Row>>();
+
+        let instructions_bot = block::Title::from(Line::from(vec![
+            Span::styled(
+                if self.sorting_asc {
+                    "Ascending "
+                } else {
+                    "Descending "
+                },
+                self.styles.text_style,
+            ),
+            Span::styled("S", self.styles.hotkey_style),
+            Span::styled("orting", self.styles.text_style),
+        ]))
+        .alignment(Alignment::Right)
+        .position(block::Position::Bottom);
 
         let table = Table::new(notes_rows, notes_table_widths)
             .column_spacing(1)
@@ -489,7 +516,11 @@ impl super::Screen for SelectScreen {
                 ]),
             ]))
             .highlight_style(self.styles.selected_style)
-            .block(Block::bordered().title("Notes".set_style(self.styles.title_style)));
+            .block(
+                Block::bordered()
+                    .title("Notes".set_style(self.styles.title_style))
+                    .title(instructions_bot),
+            );
 
         // === Rendering ===
 

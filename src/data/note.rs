@@ -7,13 +7,20 @@ use std::{
 use eyre::Context;
 use regex::Regex;
 
+/// An abstract representation of a note that contains statistics about it but _not_ the full text.
 #[derive(Clone, Debug)]
 pub struct Note {
+    /// The title of the note.
     pub name: String,
+    /// All tags contained at any part of the note.
     pub tags: Vec<String>,
+    /// All links contained within the note - no external (e.g. web) links.
     pub links: Vec<String>,
+    /// The number of words.
     pub words: usize,
+    /// The number of characters.
     pub characters: usize,
+    /// A copy of the path leading to this note.
     pub path: PathBuf,
 }
 
