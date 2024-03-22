@@ -24,7 +24,8 @@ enum SortingMode {
     Name,
     Words,
     Chars,
-    OutLinks,
+    GlobalOutLinks,
+    LocalOutLinks,
     GlobalInLinks,
     LocalInLinks,
     Score,
@@ -172,7 +173,7 @@ impl SelectScreen {
         // if the asc has changed, reverse
         if new_asc != self.sorting_asc {
             self.sorting_asc = new_asc;
-            self.local_stats.filtered_ids.reverse();
+            self.local_stats.filtered_stats.reverse();
         }
     }
 
@@ -181,33 +182,34 @@ impl SelectScreen {
         if self.sorting == SortingMode::Name {
             // Name: Sort-string by name
             self.local_stats
-                .filtered_ids
-                .sort_by_cached_key(|(id, _, _, _)| self.index.get(id).map(|note| &note.name));
+                .filtered_stats
+                .sort_by_cached_key(|env_stats| env_stats.id.clone());
         } else {
             // all others are usize and can be done in one thing
-            self.local_stats.filtered_ids.sort_by_cached_key(
-                |(id, score, global_inlinks, local_inlinks)| {
-                    if let Some(note) = self.index.get(id) {
+            self.local_stats
+                .filtered_stats
+                .sort_by_cached_key(|env_stats| {
+                    if let Some(note) = self.index.get(&env_stats.id) {
                         match self.sorting {
                             // This should not appear
                             SortingMode::Name => 0,
                             SortingMode::Words => note.words,
                             SortingMode::Chars => note.characters,
-                            SortingMode::OutLinks => note.links.len(),
-                            SortingMode::GlobalInLinks => *global_inlinks,
-                            SortingMode::LocalInLinks => *local_inlinks,
-                            SortingMode::Score => *score as usize,
+                            SortingMode::GlobalOutLinks => env_stats.outlinks_global,
+                            SortingMode::LocalOutLinks => env_stats.outlinks_local,
+                            SortingMode::GlobalInLinks => env_stats.inlinks_global,
+                            SortingMode::LocalInLinks => env_stats.inlinks_local,
+                            SortingMode::Score => env_stats.match_score as usize,
                         }
                     } else {
                         0
                     }
-                },
-            )
+                })
         }
 
         // Potentially reverse sorting
         if !self.sorting_asc {
-            self.local_stats.filtered_ids.reverse();
+            self.local_stats.filtered_stats.reverse();
         }
 
         // Always select the first element whenever a resort is triggered.
@@ -253,7 +255,10 @@ impl super::Screen for SelectScreen {
                     self.set_mode_and_maybe_sort(SortingMode::Chars, false);
                 }
                 KeyCode::Char('o' | 'O') => {
-                    self.set_mode_and_maybe_sort(SortingMode::OutLinks, false);
+                    self.set_mode_and_maybe_sort(SortingMode::GlobalOutLinks, false);
+                }
+                KeyCode::Char('u' | 'U') => {
+                    self.set_mode_and_maybe_sort(SortingMode::LocalOutLinks, false);
                 }
                 KeyCode::Char('g') => {
                     self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
@@ -263,14 +268,14 @@ impl super::Screen for SelectScreen {
                 }
                 // Selection
                 // Down
-                KeyCode::Char('j' | 'J') => {
+                KeyCode::Char('j' | 'J') | KeyCode::Down => {
                     self.selected = self
                         .selected
                         .saturating_add(1)
-                        .min(self.local_stats.filtered_ids.len() - 1);
+                        .min(self.local_stats.filtered_stats.len() - 1);
                 }
                 // Up
-                KeyCode::Char('k' | 'K') => {
+                KeyCode::Char('k' | 'K') | KeyCode::Up => {
                     self.selected = self.selected.saturating_sub(1);
                 }
                 // To the start
@@ -279,8 +284,8 @@ impl super::Screen for SelectScreen {
                 }
                 // Open selected item
                 KeyCode::Enter => {
-                    if let Some((id, _, _, _)) = self.local_stats.filtered_ids.get(self.selected) {
-                        if let Some(note) = self.index.get(id) {
+                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
+                        if let Some(note) = self.index.get(&env_stats.id) {
                             return Some(crate::ui::input::Message::SwitchDisplay(
                                 note.path.clone(),
                             ));
@@ -314,7 +319,7 @@ impl super::Screen for SelectScreen {
 
         let vertical = Layout::vertical([
             Constraint::Length(5),
-            Constraint::Length(5),
+            Constraint::Length(6),
             Constraint::Length(3),
             Constraint::Min(6),
         ]);
@@ -336,8 +341,8 @@ impl super::Screen for SelectScreen {
             format!("{:7}", self.global_stats.word_count_total),
             format!("{:7}", self.global_stats.tag_count_total),
             format!("{:7}", self.global_stats.char_count_total),
-            format!("{:7}", self.global_stats.outlinks_total),
-            format!("{:7}", self.global_stats.global_inlinks_total),
+            format!("{:7}", self.global_stats.local_local_links),
+            format!("{:7}", self.global_stats.broken_links),
         ];
 
         let global_stats_rows = [
@@ -354,9 +359,9 @@ impl super::Screen for SelectScreen {
                 &global_strings[3],
             ]),
             Row::new(vec![
-                "Outgoing links:",
+                "Total links:",
                 &global_strings[4],
-                "Incoming links:",
+                "Broken links:",
                 &global_strings[5],
             ]),
         ];
@@ -369,35 +374,47 @@ impl super::Screen for SelectScreen {
 
         let local_strings = [
             format!(
-                "{:7} ({:02}%)",
+                "{:7} ({:3}%)",
                 self.local_stats.note_count_total,
-                self.local_stats.note_count_total * 100 / self.global_stats.note_count_total
+                self.local_stats.note_count_total * 100 / self.global_stats.note_count_total.max(1)
             ),
             format!(
-                "{:7} ({:02}%)",
+                "{:7} ({:3}%)",
                 self.local_stats.word_count_total,
-                self.local_stats.word_count_total * 100 / self.global_stats.word_count_total
+                self.local_stats.word_count_total * 100 / self.global_stats.word_count_total.max(1)
             ),
             format!(
-                "{:7} ({:02}%)",
+                "{:7} ({:3}%)",
                 self.local_stats.tag_count_total,
-                self.local_stats.tag_count_total * 100 / self.global_stats.tag_count_total
+                self.local_stats.tag_count_total * 100 / self.global_stats.tag_count_total.max(1)
             ),
             format!(
-                "{:7} ({:02}%)",
+                "{:7} ({:3}%)",
                 self.local_stats.char_count_total,
-                self.local_stats.char_count_total * 100 / self.global_stats.char_count_total
+                self.local_stats.char_count_total * 100 / self.global_stats.char_count_total.max(1)
             ),
             format!(
-                "{:7} ({:02}%)",
-                self.local_stats.outlinks_total,
-                self.local_stats.outlinks_total * 100 / self.global_stats.outlinks_total
+                "{:7} ({:3}%)",
+                self.local_stats.global_local_links,
+                self.local_stats.global_local_links * 100
+                    / self.global_stats.global_local_links.max(1)
             ),
             format!(
-                "{:7} ({:02}%)",
-                self.local_stats.global_inlinks_total,
-                self.local_stats.global_inlinks_total * 100
-                    / self.global_stats.global_inlinks_total
+                "{:7} ({:3}%)",
+                self.local_stats.local_global_links,
+                self.local_stats.local_global_links * 100
+                    / self.global_stats.local_global_links.max(1)
+            ),
+            format!(
+                "{:7} ({:3}%)",
+                self.local_stats.local_local_links,
+                self.local_stats.local_local_links * 100
+                    / self.global_stats.local_local_links.max(1)
+            ),
+            format!(
+                "{:7} ({:3}%)",
+                self.local_stats.broken_links,
+                self.local_stats.broken_links * 100 / self.global_stats.broken_links.max(1)
             ),
         ];
 
@@ -415,10 +432,16 @@ impl super::Screen for SelectScreen {
                 &local_strings[3],
             ]),
             Row::new(vec![
-                "Outgoing links:",
-                &local_strings[4],
                 "Incoming links:",
+                &local_strings[4],
+                "Outgoing links:",
                 &local_strings[5],
+            ]),
+            Row::new(vec![
+                "Internal links:",
+                &local_strings[6],
+                "Broken links:",
+                &local_strings[7],
             ]),
         ];
 
@@ -436,9 +459,10 @@ impl super::Screen for SelectScreen {
             Constraint::Min(25),
             Constraint::Length(8),
             Constraint::Length(8),
-            Constraint::Length(8),
-            Constraint::Length(8),
-            Constraint::Length(8),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
         ];
 
         let top_ind = self.selected.saturating_sub(5);
@@ -452,19 +476,20 @@ impl super::Screen for SelectScreen {
 
         let notes_rows = self
             .local_stats
-            .filtered_ids
+            .filtered_stats
             .iter()
             .skip(top_ind)
             .take(table_area.height as usize)
-            .map(|(id, _score, global_inlinks, local_inlinks)| {
-                self.index.get(id).map(|note| {
+            .map(|env_stats| {
+                self.index.get(&env_stats.id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
                         format!("{:7}", note.words),
                         format!("{:7}", note.characters),
-                        format!("{:7}", note.links.len()),
-                        format!("{:7}", global_inlinks),
-                        format!("{:7}", local_inlinks),
+                        format!("{:7}", env_stats.outlinks_global),
+                        format!("{:7}", env_stats.outlinks_local),
+                        format!("{:7}", env_stats.inlinks_global),
+                        format!("{:7}", env_stats.inlinks_local),
                     ])
                 })
             })
@@ -503,8 +528,14 @@ impl super::Screen for SelectScreen {
                     Span::styled("rs", self.styles.title_style),
                 ]),
                 Line::from(vec![
+                    Span::styled("Global", self.styles.title_style),
                     Span::styled("O", self.styles.hotkey_style),
                     Span::styled("ut", self.styles.title_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("LocalO", self.styles.title_style),
+                    Span::styled("u", self.styles.hotkey_style),
+                    Span::styled("t", self.styles.title_style),
                 ]),
                 Line::from(vec![
                     Span::styled("G", self.styles.hotkey_style),

@@ -39,7 +39,7 @@ impl Note {
         // Anything starting with a single #, then all non-whitespace chars until a whitespace
         let tag_regex = Regex::new(r"(\s|^)(\#[^\s\#]+)")?;
         // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
-        let link_regex = Regex::new(r"\[\[([^\[\]\|]+)[\|]?[^\[\]\|]*\]\]")?;
+        let link_regex = Regex::new(r"\[\[([^\[\]\|\#]+)[\#]?[\|]?[^\[\]\|]*\]\]")?;
 
         Ok(Self {
             // Name: Remove file extension
