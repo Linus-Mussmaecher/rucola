@@ -3,25 +3,64 @@ use fuzzy_matcher::FuzzyMatcher;
 use super::note::Note;
 use std::collections::HashMap;
 
+/// A struct describing statistics to a note in relation to a containing environment.
+#[derive(Debug, Clone)]
+pub struct NoteEnvStatistics {
+    /// The notes id
+    pub id: String,
+    /// The fuzzy match score of this note with the filter used to create the environment
+    pub match_score: i64,
+    /// The amount of links pointing to this note from anywhere.
+    pub inlinks_global: usize,
+    /// The amount of links pointing to this note from other notes within the environment.
+    pub inlinks_local: usize,
+    /// The amount of links going out from this note to other notes within the environment.
+    pub outlinks_local: usize,
+    /// The amount of links going out from this note to other notes.
+    /// Differs from the length of the 'links' table by not counting broken links.
+    pub outlinks_global: usize,
+    /// The amount of links originating from this note that do not have a valid target anywhere.
+    pub broken_links: usize,
+}
+
+impl NoteEnvStatistics {
+    /// Creates a new instance of NoteEnvStatistics with only the two passed fields filled out.
+    fn new_empty(id: String, match_score: i64) -> Self {
+        Self {
+            id,
+            match_score,
+            inlinks_global: 0,
+            inlinks_local: 0,
+            outlinks_local: 0,
+            outlinks_global: 0,
+            broken_links: 0,
+        }
+    }
+}
+
 /// A data struct containing statistical information about a (subset of a) user's notes.
+/// This subset is called an 'environment' and is described by a filter passed to the constructor.
 #[derive(Debug, Clone)]
 pub struct EnvironmentStats {
-    /// The total amount of words in the notes.
+    /// The total amount of words in the notes in this environment.
     /// What is a word and what not mirrors the definition from Note.words.
     pub word_count_total: usize,
-    /// The total amount of characters, including whitespace, in the notes.
+    /// The total amount of characters, including whitespace, in the notes of this environment.
     pub char_count_total: usize,
-    /// The total amount of notes tracked.
+    /// The total amount of notes in this environment.
     pub note_count_total: usize,
-    /// The total amount of _unique_ tags tracked.
+    /// The total amount of _unique_ tags in this environment.
     pub tag_count_total: usize,
-    /// The total amount of (non-unique) outgoing links withing notes. Does not count external links.
-    pub outlinks_total: usize,
-    /// The total amount of (globally) incoming links to matched notes.
-    pub global_inlinks_total: usize,
-    /// A HashMap of all notes matching the given filter used to create this struct.
-    /// Provided alongside are their fuzzy match score, inlinks (global) and inlinks (local, i.e. of notes also matching the filter).
-    pub filtered_ids: Vec<(String, i64, usize, usize)>,
+    /// Total amount of links from a note within the environment to another note within the environment.
+    pub local_local_links: usize,
+    /// Total amount of links from a note within the environment to any note.
+    pub local_global_links: usize,
+    /// Total amount of links from any note to a note within the environment.
+    pub global_local_links: usize,
+    /// A vector of all notes within the environment.
+    pub filtered_stats: Vec<NoteEnvStatistics>,
+    /// Counts how many links among notes within the environment do not have a valid target anywhere.
+    pub broken_links: usize,
 }
 
 impl EnvironmentStats {
@@ -30,15 +69,15 @@ impl EnvironmentStats {
         // Create fuzzy matcher
         let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
 
-        // Filter the index
-        let filtered_index = index
+        // Filter the index -> Create an iterator
+        let mut filtered_index = index
             .iter()
-            .filter_map(|entry| {
+            .filter_map(|(id, note)| {
                 // Check if any or all the tags specified in the filter are in the note.
                 let mut any_tag = filter.tags.is_empty();
                 let mut all_tags = true;
                 for tag in filter.tags.iter() {
-                    if entry.1.tags.contains(tag) {
+                    if note.tags.contains(tag) {
                         any_tag = true;
                     } else {
                         all_tags = false;
@@ -51,96 +90,101 @@ impl EnvironmentStats {
 
                 // Check if the rest of the filter fuzzy matches the note title.
 
-                matcher
-                    .fuzzy_match(&entry.1.name, &filter.title)
-                    .map(|score| (entry.0, (entry.1, score)))
+                matcher.fuzzy_match(&note.name, &filter.title).map(|score| {
+                    (
+                        id.clone(),
+                        (NoteEnvStatistics::new_empty(id.clone(), score), note),
+                    )
+                })
             })
-            .collect::<HashMap<&String, (&Note, i64)>>();
+            .collect::<HashMap<_, _>>();
 
-        // Create a new hash map with tags and their usage
-        let mut tags = HashMap::new();
-        for (_, (note, _)) in filtered_index.iter() {
-            // for every tag found in a note
-            for tag in note.tags.iter() {
-                // either create a new entry in the hash map or increment an existing entry by one
-                match tags.get_mut(tag) {
-                    Some(val) => *val += 1,
-                    None => {
-                        tags.insert(tag.clone(), 1 as usize);
+        // Count links by iterating over unfiltered index
+        for (id, note) in index.iter() {
+            // remember if source is from withing the environment
+            let local_source = filtered_index.contains_key(id);
+            // keep track of found local targets
+            let mut local_targets = 0;
+            // keep track of found targets
+            let mut global_targets = 0;
+
+            // then go over its links
+            for link in &note.links {
+                if let Some((target, _)) = filtered_index.get_mut(link) {
+                    // always count up global inlink count of target
+                    target.inlinks_global += 1;
+                    // if id of source is also in filtered index, also count up local inlink count of target
+                    if local_source {
+                        target.inlinks_local += 1;
+                    }
+                    // since this target was in the environment, increment the counter
+                    local_targets += 1;
+                    global_targets += 1;
+                } else {
+                    // else, check if target exists at all
+                    if index.contains_key(link) {
+                        global_targets += 1;
                     }
                 }
             }
-        }
-
-        // Create a new hash map with note names and the amount they are linked to from other notes.
-        // Considers only those notes that match the filter.
-        let mut inlinks = HashMap::new();
-        for (_, (note, _)) in filtered_index.iter() {
-            // for every link found within a note
-            for link in note.links.iter() {
-                // either create a new entry in the hash map or increment an existing entry by one.
-                // Note that this does count self-links
-                match inlinks.get_mut(link) {
-                    Some(val) => *val += 1,
-                    None => {
-                        inlinks.insert(link.clone(), 1 as usize);
-                    }
-                }
-            }
-        }
-
-        // Create a new hash map with note names and the amount they are linked to from other notes.
-        // Always considers all notes.
-        let mut inlinks_global = HashMap::new();
-        for (_, note) in index.iter() {
-            // for every link found within a note
-            for link in note.links.iter() {
-                // either create a new entry in the hash map or increment an existing entry by one.
-                // Note that this does count self-links
-                match inlinks_global.get_mut(link) {
-                    Some(val) => *val += 1,
-                    None => {
-                        inlinks_global.insert(link.clone(), 1 as usize);
-                    }
-                }
+            // add the found local targets to the statistics (this could be an assignment).
+            if let Some((source, _)) = filtered_index.get_mut(id) {
+                source.outlinks_local += local_targets;
+                source.outlinks_global += global_targets;
+                source.broken_links = note.links.len() - global_targets;
             }
         }
 
         Self {
-            // Sum up all word counts of notes
-            word_count_total: filtered_index.values().map(|(note, _)| note.words).sum(),
-            // Sum up all char counts of notes.
+            // Word count: Just map over the stats.
+            word_count_total: filtered_index.values().map(|(_, stats)| stats.words).sum(),
+            // Char count: Just map over the stats
             char_count_total: filtered_index
                 .values()
-                .map(|(note, _)| note.characters)
+                .map(|(_, stats)| stats.characters)
                 .sum(),
-            // Simply take the lenght of the (filtered) index.
+            // Total notes: Just the length of the filtered index.
             note_count_total: filtered_index.len(),
-            // Take the created tag-usage map and check its length.
-            tag_count_total: tags.len(),
-            // Take the sum of the length of links-lists from each individual note.
-            outlinks_total: filtered_index
+            // Total tags: Collect all tag vectors of notes into a HashSet, then take its length.
+            tag_count_total: filtered_index
                 .values()
-                .map(|(note, _)| note.links.len())
-                .sum(),
-            // Sum over the hashmap
-            global_inlinks_total: filtered_index
-                .keys()
-                .map(|id| inlinks_global.get(*id))
+                .map(|(_, stats)| &stats.tags)
                 .flatten()
+                .collect::<std::collections::HashSet<_>>()
+                .len(),
+            // Local-Local links: Check outgoing local links of all notes. Could also check incoming local links of all notes.
+            local_local_links: filtered_index
+                .values()
+                .map(|(env_stats, _)| env_stats.outlinks_local)
                 .sum(),
-            // Collect the ids in the index and their global/local inlinks
-            filtered_ids: filtered_index
-                .into_iter()
-                .map(|(id, (_, score))| {
-                    (
-                        id.clone(),
-                        score,
-                        inlinks_global.get(id).copied().unwrap_or(0),
-                        inlinks.get(id).copied().unwrap_or(0),
-                    )
-                })
-                .collect(),
+            // Local-Global links: Check outgoing global links of all notes.
+            local_global_links: filtered_index
+                .values()
+                .map(|(env_stats, _)| env_stats.outlinks_global)
+                .sum(),
+            // Global-Local Links: Check incoming links of all notes.
+            global_local_links: filtered_index
+                .values()
+                .map(|(env_stats, _)| env_stats.inlinks_global)
+                .sum(),
+            // Broken links: Again, just sum it up.
+            broken_links: filtered_index
+                .values()
+                .map(|(env_stats, _)| env_stats.broken_links)
+                .sum(),
+            // Finally, reduce the vector to just the env stats
+            filtered_stats: {
+                let mut fs = filtered_index
+                    .into_values()
+                    .map(|(env_stats, _)| env_stats)
+                    .collect::<Vec<_>>();
+
+                // Default sort: By match score, descending.
+                fs.sort_by_cached_key(|env_stats| env_stats.match_score);
+                fs.reverse();
+
+                fs
+            },
         }
     }
 }
