@@ -1,4 +1,3 @@
-use config::Config;
 use crossterm::{
     event::{self, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -34,7 +33,7 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize state
 
-    let config = Config::load()?;
+    let config = config::Config::load()?;
 
     let index = Rc::new(data::create_index(std::path::Path::new(
         &config.get_vault_path(),
