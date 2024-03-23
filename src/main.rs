@@ -6,6 +6,7 @@ use crossterm::{
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::{collections::HashMap, io::stdout, rc::Rc};
 
+mod config;
 mod data;
 mod ui;
 
@@ -22,14 +23,24 @@ fn main() -> color_eyre::Result<()> {
 
     let mut terminal = init_hooks_and_terminal()?;
 
+    // Draw 'loading' screen
+    terminal.draw(|frame| {
+        frame.render_widget(
+            ratatui::widgets::Paragraph::new("Indexing..."),
+            frame.size(),
+        );
+    })?;
+
     // Initialize state
 
+    let config = config::Config::default();
+
     let index = Rc::new(data::create_index(std::path::Path::new(
-        "/home/linus/Coppermind/",
+        &config.vault_path,
     ))?);
 
     let mut app = App {
-        screen: Box::new(ui::screen::SelectScreen::new(index.clone())),
+        screen: Box::new(ui::screen::SelectScreen::new(index.clone(), &config)),
         index,
     };
 
@@ -54,8 +65,10 @@ fn main() -> color_eyre::Result<()> {
                         match msg {
                             ui::input::Message::Quit => break 'main,
                             ui::input::Message::SwitchSelect => {
-                                app.screen =
-                                    Box::new(ui::screen::SelectScreen::new(app.index.clone()));
+                                app.screen = Box::new(ui::screen::SelectScreen::new(
+                                    app.index.clone(),
+                                    &config,
+                                ));
                             }
                             ui::input::Message::SwitchDisplay(path) => {
                                 if let Ok(loaded_note) = ui::screen::DisplayScreen::new(&path) {

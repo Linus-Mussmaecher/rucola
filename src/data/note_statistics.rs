@@ -101,33 +101,35 @@ impl EnvironmentStats {
 
         // Count links by iterating over unfiltered index
         for (id, note) in index.iter() {
-            // remember if source is from withing the environment
+            // Remember if source is from withing the environment.
             let local_source = filtered_index.contains_key(id);
-            // keep track of found local targets
+            // Keep track of found local targets.
             let mut local_targets = 0;
-            // keep track of found targets
+            // Keep track of found targets.
             let mut global_targets = 0;
 
-            // then go over its links
+            // Then go over its links.
             for link in &note.links {
-                if let Some((target, _)) = filtered_index.get_mut(link) {
-                    // always count up global inlink count of target
-                    target.inlinks_global += 1;
-                    // if id of source is also in filtered index, also count up local inlink count of target
-                    if local_source {
-                        target.inlinks_local += 1;
-                    }
-                    // since this target was in the environment, increment the counter
-                    local_targets += 1;
+                // Check if target exists
+                if index.contains_key(link) {
+                    // and increase count of valid targets if so.
                     global_targets += 1;
-                } else {
-                    // else, check if target exists at all
-                    if index.contains_key(link) {
-                        global_targets += 1;
+
+                    // Now check if target is local.
+                    if let Some((target, _)) = filtered_index.get_mut(link) {
+                        // Always count up global inlink count of target.
+                        target.inlinks_global += 1;
+                        // If id of source is also in filtered index, also count up local inlink count of target.
+                        if local_source {
+                            target.inlinks_local += 1;
+                        }
+                        // Since this target was in the environment, increment the counter.
+                        local_targets += 1;
                     }
                 }
             }
-            // add the found local targets to the statistics (this could be an assignment).
+            // If source was local, we are interested in its stats.
+            // Add the found local/global targets to the statistics (this could be an assignment).
             if let Some((source, _)) = filtered_index.get_mut(id) {
                 source.outlinks_local += local_targets;
                 source.outlinks_global += global_targets;
