@@ -1,4 +1,5 @@
-pub mod input;
+mod input;
+pub use input::Message;
 
 pub mod screen;
 

@@ -1,3 +1,4 @@
+use config::Config;
 use crossterm::{
     event::{self, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -33,10 +34,10 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize state
 
-    let config = config::Config::default();
+    let config = Config::load()?;
 
     let index = Rc::new(data::create_index(std::path::Path::new(
-        &config.vault_path,
+        &config.get_vault_path(),
     ))?);
 
     let mut app = App {
@@ -63,15 +64,17 @@ fn main() -> color_eyre::Result<()> {
                     // Register input and get message.
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
-                            ui::input::Message::Quit => break 'main,
-                            ui::input::Message::SwitchSelect => {
+                            ui::Message::Quit => break 'main,
+                            ui::Message::SwitchSelect => {
                                 app.screen = Box::new(ui::screen::SelectScreen::new(
                                     app.index.clone(),
                                     &config,
                                 ));
                             }
-                            ui::input::Message::SwitchDisplay(path) => {
-                                if let Ok(loaded_note) = ui::screen::DisplayScreen::new(&path) {
+                            ui::Message::SwitchDisplay(path) => {
+                                if let Ok(loaded_note) =
+                                    ui::screen::DisplayScreen::new(&path, &config)
+                                {
                                     app.screen = Box::new(loaded_note);
                                 }
                             }
@@ -81,6 +84,9 @@ fn main() -> color_eyre::Result<()> {
             }
         }
     }
+
+    // Save configuration
+    config.store()?;
 
     //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
     restore_terminal()
