@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 # General TUI
 crossterm = "0.27.0"
-ratatui = "0.26.1"
+ratatui = {verion = "0.26.1", features = ["serde"]}
 tui-textarea = "0.4.0"
 # Parsing
 regex = "1.10.3"
@@ -19,4 +19,7 @@ eyre = "0.6.12"
 color-eyre = "0.5.7"
 # Rendering
 # mathjax = "0.1.1"
+# Config
+serde = { version = "1.0", features = ["derive"] }
+confy = "^0.6"
 

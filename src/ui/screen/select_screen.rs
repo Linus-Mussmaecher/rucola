@@ -69,19 +69,18 @@ pub struct SelectScreen {
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
     pub fn new(index: Rc<HashMap<String, Note>>, config: &Config) -> Self {
-        let styles = Styles::default();
         let mut res = Self {
             local_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
             global_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
-            styles,
+            styles: config.get_styles().clone(),
             all_tags: false,
             sorting: SortingMode::Name,
             sorting_asc: false,
             selected: 0,
-            dynamic_filter: config.dynamic_filter,
+            dynamic_filter: config.get_dynamic_filter(),
         };
 
         res.style_text_area();

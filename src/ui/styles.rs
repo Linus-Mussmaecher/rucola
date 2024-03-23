@@ -1,7 +1,7 @@
 use ratatui::style::{Modifier, Style};
 
 /// A struct that holds a collection of styles for a consistent looking UI.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Styles {
     /// For titles of boxes.
     pub title_style: Style,
