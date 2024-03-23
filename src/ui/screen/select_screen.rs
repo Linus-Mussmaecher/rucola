@@ -1,4 +1,5 @@
 use crate::{
+    config::Config,
     data::{EnvironmentStats, Filter, Note},
     ui::Styles,
 };
@@ -61,11 +62,13 @@ pub struct SelectScreen {
     sorting: SortingMode,
     /// Sort ascedingly
     sorting_asc: bool,
+    /// Refilter while typing or not (to save resources)
+    dynamic_filter: bool,
 }
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
-    pub fn new(index: Rc<HashMap<String, Note>>) -> Self {
+    pub fn new(index: Rc<HashMap<String, Note>>, config: &Config) -> Self {
         let styles = Styles::default();
         let mut res = Self {
             local_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
@@ -78,6 +81,7 @@ impl SelectScreen {
             sorting: SortingMode::Name,
             sorting_asc: false,
             selected: 0,
+            dynamic_filter: config.dynamic_filter,
         };
 
         res.style_text_area();
@@ -300,12 +304,17 @@ impl super::Screen for SelectScreen {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Enter => {
                         self.mode = SelectMode::Select;
+                        if key.code == KeyCode::Enter && !self.dynamic_filter {
+                            self.filter(self.filter_from_input());
+                        }
                     }
                     // All other key events are passed on to the text area, then the filter is immediately applied
                     _ => {
                         // Else -> Pass on to the text area
                         self.text_area.input_without_shortcuts(key);
-                        self.filter(self.filter_from_input());
+                        if self.dynamic_filter {
+                            self.filter(self.filter_from_input());
+                        }
                     }
                 };
             }
