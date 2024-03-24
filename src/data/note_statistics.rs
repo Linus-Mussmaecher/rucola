@@ -201,3 +201,76 @@ pub struct Filter {
     /// The words to search the note title for. Will be fuzzy matched with the note title.
     pub title: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_env_stats_general() {
+        let index =
+            crate::data::create_index(&std::path::Path::new("./tests/common/notes/")).unwrap();
+
+        assert_eq!(index.len(), 11);
+
+        // === Filter 1 ===
+
+        let filter1 = Filter {
+            all_tags: false,
+            tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
+            title: String::new(),
+        };
+
+        let env1 = EnvironmentStats::new_with_filters(&index, filter1);
+
+        assert_eq!(env1.note_count_total, 5);
+        assert_eq!(env1.tag_count_total, 3);
+        assert_eq!(env1.local_local_links, 9);
+        assert_eq!(env1.local_global_links, 10);
+        assert_eq!(env1.global_local_links, 12);
+        assert_eq!(env1.broken_links, 1);
+
+        // === Filter 2 ===
+
+        let filter2 = Filter {
+            all_tags: true,
+            tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
+            title: String::new(),
+        };
+        let env2 = EnvironmentStats::new_with_filters(&index, filter2);
+
+        assert_eq!(env2.note_count_total, 2);
+        assert_eq!(env2.tag_count_total, 2);
+        assert_eq!(env2.local_local_links, 1);
+        assert_eq!(env2.local_global_links, 5);
+        assert_eq!(env2.global_local_links, 5);
+        assert_eq!(env2.broken_links, 1);
+
+        env2.filtered_stats
+            .iter()
+            .filter(|env_stats| env_stats.id == "manifold")
+            .for_each(|ma| {
+                assert_eq!(ma.inlinks_global, 4);
+                assert_eq!(ma.inlinks_local, 1);
+                assert_eq!(ma.outlinks_local, 0);
+                assert_eq!(ma.outlinks_global, 4);
+                assert_eq!(ma.broken_links, 0);
+            });
+
+        // === Filter 3 ===
+
+        let filter3 = Filter {
+            all_tags: false,
+            tags: vec![],
+            title: "operating".to_string(),
+        };
+        let env3 = EnvironmentStats::new_with_filters(&index, filter3);
+
+        assert_eq!(env3.note_count_total, 1);
+        assert_eq!(env3.tag_count_total, 1);
+        assert_eq!(env3.local_local_links, 0);
+        assert_eq!(env3.local_global_links, 6);
+        assert_eq!(env3.global_local_links, 0);
+        assert_eq!(env3.broken_links, 0);
+    }
+}

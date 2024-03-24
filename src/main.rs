@@ -6,7 +6,7 @@ use crossterm::{
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::{collections::HashMap, io::stdout, rc::Rc};
 
-mod config;
+pub mod config;
 mod data;
 mod ui;
 
