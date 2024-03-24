@@ -66,4 +66,25 @@ mod tests {
         assert_eq!(name_to_id("Lie Theory"), "lie-theory");
         assert_eq!(name_to_id("lie-theory"), "lie-theory");
     }
+
+    #[test]
+    fn test_indexing() {
+        let index = create_index(&Path::new("./tests/common/notes/")).unwrap();
+
+        assert_eq!(index.len(), 11);
+
+        assert!(!index.contains_key("booksold"));
+
+        let os = index.get("operating-systems").unwrap();
+        let lg = index.get("lie-group").unwrap();
+        let ma = index.get("manifold").unwrap();
+
+        assert_eq!(os.links.len(), 6);
+        assert_eq!(os.tags, ["#os"]);
+        assert_eq!(os.name, "Operating Systems");
+        assert_eq!(os.words, 41);
+
+        assert_eq!(lg.links, ["manifold", "smooth-map", "topology"]);
+        assert_eq!(ma.tags.len(), 2);
+    }
 }

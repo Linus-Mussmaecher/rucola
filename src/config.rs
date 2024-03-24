@@ -22,7 +22,7 @@ impl Default for ConfigFile {
 }
 
 ///A wrapper grouping all config files into one struct
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Config {
     /// The data stored in the config file
     config_file: ConfigFile,
