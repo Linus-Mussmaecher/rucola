@@ -25,8 +25,10 @@ pub fn name_to_id(name: &str) -> String {
 ///  - An entry for every '.md' file in the directory or any subdirectories
 ///  - The key will be the file name, without the file extension, in lowercase and with spaces replaced by dashes
 ///  - The value will be an instance of Note containing metadata of the file.
-pub fn create_index(directory: &Path) -> color_eyre::Result<HashMap<String, Note>> {
-    Ok(walkdir::WalkDir::new(directory)
+///
+/// All files that lead to IO errors when loading are ignored.
+pub fn create_index(directory: &Path) -> HashMap<String, Note> {
+    walkdir::WalkDir::new(directory)
         .into_iter()
         // Ignore dot-folders and dotfiles
         .filter_entry(is_not_hidden)
@@ -34,14 +36,14 @@ pub fn create_index(directory: &Path) -> color_eyre::Result<HashMap<String, Note
         .flatten()
         // Check only markdown files
         .filter(is_markdown)
-        // Convert tiles tot notes
+        // Convert tiles to notes
         .map(|entry| Note::from_path(entry.path()))
         // Skip errors
         .flatten()
         // Extract name and convert to id
         .map(|note| (name_to_id(&note.name), note))
         // Collect into hash map
-        .collect())
+        .collect()
 }
 
 /// Checks if the given dir entry is 'hidden', i.e. not the root of a search and prefixed by a dot.

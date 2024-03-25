@@ -9,6 +9,7 @@ use std::{collections::HashMap, io::stdout, rc::Rc};
 pub mod config;
 mod data;
 mod ui;
+use ui::screen;
 
 /// The main state of the application.
 struct App {
@@ -33,14 +34,14 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize state
 
-    let config = config::Config::load()?;
+    let config = config::Config::load().unwrap_or_default();
 
     let index = Rc::new(data::create_index(std::path::Path::new(
         &config.get_vault_path(),
-    ))?);
+    )));
 
     let mut app = App {
-        screen: Box::new(ui::screen::SelectScreen::new(index.clone(), &config)),
+        screen: Box::new(screen::SelectScreen::new(index.clone(), &config)),
         index,
     };
 
@@ -65,14 +66,11 @@ fn main() -> color_eyre::Result<()> {
                         match msg {
                             ui::Message::Quit => break 'main,
                             ui::Message::SwitchSelect => {
-                                app.screen = Box::new(ui::screen::SelectScreen::new(
-                                    app.index.clone(),
-                                    &config,
-                                ));
+                                app.screen =
+                                    Box::new(screen::SelectScreen::new(app.index.clone(), &config));
                             }
                             ui::Message::SwitchDisplay(path) => {
-                                if let Ok(loaded_note) =
-                                    ui::screen::DisplayScreen::new(&path, &config)
+                                if let Ok(loaded_note) = screen::DisplayScreen::new(&path, &config)
                                 {
                                     app.screen = Box::new(loaded_note);
                                 }
@@ -83,9 +81,6 @@ fn main() -> color_eyre::Result<()> {
             }
         }
     }
-
-    // Save configuration
-    config.store()?;
 
     //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
     restore_terminal()
