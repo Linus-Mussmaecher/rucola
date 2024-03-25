@@ -1,10 +1,9 @@
 use std::{
     fs::File,
-    io::Read,
+    io,
     path::{Path, PathBuf},
 };
 
-use eyre::Context;
 use regex::Regex;
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
@@ -26,20 +25,22 @@ pub struct Note {
 
 impl Note {
     /// Opens the file from the given path (if possible) and extracts metadata.
-    pub fn from_path(path: &Path) -> color_eyre::Result<Self> {
+    pub fn from_path(path: &Path) -> io::Result<Self> {
         // Open the file.
-        let mut file = File::open(path).with_context(|| "When trying to load a note file.")?;
+        let mut file = File::open(path)?;
 
         // Read content of markdown(plaintext) file
         let mut content = String::new();
-        file.read_to_string(&mut content)?;
+        io::Read::read_to_string(&mut file, &mut content)?;
 
         // Create regexes to match tags and links
 
+        // Both regexes are hard-coded in, so we can expect as we know they are valid.
         // Anything starting with a single #, then all non-whitespace chars until a whitespace
-        let tag_regex = Regex::new(r"(\s|^)(\#[^\s\#]+)")?;
+        let tag_regex = Regex::new(r"(\s|^)(\#[^\s\#]+)").expect("Invalid static regex.");
         // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
-        let link_regex = Regex::new(r"\[\[([^\[\]\|\#]+)[\#]?[\|]?[^\[\]\|]*\]\]")?;
+        let link_regex = Regex::new(r"\[\[([^\[\]\|\#]+)[\#]?[\|]?[^\[\]\|]*\]\]")
+            .expect("Invalid static regex.");
 
         Ok(Self {
             // Name: Remove file extension

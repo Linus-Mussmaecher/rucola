@@ -1,3 +1,5 @@
+use eyre::Context;
+
 use crate::ui;
 
 /// Groups data passed by the user in the config file.
@@ -33,9 +35,11 @@ pub struct Config {
 impl Config {
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
     pub fn load() -> color_eyre::Result<Self> {
-        let config_file: ConfigFile = confy::load("giraffe", "config")?;
+        let config_file: ConfigFile = confy::load("giraffe", "config")
+            .with_context(|| "Attempting to write/read config file.")?;
 
-        let styles: ui::Styles = confy::load("giraffe", config_file.theme.as_str())?;
+        let styles: ui::Styles = confy::load("giraffe", config_file.theme.as_str())
+            .with_context(|| "Attempting to write/read styles file.")?;
 
         Ok(Self {
             config_file,
@@ -44,6 +48,8 @@ impl Config {
     }
 
     /// Stores this config file in the default locations
+    /// As currently, the config cannot be manipulated from within the program, this is unused.
+    #[allow(dead_code)]
     pub fn store(self) -> color_eyre::Result<()> {
         confy::store("giraffe", self.config_file.theme.as_str(), self.styles)?;
         confy::store("giraffe", "config", self.config_file)?;
