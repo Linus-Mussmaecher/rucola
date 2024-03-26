@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_indexing() {
-        let index = create_index(&Path::new("./tests/common/notes/")).unwrap();
+        let index = create_index(&Path::new("./tests/common/notes/"));
 
         assert_eq!(index.len(), 11);
 
