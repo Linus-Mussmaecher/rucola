@@ -19,6 +19,7 @@ struct App {
     index: Rc<HashMap<String, data::Note>>,
 }
 
+/// Main function
 fn main() -> color_eyre::Result<()> {
     // Initialize terminal
 
@@ -86,6 +87,7 @@ fn main() -> color_eyre::Result<()> {
     restore_terminal()
 }
 
+/// Ratatui boilerplate to set up panic hooks and put the terminal into a TUI state
 fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
     // Step 1: Set panic hooks (ratatui tutorial boilerplate)
 
@@ -110,8 +112,8 @@ fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backen
     Ok(terminal)
 }
 
+/// Ratatui boilerplate to restore the terminal to a usable state after program exits (regularly or by panic)
 fn restore_terminal() -> color_eyre::Result<()> {
-    // Step -1: More ratatuio boilerplate that happens on a panic to make sure the terminal remains usable
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
