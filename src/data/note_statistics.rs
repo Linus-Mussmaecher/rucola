@@ -208,8 +208,7 @@ mod tests {
 
     #[test]
     fn test_env_stats_general() {
-        let index =
-            crate::data::create_index(&std::path::Path::new("./tests/common/notes/")).unwrap();
+        let index = crate::data::create_index(&std::path::Path::new("./tests/common/notes/"));
 
         assert_eq!(index.len(), 11);
 
