@@ -23,7 +23,7 @@ impl Default for ConfigFile {
     }
 }
 
-///A wrapper grouping all config files into one struct
+///A wrapper grouping all config files into one struct.
 #[derive(Debug, Clone, Default)]
 pub struct Config {
     /// The data stored in the config file
@@ -47,8 +47,8 @@ impl Config {
         })
     }
 
-    /// Stores this config file in the default locations
-    /// As currently, the config cannot be manipulated from within the program, this is unused.
+    /// Stores this config file in the default locations.
+    /// As currently the config cannot be manipulated from within the program, this is unused.
     #[allow(dead_code)]
     pub fn store(self) -> color_eyre::Result<()> {
         confy::store("giraffe", self.config_file.theme.as_str(), self.styles)?;
@@ -57,17 +57,17 @@ impl Config {
         Ok(())
     }
 
-    /// Returns the user-selected UI styles
+    /// Returns the user-selected UI styles.
     pub fn get_styles(&self) -> &ui::Styles {
         &self.styles
     }
 
-    /// Returns the dynamic filtering option
+    /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
     pub fn get_dynamic_filter(&self) -> bool {
         self.config_file.dynamic_filter
     }
 
-    /// Returns the default vault path
+    /// Returns the default vault path.
     pub fn get_vault_path(&self) -> &str {
         &self.config_file.vault_path
     }
