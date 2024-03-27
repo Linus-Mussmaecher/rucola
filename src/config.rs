@@ -11,6 +11,8 @@ struct ConfigFile {
     vault_path: String,
     /// Selected theme
     theme: String,
+    /// Selected styling
+    style: String,
 }
 
 impl Default for ConfigFile {
@@ -18,7 +20,8 @@ impl Default for ConfigFile {
         Self {
             dynamic_filter: true,
             vault_path: "/home/linus/Coppermind/".to_string(),
-            theme: "default_light".to_string(),
+            theme: "default_light_theme".to_string(),
+            style: "default_light_style".to_string(),
         }
     }
 }
@@ -29,7 +32,9 @@ pub struct Config {
     /// The data stored in the config file
     config_file: ConfigFile,
     /// The data describing the look of the ui
-    styles: ui::Styles,
+    uistyles: ui::UiStyles,
+    /// Data describing the look of the markdown elements.
+    mdstyles: ui::MdStyles,
 }
 
 impl Config {
@@ -38,12 +43,16 @@ impl Config {
         let config_file: ConfigFile = confy::load("giraffe", "config")
             .with_context(|| "Attempting to write/read config file.")?;
 
-        let styles: ui::Styles = confy::load("giraffe", config_file.theme.as_str())
-            .with_context(|| "Attempting to write/read styles file.")?;
+        let uistyles: ui::UiStyles = confy::load("giraffe", config_file.theme.as_str())
+            .with_context(|| "Attempting to write/read theme file.")?;
+
+        let mdstyles: ui::MdStyles = confy::load("giraffe", config_file.style.as_str())
+            .with_context(|| "Attempting to write/read style file.")?;
 
         Ok(Self {
             config_file,
-            styles,
+            uistyles,
+            mdstyles,
         })
     }
 
@@ -51,15 +60,21 @@ impl Config {
     /// As currently the config cannot be manipulated from within the program, this is unused.
     #[allow(dead_code)]
     pub fn store(self) -> color_eyre::Result<()> {
-        confy::store("giraffe", self.config_file.theme.as_str(), self.styles)?;
+        confy::store("giraffe", self.config_file.theme.as_str(), self.uistyles)?;
+        confy::store("giraffe", self.config_file.style.as_str(), self.mdstyles)?;
         confy::store("giraffe", "config", self.config_file)?;
 
         Ok(())
     }
 
     /// Returns the user-selected UI styles.
-    pub fn get_styles(&self) -> &ui::Styles {
-        &self.styles
+    pub fn get_ui_styles(&self) -> &ui::UiStyles {
+        &self.uistyles
+    }
+
+    /// Returns the user-selected Markdown styles.
+    pub fn get_md_styles(&self) -> &ui::MdStyles {
+        &self.mdstyles
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).

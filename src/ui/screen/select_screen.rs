@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     data::{EnvironmentStats, Filter, Note},
-    ui::Styles,
+    ui::UiStyles,
 };
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -42,7 +42,7 @@ pub struct SelectScreen {
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: EnvironmentStats,
     /// The styles used on this screen.
-    styles: Styles,
+    styles: UiStyles,
 
     // === UI (state) ===
     /// The text area to type in filters.
@@ -75,7 +75,7 @@ impl SelectScreen {
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
-            styles: config.get_styles().clone(),
+            styles: config.get_ui_styles().clone(),
             all_tags: false,
             sorting: SortingMode::Name,
             sorting_asc: false,
