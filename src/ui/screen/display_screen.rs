@@ -6,8 +6,7 @@ use crate::ui;
 use ratatui::{prelude::*, widgets::*};
 
 pub struct DisplayScreen {
-    content: String,
-    styles: ui::Styles,
+    styles: ui::MdStyles,
     paragraphs: Vec<parser::Paragraph>,
 }
 
@@ -20,9 +19,8 @@ impl DisplayScreen {
         let _ = file.read_to_string(&mut content)?;
 
         Ok(Self {
+            styles: config.get_md_styles().clone(),
             paragraphs: parser::parse_note(&content),
-            content,
-            styles: config.get_styles().clone(),
         })
     }
 }
@@ -36,16 +34,10 @@ impl super::Screen for DisplayScreen {
         let lines = self
             .paragraphs
             .iter()
-            .map(|a| a.to_widget())
+            .map(|a| a.to_widget(self.styles))
             .collect::<Vec<_>>();
 
-        Widget::render(
-            Paragraph::new(lines)
-                .wrap(Wrap { trim: true })
-                .style(self.styles.text_style),
-            area,
-            buf,
-        );
+        Widget::render(Paragraph::new(lines).wrap(Wrap { trim: true }), area, buf);
     }
 
     fn update(&mut self, key: crossterm::event::KeyEvent) -> Option<ui::Message> {
