@@ -40,7 +40,7 @@ fn main() -> color_eyre::Result<()> {
     let config = config::Config::load().unwrap_or_default();
 
     let index = Rc::new(data::create_index(std::path::Path::new(
-        &config.get_vault_path(),
+        &config.get_vault_path().unwrap_or("./"),
     )));
 
     let mut app = App {

@@ -8,7 +8,7 @@ struct ConfigFile {
     /// Wether or not the select view filters while typing or only on enter.
     dynamic_filter: bool,
     /// Path to the vault to index.
-    vault_path: String,
+    vault_path: Option<String>,
     /// Selected theme
     theme: String,
     /// Selected styling
@@ -19,7 +19,7 @@ impl Default for ConfigFile {
     fn default() -> Self {
         Self {
             dynamic_filter: true,
-            vault_path: "/home/linus/Coppermind/".to_string(),
+            vault_path: None,
             theme: "default_light_theme".to_string(),
             style: "default_light_style".to_string(),
         }
@@ -83,7 +83,7 @@ impl Config {
     }
 
     /// Returns the default vault path.
-    pub fn get_vault_path(&self) -> &str {
-        &self.config_file.vault_path
+    pub fn get_vault_path(&self) -> Option<&str> {
+        self.config_file.vault_path.as_deref()
     }
 }
