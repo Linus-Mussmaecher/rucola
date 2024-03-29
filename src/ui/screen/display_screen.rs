@@ -3,11 +3,12 @@ use std::io::Read;
 use crate::config;
 use crate::parser;
 use crate::ui;
+use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
 pub struct DisplayScreen {
     styles: ui::MdStyles,
-    paragraphs: Vec<parser::Paragraph>,
+    tokens: Vec<parser::MdToken>,
 }
 
 impl DisplayScreen {
@@ -20,7 +21,7 @@ impl DisplayScreen {
 
         Ok(Self {
             styles: config.get_md_styles().clone(),
-            paragraphs: parser::parse_note(&content),
+            tokens: parser::parse_note(&content),
         })
     }
 }
@@ -32,11 +33,37 @@ impl super::Screen for DisplayScreen {
         buf: &mut ratatui::prelude::buffer::Buffer,
     ) {
         let lines = self
-            .paragraphs
+            // take the markdown tokens
+            .tokens
             .iter()
-            .map(|a| a.to_widget(self.styles))
+            // split them by linebreaks
+            .group_by(|token| token.is_line_break())
+            .into_iter()
+            // now, iterator over all created groups
+            .flat_map(|(is_line_break, group)| {
+                // check if its 'just' the line break separator
+                match is_line_break {
+                    // yes -> return none, will be skipped by flat_map
+                    true => None,
+                    false =>
+                    // no -> create a Line from the group
+                    {
+                        Some(Line::from(
+                            // by iterating over the contained tokens
+                            group
+                                .into_iter()
+                                // and converting them to a styled ratatui span with the provided method
+                                .map(|token| token.to_span(&self.styles))
+                                // then collect to a vec for Line to take in
+                                .collect::<Vec<_>>(),
+                        ))
+                    }
+                }
+            })
+            // Collect a vec of lines
             .collect::<Vec<_>>();
 
+        // Create a paragraph from this vec and display it.
         Widget::render(Paragraph::new(lines).wrap(Wrap { trim: true }), area, buf);
     }
 
