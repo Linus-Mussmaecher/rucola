@@ -1,8 +1,4 @@
-use std::{
-    fs::File,
-    io,
-    path::{Path, PathBuf},
-};
+use std::{fs, io, path};
 
 use regex::Regex;
 
@@ -20,14 +16,14 @@ pub struct Note {
     /// The number of characters.
     pub characters: usize,
     /// A copy of the path leading to this note.
-    pub path: PathBuf,
+    pub path: path::PathBuf,
 }
 
 impl Note {
     /// Opens the file from the given path (if possible) and extracts metadata.
-    pub fn from_path(path: &Path) -> io::Result<Self> {
+    pub fn from_path(path: &path::Path) -> io::Result<Self> {
         // Open the file.
-        let mut file = File::open(path)?;
+        let mut file = fs::File::open(path)?;
 
         // Read content of markdown(plaintext) file
         let mut content = String::new();

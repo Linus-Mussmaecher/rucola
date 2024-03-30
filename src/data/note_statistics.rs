@@ -1,6 +1,6 @@
 use fuzzy_matcher::FuzzyMatcher;
 
-use super::note::Note;
+use super::note;
 use std::collections::HashMap;
 
 /// A struct describing statistics to a note in relation to a containing environment.
@@ -65,7 +65,7 @@ pub struct EnvironmentStats {
 
 impl EnvironmentStats {
     /// Creates a new set of statistics from the subset of the passed index that matches the given filter.
-    pub fn new_with_filters(index: &HashMap<String, Note>, filter: Filter) -> Self {
+    pub fn new_with_filters(index: &HashMap<String, note::Note>, filter: Filter) -> Self {
         // Create fuzzy matcher
         let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
 

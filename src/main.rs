@@ -3,10 +3,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::prelude::{CrosstermBackend, Terminal};
+use ratatui::prelude::*;
 use std::{collections::HashMap, io::stdout, rc::Rc};
 
-pub mod config;
+mod config;
 mod data;
 mod ui;
 use ui::screen;

@@ -1,4 +1,4 @@
-use ratatui::style::{Modifier, Style};
+use ratatui::style::*;
 
 /// A struct that holds a collection of styles for a consistent looking UI.
 #[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]

@@ -1,24 +1,21 @@
-use crate::{
-    config::Config,
-    data::{EnvironmentStats, Filter, Note},
-    ui::UiStyles,
-};
+use crate::{config, data, ui};
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{
-    prelude::*,
-    widgets::{self, *},
-};
+use ratatui::{prelude::*, widgets::*};
 
 use std::{collections::HashMap, rc::Rc};
 use tui_textarea::TextArea;
 
+/// Describes the current mode of the UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 enum SelectMode {
+    /// Selecting a note from the list.
     #[default]
     Select,
+    /// Typing into the filter box.
     Filter,
 }
 
+/// Describes the current sorting mode of the displayed list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 enum SortingMode {
     #[default]
@@ -36,13 +33,13 @@ enum SortingMode {
 pub struct SelectScreen {
     // === Displayed Data ===
     /// A reference to the index of all notes
-    index: Rc<HashMap<String, Note>>,
+    index: Rc<HashMap<String, data::Note>>,
     /// The currently displayed statistics for all notes.
-    local_stats: EnvironmentStats,
+    local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
-    global_stats: EnvironmentStats,
+    global_stats: data::EnvironmentStats,
     /// The styles used on this screen.
-    styles: UiStyles,
+    styles: ui::UiStyles,
 
     // === UI (state) ===
     /// The text area to type in filters.
@@ -68,10 +65,10 @@ pub struct SelectScreen {
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
-    pub fn new(index: Rc<HashMap<String, Note>>, config: &Config) -> Self {
+    pub fn new(index: Rc<HashMap<String, data::Note>>, config: &config::Config) -> Self {
         let mut res = Self {
-            local_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
-            global_stats: EnvironmentStats::new_with_filters(&index, Filter::default()),
+            local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
+            global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
@@ -128,10 +125,10 @@ impl SelectScreen {
     }
 
     /// Creates a filter from the current content of the text area.
-    fn filter_from_input(&self) -> Filter {
+    fn filter_from_input(&self) -> data::Filter {
         // We should only have one line, read that one
         if let Some(line) = self.text_area.lines().first() {
-            let mut filter = Filter::default();
+            let mut filter = data::Filter::default();
             // default filter is this line with all white space removed
             filter.title = line.chars().filter(|c| !c.is_whitespace()).collect();
 
@@ -150,14 +147,14 @@ impl SelectScreen {
 
             filter
         } else {
-            Filter::default()
+            data::Filter::default()
         }
     }
 
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     /// Every filtering neccessarily triggers a non-stable resort.
-    fn filter(&mut self, filter: Filter) {
-        self.local_stats = EnvironmentStats::new_with_filters(&self.index, filter);
+    fn filter(&mut self, filter: data::Filter) {
+        self.local_stats = data::EnvironmentStats::new_with_filters(&self.index, filter);
         self.sorting_asc = false;
         self.sorting = SortingMode::Score;
         self.sort();
@@ -234,7 +231,7 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('c' | 'C') => {
                     self.text_area.select_all();
                     self.text_area.cut();
-                    self.filter(Filter::default());
+                    self.filter(data::Filter::default());
                 }
                 // Q: Quit application
                 KeyCode::Char('q' | 'Q') => return Some(crate::ui::input::Message::Quit),
@@ -372,7 +369,7 @@ impl super::Screen for SelectScreen {
             ]),
         ];
 
-        let global_stats = widgets::Table::new(global_stats_rows, stats_widths)
+        let global_stats = Table::new(global_stats_rows, stats_widths)
             .column_spacing(1)
             .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
 
