@@ -1,20 +1,22 @@
 use std::io::Read;
 
-use crate::config;
-use crate::data::Note;
-use crate::parser;
-use crate::ui;
+use crate::{config, data, parser, ui};
+
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
+/// The display screen displays a single note to the user.
 pub struct DisplayScreen {
+    /// User-configured styles to use when displaying markdown.
     styles: ui::MdStyles,
+    /// A vector of the parsed markdown tokens to display every frame.
     tokens: Vec<parser::MdToken>,
+    /// The title of the displayed note.
     title: String,
 }
 
 impl DisplayScreen {
-    pub fn new(note: &Note, config: &config::Config) -> color_eyre::Result<Self> {
+    pub fn new(note: &data::Note, config: &config::Config) -> color_eyre::Result<Self> {
         let mut file = std::fs::File::open(&note.path)?;
 
         let mut content = String::new();
