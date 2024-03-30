@@ -448,7 +448,7 @@ impl super::Screen for SelectScreen {
             ]),
         ];
 
-        let local_stats = widgets::Table::new(local_stats_rows, stats_widths)
+        let local_stats = Table::new(local_stats_rows, stats_widths)
             .column_spacing(1)
             .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
