@@ -67,4 +67,49 @@ impl TokenParser {
             |substr| token::MdToken::new(token::MdTokenType::Text, substr.to_string()),
         )
     }
+    /// Creates a token parser recognizing text in stars.
+    pub fn create_star_parser() -> Self {
+        Self::new(
+            regex::Regex::new(r"\*[^\*\n]*\*").expect("Static regex ill-formed."),
+            |substr| {
+                token::MdToken::new(
+                    token::MdTokenType::Stars,
+                    substr
+                        .trim_start_matches("*")
+                        .trim_end_matches("*")
+                        .to_string(),
+                )
+            },
+        )
+    }
+    /// Creates a token parser recognizing text in underscores.
+    pub fn create_underscore_parser() -> Self {
+        Self::new(
+            regex::Regex::new(r"_[^_\n]*_").expect("Static regex ill-formed."),
+            |substr| {
+                token::MdToken::new(
+                    token::MdTokenType::Underscores,
+                    substr
+                        .trim_start_matches("_")
+                        .trim_end_matches("_")
+                        .to_string(),
+                )
+            },
+        )
+    }
+    /// Creates a token parser recognizing text in double stars.
+    pub fn create_double_star_parser() -> Self {
+        Self::new(
+            regex::Regex::new(r"\*\*[^\*\n]*\*\*").expect("Static regex ill-formed."),
+            |substr| {
+                token::MdToken::new(
+                    token::MdTokenType::DoubleStars,
+                    substr
+                        .trim_start_matches("*")
+                        .trim_end_matches("*")
+                        .to_string(),
+                )
+            },
+        )
+    }
 }

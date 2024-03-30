@@ -12,6 +12,9 @@ pub fn parse_note(note: &str) -> Vec<MdToken> {
             TokenParser::create_line_break_parser(),
             TokenParser::create_headings_parser(),
             TokenParser::create_tag_parser(),
+            TokenParser::create_double_star_parser(),
+            TokenParser::create_star_parser(),
+            TokenParser::create_underscore_parser(),
             TokenParser::create_text_parser(),
         ],
     )
