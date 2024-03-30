@@ -2,30 +2,30 @@ mod token;
 use itertools::Itertools;
 pub use token::MdToken;
 
+mod token_parser;
+use token_parser::TokenParser;
+
 pub fn parse_note(note: &str) -> Vec<MdToken> {
-    match_stuff(
+    parse_recursively(
         note,
-        &regex::Regex::new(r"[\#]+\s.*\n").expect("Static regex ill-formed."),
-        &|substr| {
-            MdToken::new(
-                token::MdTokenType::Heading(1),
-                &substr.trim_start_matches(&['#', ' ']),
-            )
-        },
+        &[
+            TokenParser::create_line_break_parser(),
+            TokenParser::create_headings_parser(),
+            TokenParser::create_tag_parser(),
+            TokenParser::create_text_parser(),
+        ],
     )
 }
 
-pub fn match_stuff<F>(content: &str, regex: &regex::Regex, converter: &F) -> Vec<MdToken>
-where
-    F: Fn(&str) -> MdToken,
-{
-    // if content.len() == 0 {
-    //     return Vec::new();
-    // }
+pub fn parse_recursively(content: &str, token_parsers: &[TokenParser]) -> Vec<MdToken> {
+    if token_parsers.is_empty() {
+        return vec![];
+    }
 
     std::iter::once((0, 0))
         .chain(
-            regex
+            token_parsers[0]
+                .get_regex()
                 .find_iter(content)
                 .map(|thematch| (thematch.start(), thematch.end())),
         )
@@ -33,18 +33,16 @@ where
         .tuple_windows()
         .map(|((_a_start, a_end), (b_start, b_end))| {
             // let mut v = match_stuff(&content[a_end..b_start], regex, converter);
-            let mut v = Vec::with_capacity(2);
-            if a_end != b_start {
-                v.push(MdToken::new(
-                    token::MdTokenType::Text,
-                    &content[a_end..b_start],
-                ));
-            }
+            let mut v = if a_end != b_start {
+                parse_recursively(&content[a_end..b_start], &token_parsers[1..])
+            } else {
+                Vec::with_capacity(1)
+            };
 
             if b_start != b_end {
-                v.push(MdToken::new(token::MdTokenType::LineBreak, ""));
-                v.push(converter(&content[b_start..b_end]));
-                v.push(MdToken::new(token::MdTokenType::LineBreak, ""));
+                if let Some(mdtoken) = token_parsers[0].convert(&content[b_start..b_end]) {
+                    v.push(mdtoken);
+                }
             }
             v
         })

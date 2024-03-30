@@ -37,17 +37,16 @@ impl super::Screen for DisplayScreen {
             .tokens
             .iter()
             // split them by linebreaks
-            .group_by(|token| token.is_line_break())
+            .group_by(|token| (token.to_line_preference(), token.is_line_break()))
             .into_iter()
             // now, iterator over all created groups
-            .flat_map(|(is_line_break, group)| {
+            .flat_map(|((_, is_line_break), group)| {
                 // check if its 'just' the line break separator
                 match is_line_break {
                     // yes -> return none, will be skipped by flat_map
                     true => None,
-                    false =>
                     // no -> create a Line from the group
-                    {
+                    false => {
                         Some(Line::from(
                             // by iterating over the contained tokens
                             group

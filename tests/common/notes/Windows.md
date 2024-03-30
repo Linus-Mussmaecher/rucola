@@ -1,3 +1,6 @@
-#os
+Windows is an #os (inline tag!) from Microsoft Cooperation.
 
-Windows is an operating system from Microsoft Cooperation.
+## A heading
+## Another Heading
+
+### Another Heading
