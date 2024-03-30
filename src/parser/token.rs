@@ -11,6 +11,12 @@ pub enum MdTokenType {
     Heading(u8),
     /// A tag
     Tag,
+    /// Text surrouded by stars
+    Stars,
+    /// Text surrounded by underscores
+    Underscores,
+    /// Text surrounded by double stars
+    DoubleStars,
 }
 
 impl MdTokenType {
@@ -18,7 +24,11 @@ impl MdTokenType {
     pub fn to_line_preference(&self) -> MdTokenTypeLinePreference {
         match self {
             MdTokenType::LineBreak | MdTokenType::Heading(_) => MdTokenTypeLinePreference::Alone,
-            MdTokenType::Text | MdTokenType::Tag => MdTokenTypeLinePreference::Text,
+            MdTokenType::DoubleStars
+            | MdTokenType::Underscores
+            | MdTokenType::Stars
+            | MdTokenType::Text
+            | MdTokenType::Tag => MdTokenTypeLinePreference::Text,
         }
     }
 }
@@ -75,6 +85,9 @@ impl MdToken {
             MdTokenType::Text => Span::styled(&self.content, styles.text),
             MdTokenType::Heading(_layer) => Span::styled(&self.content, styles.heading),
             MdTokenType::Tag => Span::styled(&self.content, styles.tag),
+            MdTokenType::Stars => Span::styled(&self.content, styles.star),
+            MdTokenType::Underscores => Span::styled(&self.content, styles.underscore),
+            MdTokenType::DoubleStars => Span::styled(&self.content, styles.doublestar),
         }
     }
 }

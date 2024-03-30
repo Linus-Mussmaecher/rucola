@@ -6,6 +6,9 @@ pub struct MdStyles {
     pub heading: Style,
     pub heading_size: u8,
     pub tag: Style,
+    pub star: Style,
+    pub underscore: Style,
+    pub doublestar: Style,
 }
 
 impl Default for MdStyles {
@@ -17,6 +20,9 @@ impl Default for MdStyles {
             tag: Style::new()
                 .bg(Color::LightBlue)
                 .add_modifier(Modifier::ITALIC),
+            star: Style::new().add_modifier(Modifier::ITALIC),
+            underscore: Style::new().add_modifier(Modifier::ITALIC),
+            doublestar: Style::new().add_modifier(Modifier::BOLD),
         }
     }
 }
