@@ -19,6 +19,7 @@ impl Default for MdStyles {
             heading_size: 24,
             tag: Style::new()
                 .bg(Color::LightBlue)
+                .fg(Color::White)
                 .add_modifier(Modifier::ITALIC),
             star: Style::new().add_modifier(Modifier::ITALIC),
             underscore: Style::new().add_modifier(Modifier::ITALIC),
