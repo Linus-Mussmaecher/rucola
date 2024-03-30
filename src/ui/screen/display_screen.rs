@@ -1,6 +1,7 @@
 use std::io::Read;
 
 use crate::config;
+use crate::data::Note;
 use crate::parser;
 use crate::ui;
 use itertools::Itertools;
@@ -9,11 +10,12 @@ use ratatui::{prelude::*, widgets::*};
 pub struct DisplayScreen {
     styles: ui::MdStyles,
     tokens: Vec<parser::MdToken>,
+    title: String,
 }
 
 impl DisplayScreen {
-    pub fn new(path: &std::path::Path, config: &config::Config) -> color_eyre::Result<Self> {
-        let mut file = std::fs::File::open(path)?;
+    pub fn new(note: &Note, config: &config::Config) -> color_eyre::Result<Self> {
+        let mut file = std::fs::File::open(&note.path)?;
 
         let mut content = String::new();
 
@@ -22,6 +24,7 @@ impl DisplayScreen {
         Ok(Self {
             styles: config.get_md_styles().clone(),
             tokens: parser::parse_note(&content),
+            title: note.name.clone(),
         })
     }
 }
@@ -32,33 +35,36 @@ impl super::Screen for DisplayScreen {
         area: ratatui::prelude::layout::Rect,
         buf: &mut ratatui::prelude::buffer::Buffer,
     ) {
-        let lines = self
-            // take the markdown tokens
-            .tokens
-            .iter()
-            // split them by linebreaks
-            .group_by(|token| (token.to_line_preference(), token.is_line_break()))
-            .into_iter()
-            // now, iterator over all created groups
-            .flat_map(|((_, is_line_break), group)| {
-                // check if its 'just' the line break separator
-                match is_line_break {
-                    // yes -> return none, will be skipped by flat_map
-                    true => None,
-                    // no -> create a Line from the group
-                    false => {
-                        Some(Line::from(
-                            // by iterating over the contained tokens
-                            group
-                                .into_iter()
-                                // and converting them to a styled ratatui span with the provided method
-                                .map(|token| token.to_span(&self.styles))
-                                // then collect to a vec for Line to take in
-                                .collect::<Vec<_>>(),
-                        ))
-                    }
-                }
-            })
+        let lines = std::iter::once(Line::styled(&self.title, self.styles.heading))
+            .chain(
+                self
+                    // take the markdown tokens
+                    .tokens
+                    .iter()
+                    // split them by linebreaks
+                    .group_by(|token| (token.to_line_preference(), token.is_line_break()))
+                    .into_iter()
+                    // now, iterator over all created groups
+                    .flat_map(|((_, is_line_break), group)| {
+                        // check if its 'just' the line break separator
+                        match is_line_break {
+                            // yes -> return none, will be skipped by flat_map
+                            true => None,
+                            // no -> create a Line from the group
+                            false => {
+                                Some(Line::from(
+                                    // by iterating over the contained tokens
+                                    group
+                                        .into_iter()
+                                        // and converting them to a styled ratatui span with the provided method
+                                        .map(|token| token.to_span(&self.styles))
+                                        // then collect to a vec for Line to take in
+                                        .collect::<Vec<_>>(),
+                                ))
+                            }
+                        }
+                    }),
+            )
             // Collect a vec of lines
             .collect::<Vec<_>>();
 

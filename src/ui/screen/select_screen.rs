@@ -289,9 +289,7 @@ impl super::Screen for SelectScreen {
                 KeyCode::Enter => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
                         if let Some(note) = self.index.get(&env_stats.id) {
-                            return Some(crate::ui::input::Message::SwitchDisplay(
-                                note.path.clone(),
-                            ));
+                            return Some(crate::ui::input::Message::SwitchDisplay(note.clone()));
                         }
                     }
                 }
