@@ -1,53 +1,57 @@
-mod token;
-use itertools::Itertools;
-pub use token::MdToken;
+mod md_block;
+pub use md_block::MdBlock;
+pub use md_block::MdBlockType;
 
-mod token_parser;
-use token_parser::TokenParser;
+pub fn parse_note(note: &str) -> Vec<MdBlock> {
+    // Recognize lines
+    let lines = note
+        .lines()
+        .map(|line| (MdBlockType::recognize_line(line), line))
+        .collect::<Vec<_>>();
 
-pub fn parse_note(note: &str) -> Vec<MdToken> {
-    parse_recursively(
-        note,
-        &[
-            TokenParser::create_line_break_parser(),
-            TokenParser::create_headings_parser(),
-            TokenParser::create_tag_parser(),
-            TokenParser::create_double_star_parser(),
-            TokenParser::create_star_parser(),
-            TokenParser::create_underscore_parser(),
-            TokenParser::create_text_parser(),
-        ],
-    )
-}
-
-pub fn parse_recursively(content: &str, token_parsers: &[TokenParser]) -> Vec<MdToken> {
-    if token_parsers.is_empty() {
-        return vec![];
+    // Turn it into blocks
+    let mut blocks = Vec::new();
+    let mut buffer = String::new();
+    let mut in_latex = false;
+    let mut in_code = false;
+    for (btype, line) in lines.into_iter() {
+        match btype {
+            // Text (non-special lines) is always appended to the buffer.
+            MdBlockType::Text => buffer.push_str(line),
+            // New line simply writes this buffer as a block
+            MdBlockType::Newline => {
+                write_block(&mut buffer, &mut blocks, MdBlockType::Text);
+            }
+            // Heading also writes to a block if there was one, and then adds its own block of just this line.
+            MdBlockType::Heading => {
+                write_block(&mut buffer, &mut blocks, MdBlockType::Text);
+                in_latex = false;
+                in_code = false;
+                write_block(&mut line.to_owned(), &mut blocks, MdBlockType::Heading);
+            }
+            // LaTeX line just remembers it is latex, if it is an ending line writes to the buffer while noting that
+            MdBlockType::LaTeX => {
+                if in_latex {
+                    write_block(&mut buffer, &mut blocks, MdBlockType::LaTeX);
+                }
+                in_latex = !in_latex;
+            }
+            // Code does the same as LaTeX
+            MdBlockType::Code => {
+                if in_code {
+                    write_block(&mut buffer, &mut blocks, MdBlockType::Code);
+                }
+                in_code = !in_code;
+            }
+        }
     }
 
-    std::iter::once((0, 0))
-        .chain(
-            token_parsers[0]
-                .get_regex()
-                .find_iter(content)
-                .map(|thematch| (thematch.start(), thematch.end())),
-        )
-        .chain(std::iter::once((content.len(), content.len())))
-        .tuple_windows()
-        .flat_map(|((_a_start, a_end), (b_start, b_end))| {
-            // let mut v = match_stuff(&content[a_end..b_start], regex, converter);
-            let mut v = if a_end != b_start {
-                parse_recursively(&content[a_end..b_start], &token_parsers[1..])
-            } else {
-                Vec::with_capacity(1)
-            };
+    blocks
+}
 
-            if b_start != b_end {
-                if let Some(mdtoken) = token_parsers[0].convert(&content[b_start..b_end]) {
-                    v.push(mdtoken);
-                }
-            }
-            v
-        })
-        .collect()
+fn write_block(buffer: &mut String, blocks: &mut Vec<MdBlock>, mdbtype: MdBlockType) {
+    if !buffer.is_empty() {
+        blocks.push(MdBlock::new(mdbtype, buffer.clone()));
+        buffer.clear();
+    }
 }
