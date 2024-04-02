@@ -43,18 +43,13 @@ impl Note {
             name: path
                 .file_name()
                 .map(|s| s.to_string_lossy().replace(".md", ""))
-                .unwrap_or_else(|| "".to_string()),
+                .unwrap_or_default(),
             // Path: Already given - convert to owned version.
             path: path.to_path_buf(),
             // Tags: Use the regex to extract a list of captures, then convert them to strings
             tags: tag_regex
                 .captures_iter(&content)
-                .filter_map(|c| {
-                    c.extract::<2>()
-                        .1
-                        .get(1)
-                        .and_then(|ss| Some(String::from(*ss)))
-                })
+                .filter_map(|c| c.extract::<2>().1.get(1).map(|ss| String::from(*ss)))
                 .collect(),
             // Links: Use the regex to extract a list of captures, then convert them to strings
             links: link_regex
@@ -63,7 +58,7 @@ impl Note {
                     c.extract::<1>()
                         .1
                         .first()
-                        .and_then(|ss| Some(String::from(*ss).to_lowercase().replace(" ", "-")))
+                        .map(|ss| String::from(*ss).to_lowercase().replace(' ', "-"))
                 })
                 .collect(),
             // Words: Split at whitespace, grouping multiple consecutive instances of whitespace together.

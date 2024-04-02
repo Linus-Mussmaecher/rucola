@@ -6,7 +6,6 @@ pub use note_statistics::EnvironmentStats;
 pub use note_statistics::Filter;
 
 use std::{collections::HashMap, path::Path};
-use walkdir;
 
 /// Turns a file name into its id in the following steps:
 ///  - All characters are turned to lowercase
@@ -18,7 +17,7 @@ use walkdir;
 ///  assert_eq!(name_to_id("lie-theory"), "lie-theory");
 /// ```
 pub fn name_to_id(name: &str) -> String {
-    name.to_lowercase().replace(" ", "-").replace(".md", "")
+    name.to_lowercase().replace(' ', "-").replace(".md", "")
 }
 
 /// Reads a passed directory recursively, returning a hashmap containing
@@ -36,10 +35,8 @@ pub fn create_index(directory: &Path) -> HashMap<String, Note> {
         .flatten()
         // Check only markdown files
         .filter(is_markdown)
-        // Convert tiles to notes
-        .map(|entry| Note::from_path(entry.path()))
-        // Skip errors
-        .flatten()
+        // Convert tiles to notes and skip errors
+        .flat_map(|entry| Note::from_path(entry.path()))
         // Extract name and convert to id
         .map(|note| (name_to_id(&note.name), note))
         // Collect into hash map
@@ -51,7 +48,7 @@ fn is_not_hidden(entry: &walkdir::DirEntry) -> bool {
     entry
         .file_name()
         .to_str()
-        .map(|s| entry.depth() == 0 || !s.starts_with("."))
+        .map(|s| entry.depth() == 0 || !s.starts_with('.'))
         .unwrap_or(false)
 }
 /// Checks if the given dir entry is a markdown file, i.e. a file whose name ends in '.md'
@@ -71,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_indexing() {
-        let index = create_index(&Path::new("./tests/common/notes/"));
+        let index = create_index(Path::new("./tests/common/notes/"));
 
         assert_eq!(index.len(), 11);
 

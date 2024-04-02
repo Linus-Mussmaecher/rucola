@@ -21,7 +21,7 @@ pub enum MdTokenType {
 
 impl MdTokenType {
     /// Returns the Preference of this token type to be grouped with others on a single line.
-    pub fn to_line_preference(&self) -> MdTokenTypeLinePreference {
+    pub fn line_preference(&self) -> MdTokenTypeLinePreference {
         match self {
             MdTokenType::LineBreak | MdTokenType::Heading(_) => MdTokenTypeLinePreference::Alone,
             MdTokenType::DoubleStars
@@ -70,8 +70,8 @@ impl MdToken {
     }
 
     /// Returns the Preference of this token to be grouped with others on a single line.
-    pub fn to_line_preference(&self) -> MdTokenTypeLinePreference {
-        self.token_type.to_line_preference()
+    pub fn line_preference(&self) -> MdTokenTypeLinePreference {
+        self.token_type.line_preference()
     }
 
     pub fn is_line_break(&self) -> bool {

@@ -150,8 +150,7 @@ impl EnvironmentStats {
             // Total tags: Collect all tag vectors of notes into a HashSet, then take its length.
             tag_count_total: filtered_index
                 .values()
-                .map(|(_, stats)| &stats.tags)
-                .flatten()
+                .flat_map(|(_, stats)| &stats.tags)
                 .collect::<std::collections::HashSet<_>>()
                 .len(),
             // Local-Local links: Check outgoing local links of all notes. Could also check incoming local links of all notes.
@@ -208,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_env_stats_general() {
-        let index = crate::data::create_index(&std::path::Path::new("./tests/common/notes/"));
+        let index = crate::data::create_index(std::path::Path::new("./tests/common/notes/"));
 
         assert_eq!(index.len(), 11);
 

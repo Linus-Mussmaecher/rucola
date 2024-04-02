@@ -72,7 +72,7 @@ impl SelectScreen {
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
-            styles: config.get_ui_styles().clone(),
+            styles: config.get_ui_styles().to_owned(),
             all_tags: false,
             sorting: SortingMode::Name,
             sorting_asc: false,
@@ -138,7 +138,7 @@ impl SelectScreen {
                     // words with a hash count as a tag
                     filter.tags.push(word.to_string());
                     // and remove it from the title to match
-                    filter.title = filter.title.replace(&word, "");
+                    filter.title = filter.title.replace(word, "");
                 }
             }
 
@@ -483,7 +483,7 @@ impl super::Screen for SelectScreen {
             .iter()
             .skip(top_ind)
             .take(table_area.height as usize)
-            .map(|env_stats| {
+            .flat_map(|env_stats| {
                 self.index.get(&env_stats.id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
@@ -496,7 +496,6 @@ impl super::Screen for SelectScreen {
                     ])
                 })
             })
-            .flatten()
             .collect::<Vec<Row>>();
 
         let instructions_bot = block::Title::from(Line::from(vec![
