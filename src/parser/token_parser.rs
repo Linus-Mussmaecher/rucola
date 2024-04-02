@@ -47,8 +47,8 @@ impl TokenParser {
             regex::Regex::new(r"[\#]+\s[^\n\#]*\n?").expect("Static regex ill-formed."),
             |substr| {
                 token::MdToken::new(
-                    token::MdTokenType::Heading(substr.chars().map(|c| c == '#').count() as u8),
-                    substr.trim_start_matches(&['#', ' ']).to_string(),
+                    token::MdTokenType::Heading(substr.chars().filter(|c| *c == '#').count() as u8),
+                    substr.trim_start_matches(['#', ' ']).to_string(),
                 )
             },
         )
@@ -75,8 +75,8 @@ impl TokenParser {
                 token::MdToken::new(
                     token::MdTokenType::Stars,
                     substr
-                        .trim_start_matches("*")
-                        .trim_end_matches("*")
+                        .trim_start_matches('*')
+                        .trim_end_matches('*')
                         .to_string(),
                 )
             },
@@ -90,8 +90,8 @@ impl TokenParser {
                 token::MdToken::new(
                     token::MdTokenType::Underscores,
                     substr
-                        .trim_start_matches("_")
-                        .trim_end_matches("_")
+                        .trim_start_matches('_')
+                        .trim_end_matches('_')
                         .to_string(),
                 )
             },
@@ -105,8 +105,8 @@ impl TokenParser {
                 token::MdToken::new(
                     token::MdTokenType::DoubleStars,
                     substr
-                        .trim_start_matches("*")
-                        .trim_end_matches("*")
+                        .trim_start_matches('*')
+                        .trim_end_matches('*')
                         .to_string(),
                 )
             },

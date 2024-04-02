@@ -24,7 +24,7 @@ impl DisplayScreen {
         let _ = file.read_to_string(&mut content)?;
 
         Ok(Self {
-            styles: config.get_md_styles().clone(),
+            styles: *config.get_md_styles(),
             tokens: parser::parse_note(&content),
             title: note.name.clone(),
         })
@@ -44,7 +44,7 @@ impl super::Screen for DisplayScreen {
                     .tokens
                     .iter()
                     // split them by linebreaks
-                    .group_by(|token| (token.to_line_preference(), token.is_line_break()))
+                    .group_by(|token| (token.line_preference(), token.is_line_break()))
                     .into_iter()
                     // now, iterator over all created groups
                     .flat_map(|((_, is_line_break), group)| {

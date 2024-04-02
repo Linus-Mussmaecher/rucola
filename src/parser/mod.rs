@@ -34,7 +34,7 @@ pub fn parse_recursively(content: &str, token_parsers: &[TokenParser]) -> Vec<Md
         )
         .chain(std::iter::once((content.len(), content.len())))
         .tuple_windows()
-        .map(|((_a_start, a_end), (b_start, b_end))| {
+        .flat_map(|((_a_start, a_end), (b_start, b_end))| {
             // let mut v = match_stuff(&content[a_end..b_start], regex, converter);
             let mut v = if a_end != b_start {
                 parse_recursively(&content[a_end..b_start], &token_parsers[1..])
@@ -49,6 +49,5 @@ pub fn parse_recursively(content: &str, token_parsers: &[TokenParser]) -> Vec<Md
             }
             v
         })
-        .flatten()
         .collect()
 }
