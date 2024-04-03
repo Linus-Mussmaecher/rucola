@@ -1,45 +1,60 @@
 mod md_block;
 pub use md_block::MdBlock;
-pub use md_block::MdBlockType;
+
+mod md_line_type;
+pub use md_line_type::MdLineType;
 
 pub fn parse_note(note: &str) -> Vec<MdBlock> {
-    // Recognize lines
-    let lines = note
-        .lines()
-        .map(|line| (MdBlockType::recognize_line(line), line))
-        .collect::<Vec<_>>();
-
-    // Turn it into blocks
+    // Prepare buffer to collect multiple lines and vec of blocks.
     let mut blocks = Vec::new();
     let mut buffer = String::new();
+    // Remember if currently in LaTeX/Code block.
     let mut in_latex = false;
     let mut in_code = false;
-    for (btype, line) in lines.into_iter() {
+    for line in note.lines() {
+        // recognize type
+        let btype = MdLineType::recognize_line(line);
+        // convert to block
         match btype {
             // Text (non-special lines) is always appended to the buffer.
-            MdBlockType::Text => buffer.push_str(line),
+            MdLineType::Text => buffer.push_str(line),
             // New line simply writes this buffer as a block
-            MdBlockType::Newline => {
-                write_block(&mut buffer, &mut blocks, MdBlockType::Text);
+            MdLineType::Newline => {
+                if let Some(block) = MdBlock::extract_text(&mut buffer) {
+                    blocks.push(block);
+                    buffer.clear();
+                }
             }
             // Heading also writes to a block if there was one, and then adds its own block of just this line.
-            MdBlockType::Heading => {
-                write_block(&mut buffer, &mut blocks, MdBlockType::Text);
+            MdLineType::Heading => {
+                if let Some(block) = MdBlock::extract_text(&buffer) {
+                    blocks.push(block);
+                    buffer.clear();
+                }
                 in_latex = false;
                 in_code = false;
-                write_block(&mut line.to_owned(), &mut blocks, MdBlockType::Heading);
+                if let Some(block) = MdBlock::extract_heading(&line) {
+                    blocks.push(block);
+                    buffer.clear();
+                }
             }
             // LaTeX line just remembers it is latex, if it is an ending line writes to the buffer while noting that
-            MdBlockType::LaTeX => {
+            MdLineType::LaTeX => {
                 if in_latex {
-                    write_block(&mut buffer, &mut blocks, MdBlockType::LaTeX);
+                    if let Some(block) = MdBlock::extract_latex(&buffer) {
+                        blocks.push(block);
+                        buffer.clear();
+                    }
                 }
                 in_latex = !in_latex;
             }
             // Code does the same as LaTeX
-            MdBlockType::Code => {
+            MdLineType::Code => {
                 if in_code {
-                    write_block(&mut buffer, &mut blocks, MdBlockType::Code);
+                    if let Some(block) = MdBlock::extract_code(&buffer) {
+                        blocks.push(block);
+                        buffer.clear();
+                    }
                 }
                 in_code = !in_code;
             }
@@ -47,11 +62,4 @@ pub fn parse_note(note: &str) -> Vec<MdBlock> {
     }
 
     blocks
-}
-
-fn write_block(buffer: &mut String, blocks: &mut Vec<MdBlock>, mdbtype: MdBlockType) {
-    if !buffer.is_empty() {
-        blocks.push(MdBlock::new(mdbtype, buffer.clone()));
-        buffer.clear();
-    }
 }
