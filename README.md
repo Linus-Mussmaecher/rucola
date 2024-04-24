@@ -6,71 +6,40 @@
 [![tech1](https://img.shields.io/badge/-Rust-000000?logo=rust&style=flat-square)](https://www.rust-lang.org/)
 [![tech2](https://img.shields.io/badge/-Ratatui-000000?logo=gnome-terminal&style=flat-square)](https://ratatui.rs)
 
+Terminal-based browser and information aggregator for markdown file structures.
 
-Giraffe is a terminal user interface (TUI) that displays markdown files right in your terminal.
-Its main usecase is browsing and viewing a large folder structure of interlinked markdown files and - in conjunction with a text editor such as [Helix](https://helix-editor.com) or [Neovim](https://neovim.io) - serve as a replacement for note taking and knowledge base apps such as [Obsidian](https://obsidian.md) or [Notion](https://notion.so), but fully open-source and without leaving your terminal.
+> [!CAUTION]
+> This project is a work-in-progress by a single developer.
+> Many Features are still lacking and bugs may appear frequently.
+> All features described in the [features](#features) part are **target features** for version `1.0.0` and not neccessarily implemented yet.
+
+## Contents
+ - [Goals](#Goals)
+ - [Installation](#installation)
+ - [Feautures](#features)
+  - [Overview Screen](#overview-screen)
+  - [Single-Note Screen](#single-note-screen)
+  - [Configuration](#configuration)
+ - [Technology & License](#technology-license)
+
+## Goals
+ - *Target audience*: Users of a [zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) note system of interlinked markdown notes.
+ - To present the user with high-level information & statistics about their entire note set.
+ - To show the same information about filtered subsets of notes, as well as their relation with the entire note set.
+ - To allow the user to view link and backlink as well as statistical information about a single note.
+ - Allow the user to make small edits (such as renaming or changing tags) from within the application, and open the note in more sophisticated, user-specified editors and viewers.
+ - Provide all of this functionality without leaving the terminal.
+
+## Installation
 
 ## Features
 
-Giraffe is still heavily work-in-progress and not finished.
-This list serves as a TODO-list of target features, not features implemented yet.
-As soon as giraffe is in a usable state with core features implemented, this list will be split in available features and a TODO-list.
+### Overview Screen
 
-Giraffe features multiple screens to browse your markdown files.
+### Single-Note Screen
 
-### Selection Screen
+### Configuration
+Configuration files are - on Linux - stored in `XDG_CONFIGHOME/giraffe`, which is usually `~/.config/giraffe`.
 
- - Shows a list of all notes that is scrollable
- - List can be filtered by
-  - Tags (all words of the filter string beginning with '#' are considered tags. Of these, either any or all, as by the user's choice, must be matched by the notes)
-  - Title (must contain all words of the filter string not beginning with '#').
- - Shows the following statistics for each note in the list
-  - Words
-  - Characters
-  - Total amount of outgoing links
-  - Total amount of incoming links from all notes (_global inlinks_)
-  - Total amount of incoming links from other notes matching the filter (_local inlinks_)
- - Also shows _global_ and _local_ statistics for all notes 
-  - Total amount of notes
-  - Total amount of unique tags
-  - Total word count
-  - Total character count
-  - Total amount of outgoing links
-  - Total amount of incoming links
-
-### Viewing Screen
-The main mode of giraffe.
-
- - Displays a single markdown note in your terminal. Supports all usual markdown features.
- - Also supports LaTeX-based equations. I am a mathematician and most of my files contain such formulas, that are sadly less readable in a raw format than normal markdown. This was one of the main reasons for creating giraffe.
- - Follow links within your files.
- - Styling of bold text etc. can be configured with a .toml file that contains serialized versions of the ratatui Style struct.
-
-### Graph Screen
-
- - Shows a scrollable and zoomable graph of all your notes and their connections.
- - Allows showing note titles and viewing notes.
-
-### Non-features
-
-Giraffe is _not_ a markdown editor.
-The program is read-only and allows viewing your files, but never changing them in any way.
-
-There is no mouse support planned.
-
-### Styling / Ricing
-
-By default, giraffe takes on the colors defined by your terminal emulator.
-These - and the way they are applied to the different markdown and UI elements - can be configured via .toml files in ```~/.config/giraffe```. 
-See the upcoming wiki for more information.
-
-## Platforms and Installation 
-
-As of now, there are no official releases of giraffe, so the only way to download it and try it out is to clone this repository and compile it via ```cargo```.
-
-Planned features include an upload to the Arch User Repository.
-
-## Implementation
-
-Giraffe is implemented in Rust, using the [ratatui](httsp://ratatui.rs) TUI library. 
-LaTeX rendering is implemented via MathJax.
+## Technology & License
+Giraffe is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU GPL v3 License](https://www.gnu.org/licenses/gpl-3.0).
