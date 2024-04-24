@@ -1,4 +1,4 @@
-# Rucola
+# 🌱 Rucola
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
 ![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/giraffe/continuous-testing.yml?label=tests&style=flat-square)
@@ -49,7 +49,7 @@ For the future, a downloadable binary (for Windows) and releases to the AUR and 
 ### Single-Note Screen
 
 ### Configuration
-Configuration files are - on Linux - stored in `XDG_CONFIGHOME/giraffe`, which is usually `~/.config/giraffe`.
+Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
 
 ## Technology & License
-Giraffe is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU GPL v3 License](https://www.gnu.org/licenses/gpl-3.0).
+Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU GPL v3 License](https://www.gnu.org/licenses/gpl-3.0).
