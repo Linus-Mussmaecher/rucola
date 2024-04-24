@@ -1,4 +1,4 @@
-# Giraffe
+# Rucola
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
 ![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/giraffe/continuous-testing.yml?label=tests&style=flat-square)
@@ -9,7 +9,7 @@
 Terminal-based browser and information aggregator for markdown file structures.
 
 > [!CAUTION]
-> This project is a work-in-progress by a single developer.
+> This is a work-in-progress hobby project.
 > Many Features are still lacking and bugs may appear frequently.
 > All features described in the [features](#features) part are **target features** for version `1.0.0` and not neccessarily implemented yet.
 
@@ -24,13 +24,23 @@ Terminal-based browser and information aggregator for markdown file structures.
 
 ## Goals
  - *Target audience*: Users of a [zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) note system of interlinked markdown notes.
- - To present the user with high-level information & statistics about their entire note set.
- - To show the same information about filtered subsets of notes, as well as their relation with the entire note set.
- - To allow the user to view link and backlink as well as statistical information about a single note.
+ - Present the user with high-level information & statistics about their entire note set.
+ - Show the same information about filtered subsets of notes, as well as their relation with the entire note set.
+ - Allow the user to view link and backlink as well as statistical information about a single note.
  - Allow the user to make small edits (such as renaming or changing tags) from within the application, and open the note in more sophisticated, user-specified editors and viewers.
  - Provide all of this functionality without leaving the terminal.
 
 ## Installation
+Currently, the only way to use this program is to clone this repository with
+```
+ git clone https://github.com/Linus-Mussmaecher/rucola
+```
+and install it via
+```
+ cargo install
+```
+
+For the future, a downloadable binary (for Windows) and releases to the AUR and Nix package registry are planned.
 
 ## Features
 

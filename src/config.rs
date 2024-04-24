@@ -40,13 +40,13 @@ pub struct Config {
 impl Config {
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
     pub fn load() -> color_eyre::Result<Self> {
-        let config_file: ConfigFile = confy::load("giraffe", "config")
+        let config_file: ConfigFile = confy::load("rucola", "config")
             .with_context(|| "Attempting to write/read config file.")?;
 
-        let uistyles: ui::UiStyles = confy::load("giraffe", config_file.theme.as_str())
+        let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())
             .with_context(|| "Attempting to write/read theme file.")?;
 
-        let mdstyles: ui::MdStyles = confy::load("giraffe", config_file.style.as_str())
+        let mdstyles: ui::MdStyles = confy::load("rucola", config_file.style.as_str())
             .with_context(|| "Attempting to write/read style file.")?;
 
         Ok(Self {
@@ -60,9 +60,9 @@ impl Config {
     /// As currently the config cannot be manipulated from within the program, this is unused.
     #[allow(dead_code)]
     pub fn store(self) -> color_eyre::Result<()> {
-        confy::store("giraffe", self.config_file.theme.as_str(), self.uistyles)?;
-        confy::store("giraffe", self.config_file.style.as_str(), self.mdstyles)?;
-        confy::store("giraffe", "config", self.config_file)?;
+        confy::store("rucola", self.config_file.theme.as_str(), self.uistyles)?;
+        confy::store("rucola", self.config_file.style.as_str(), self.mdstyles)?;
+        confy::store("rucola", "config", self.config_file)?;
 
         Ok(())
     }
