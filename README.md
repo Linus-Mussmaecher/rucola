@@ -72,15 +72,17 @@ The following statistics are shown for the environment:
     - *Internal links* have both source and target in the local envinroment.
     - *Incoming links* have their (valid) target in the local environment and a source in the global environment (may also be in the local environment).
     - *Outgoing links* have their source in the local environment and a (valid) target in the global environment (may also be in the local environment).
+  
 For the local statistics, all value are accompanied by a percentage value comparing it to the equivalent stat of the global environment.
 
-Additionally, the following statistics are shown for every note in the filtered list (=the local environment):
+Additionally, the following statistics are shown for every note in the filtered list:
  - The name.
  - The number of words & characters in the note.
  - The number of *global outlinks*, i.e. links that start in that node and have a valid target.
  - The number of *local outlinks*, i.e. global outlinks whose target is in the local environment.
  - The number of *global inlinks*, i.e. links from other notes whose target is that one.
  - The number of *local inlinks*, i.e. links from other notes within the local environment whose target is that one.
+   
 These statistics let you judge how well-connected a note is, and wether it is mostly relevant within the filtered context or in general.
 
 #### Filtering
