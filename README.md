@@ -18,6 +18,8 @@ Terminal-based browser and information aggregator for markdown file structures.
  - [Installation](#installation)
  - [Feautures](#features)
   - [Overview Screen](#overview-screen)
+   - [Statistics](#statistics)
+   - [Filtering](#filtering)
   - [Single-Note Screen](#single-note-screen)
   - [Configuration](#configuration)
  - [Technology & License](#technology-license)
@@ -44,7 +46,49 @@ For the future, a downloadable binary (for Windows) and releases to the AUR and 
 
 ## Features
 
+Rucola can be launched from the command line (`rucola`).
+If no further arguments are given, rucola will open the notes in your default vault directory (specified in your config file).
+This allows you to access your main vault of notes from anywhere in your file structure.
+If no default vault is know yet, rucola will open in the current directory.
+If you want to open a directory different from your default vault, you can pass the target as a positional argument, e.g. `rucola .` or `rucola ~/other/stuff`.
+
 ### Overview Screen
+
+Rucola initially launches into the *overview screen*.
+Here you will find an (unordered) list of all notes currently indexed by rucola, some statistics and a search bar.
+The statistics refer to two environments:
+ - The *global environment* consists of all notes currently indexed by rucola and can only be changed by restarting the program (or directly changing your files and reloading the screen).
+ - The *local environment* consists of all notes currently matching your search query.
+
+#### Statistics
+
+The following statistics are shown for the environment:
+ - The total number of notes contained.
+ - The total number of words & characters in those notes.
+ - The total number of (unique) tags used in those notes.
+ - The number of broken links, i.e. links for which no target note could be found in the indexed structure.
+ - For the global environment, the total number of links between notes.
+ - For the local environemnt, links are again split up in three groups that can be used to judge how well-connected your local environment is in the set of all your notes:
+  - *Internal links* have both source and target in the local envinroment.
+  - *Incoming links* have their (valid) target in the local environment and a source in the global environment (may also be in the local environment).
+  - *Outgoing links* have their source in the local environment and a (valid) target in the global environment (may also be in the local environment).
+For the local statistics, all value are accompanied by a percentage value comparing it to the equivalent stat of the global environment.
+
+Additionally, the following statistics are shown for every note in the filtered list (=the local environment):
+ - The name.
+ - The number of words & characters in the note.
+ - The number of *global outlinks*, i.e. links that start in that node and have a valid target.
+ - The number of *local outlinks*, i.e. global outlinks whose target is in the local environment.
+ - The number of *global inlinks*, i.e. links from other notes whose target is that one.
+ - The number of *local inlinks*, i.e. links from other notes within the local environment whose target is that one.
+These statistics let you judge how well-connected a note is, and wether it is mostly relevant within the filtered context or in general.
+
+#### Filtering
+The filter line works in two stages: First, all tags found in your input (i.e. words starting with a `#` until the next whitespace) are matched with the notes' tags.
+You can specify wether a note needs to have all entered tags to show up in the result, or if any of them is enough.
+After that, the remaining filter string is fuzzy-matched with every note title, those without a match are excluded and the remaining notes are sorted according to their match score.
+
+The list can also be sorted by any column, and the sorting can be switched between ascending and descending at will.
 
 ### Single-Note Screen
 
