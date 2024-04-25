@@ -1,10 +1,10 @@
 # 🌱 Rucola
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
-![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/giraffe/continuous-testing.yml?label=tests&style=flat-square)
-![commits](https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/giraffe?style=flat-square)
-[![tech1](https://img.shields.io/badge/-Rust-000000?logo=rust&style=flat-square)](https://www.rust-lang.org/)
-[![tech2](https://img.shields.io/badge/-Ratatui-000000?logo=gnome-terminal&style=flat-square)](https://ratatui.rs)
+![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&style=flat-square)
+![commits](https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?style=flat-square)
+[![tech1](https://img.shields.io/badge/-Rust-f74c00?logo=rust&style=flat-square)](https://www.rust-lang.org/)
+[![tech2](https://img.shields.io/badge/-Ratatui-2563eb?logo=gnome-terminal&style=flat-square)](https://ratatui.rs)
 
 Terminal-based browser and information aggregator for markdown file structures.
 
@@ -16,12 +16,12 @@ Terminal-based browser and information aggregator for markdown file structures.
 ## Contents
  - [Goals](#Goals)
  - [Installation](#installation)
- - [Feautures](#features)
-  - [Overview Screen](#overview-screen)
-   - [Statistics](#statistics)
-   - [Filtering](#filtering)
-  - [Single-Note Screen](#single-note-screen)
-  - [Configuration](#configuration)
+ - [Features](#features)
+    - [Overview Screen](#overview-screen)
+       - [Statistics](#statistics)
+       - [Filtering](#filtering)
+    - [Single-Note Screen](#single-note-screen)
+    - [Configuration](#configuration)
  - [Technology & License](#technology-license)
 
 ## Goals
@@ -96,4 +96,4 @@ The list can also be sorted by any column, and the sorting can be switched betwe
 Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
 
 ## Technology & License
-Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU GPL v3 License](https://www.gnu.org/licenses/gpl-3.0).
+Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
