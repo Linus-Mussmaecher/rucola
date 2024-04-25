@@ -69,9 +69,9 @@ The following statistics are shown for the environment:
  - The number of broken links, i.e. links for which no target note could be found in the indexed structure.
  - For the global environment, the total number of links between notes.
  - For the local environemnt, links are again split up in three groups that can be used to judge how well-connected your local environment is in the set of all your notes:
-  - *Internal links* have both source and target in the local envinroment.
-  - *Incoming links* have their (valid) target in the local environment and a source in the global environment (may also be in the local environment).
-  - *Outgoing links* have their source in the local environment and a (valid) target in the global environment (may also be in the local environment).
+    - *Internal links* have both source and target in the local envinroment.
+    - *Incoming links* have their (valid) target in the local environment and a source in the global environment (may also be in the local environment).
+    - *Outgoing links* have their source in the local environment and a (valid) target in the global environment (may also be in the local environment).
 For the local statistics, all value are accompanied by a percentage value comparing it to the equivalent stat of the global environment.
 
 Additionally, the following statistics are shown for every note in the filtered list (=the local environment):
