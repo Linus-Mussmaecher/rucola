@@ -75,10 +75,12 @@ impl SelectScreen {
             styles: config.get_ui_styles().to_owned(),
             all_tags: false,
             sorting: SortingMode::Name,
-            sorting_asc: false,
+            sorting_asc: true,
             selected: 0,
             dynamic_filter: config.get_dynamic_filter(),
         };
+
+        res.sort();
 
         res.style_text_area();
 

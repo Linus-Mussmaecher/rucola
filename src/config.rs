@@ -11,8 +11,6 @@ struct ConfigFile {
     vault_path: Option<String>,
     /// Selected theme
     theme: String,
-    /// Selected styling
-    style: String,
 }
 
 impl Default for ConfigFile {
@@ -21,7 +19,6 @@ impl Default for ConfigFile {
             dynamic_filter: true,
             vault_path: None,
             theme: "default_light_theme".to_string(),
-            style: "default_light_style".to_string(),
         }
     }
 }
@@ -33,8 +30,6 @@ pub struct Config {
     config_file: ConfigFile,
     /// The data describing the look of the ui
     uistyles: ui::UiStyles,
-    /// Data describing the look of the markdown elements.
-    mdstyles: ui::MdStyles,
 }
 
 impl Config {
@@ -46,13 +41,9 @@ impl Config {
         let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())
             .with_context(|| "Attempting to write/read theme file.")?;
 
-        let mdstyles: ui::MdStyles = confy::load("rucola", config_file.style.as_str())
-            .with_context(|| "Attempting to write/read style file.")?;
-
         Ok(Self {
             config_file,
             uistyles,
-            mdstyles,
         })
     }
 
@@ -61,7 +52,6 @@ impl Config {
     #[allow(dead_code)]
     pub fn store(self) -> color_eyre::Result<()> {
         confy::store("rucola", self.config_file.theme.as_str(), self.uistyles)?;
-        confy::store("rucola", self.config_file.style.as_str(), self.mdstyles)?;
         confy::store("rucola", "config", self.config_file)?;
 
         Ok(())
@@ -70,11 +60,6 @@ impl Config {
     /// Returns the user-selected UI styles.
     pub fn get_ui_styles(&self) -> &ui::UiStyles {
         &self.uistyles
-    }
-
-    /// Returns the user-selected Markdown styles.
-    pub fn get_md_styles(&self) -> &ui::MdStyles {
-        &self.mdstyles
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).

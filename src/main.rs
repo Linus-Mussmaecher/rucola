@@ -10,9 +10,6 @@ mod config;
 mod data;
 mod ui;
 use ui::screen;
-
-mod parser;
-
 /// The main state of the application.
 struct App {
     /// The currently displayed UI screen.
