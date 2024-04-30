@@ -4,7 +4,6 @@ pub use note::Note;
 mod note_statistics;
 pub use note_statistics::EnvironmentStats;
 pub use note_statistics::Filter;
-pub use note_statistics::NoteEnvStatistics;
 
 use std::{collections::HashMap, path::Path};
 
