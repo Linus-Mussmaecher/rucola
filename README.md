@@ -93,6 +93,19 @@ After that, the remaining filter string is fuzzy-matched with every note title, 
 The list can also be sorted by any column, and the sorting can be switched between ascending and descending at will.
 
 ### Single-Note Screen
+The single note screen shows a number of statistics about a single note:
+ - Word count
+ - Character count
+ - Tags
+ - Path
+
+But more importantly, displays for that note lists of...
+ - all *links*, i.e. notes linked to directly from the main note.
+ - all *level 2 links*, i.e. notes linked to from notes that are in the *links* list.
+ - all *backlinks*, i.e. notes that link directly to the main note.
+ - all *level 2 backlinks*, i.e. notes linking to notes in the *backlinks* list.
+
+This allows to you to get an overview about a note's connections in your network, and maybe find inspiration or unexpected correlations.
 
 ### Configuration
 Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
