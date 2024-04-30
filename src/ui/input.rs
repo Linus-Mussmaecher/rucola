@@ -6,5 +6,5 @@ pub enum Message {
     /// Switch to select screen
     SwitchSelect,
     /// Switches to displaying the (markdown) file at the given path
-    SwitchDisplay(crate::data::Note),
+    SwitchDisplay(String),
 }
