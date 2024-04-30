@@ -69,8 +69,9 @@ fn main() -> color_eyre::Result<()> {
                                 app.screen =
                                     Box::new(screen::SelectScreen::new(app.index.clone(), &config));
                             }
-                            ui::Message::SwitchDisplay(note) => {
-                                if let Ok(loaded_note) = screen::DisplayScreen::new(&note, &config)
+                            ui::Message::SwitchDisplay(id) => {
+                                if let Ok(loaded_note) =
+                                    screen::DisplayScreen::new(id, app.index.clone(), &config)
                                 {
                                     app.screen = Box::new(loaded_note);
                                 }

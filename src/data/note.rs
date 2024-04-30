@@ -3,7 +3,7 @@ use std::{fs, io, path};
 use regex::Regex;
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Note {
     /// The title of the note.
     pub name: String,
