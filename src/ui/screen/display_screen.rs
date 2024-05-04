@@ -11,14 +11,16 @@ pub struct DisplayScreen {
     note: data::Note,
     /// The used styling theme
     styles: ui::UiStyles,
-    /// Links from the note
-    l1links: Vec<(String, String)>,
-    /// Backlinks from the note
-    l1blinks: Vec<(String, String)>,
-    /// Links from links from the note
-    l2links: Vec<(String, String)>,
-    /// Backlinks from backlinks from the note
-    l2blinks: Vec<(String, String)>,
+    /// Array of all the link tables, in the order
+    /// - backlinks
+    /// - links
+    /// - l2 backlinks
+    /// - l2 links
+    links: [Vec<(String, String)>; 4],
+    /// The index of the note selected in each table
+    selected: [usize; 4],
+    /// The index of the primary table currently focused
+    foc_table: usize,
 }
 
 impl DisplayScreen {
@@ -27,12 +29,9 @@ impl DisplayScreen {
         note_id: String,
         index: Rc<HashMap<String, data::Note>>,
         config: &config::Config,
-    ) -> color_eyre::Result<Self> {
+    ) -> Option<Self> {
         // Cache the note
-        let note = index
-            .get(&note_id)
-            .cloned()
-            .ok_or(eyre::eyre!("No such note."))?;
+        let note = index.get(&note_id).cloned()?;
 
         // Get level 1 links
         let l1links = note
@@ -78,13 +77,12 @@ impl DisplayScreen {
             .map(|(key, value)| (key.to_owned(), value.name.to_owned()))
             .collect_vec();
 
-        Ok(Self {
+        Some(Self {
             styles: config.get_ui_styles().to_owned(),
-            l1links,
-            l1blinks,
-            l2links,
-            l2blinks,
+            links: [l1blinks, l1links, l2blinks, l2links],
             note,
+            selected: [0; 4],
+            foc_table: 0,
         })
     }
 }
@@ -164,30 +162,64 @@ impl super::Screen for DisplayScreen {
         Widget::render(title, title_area, buf);
         Widget::render(stats, stats_area, buf);
 
-        self.draw_link_table("Links", &self.l1links, links1, buf);
-        self.draw_link_table("Backlinks", &self.l1blinks, blinks1, buf);
-        self.draw_link_table("Level 2 Links", &self.l2links, links2, buf);
-        self.draw_link_table("Level 2 Backlinks", &self.l2blinks, blinks2, buf);
+        self.draw_link_table(0, "Backlinks", blinks1, buf);
+        self.draw_link_table(1, "Links", links1, buf);
+        self.draw_link_table(2, "Level 2 Backlinks", blinks2, buf);
+        self.draw_link_table(3, "Level 2 Links", links2, buf);
     }
 
     fn update(&mut self, key: crossterm::event::KeyEvent) -> Option<ui::Message> {
         match key.code {
+            // Quit with q
             crossterm::event::KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
+            // Go back to selection with f
             crossterm::event::KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
-
+            // Go up in the current list with k
+            crossterm::event::KeyCode::Up | crossterm::event::KeyCode::Char('K' | 'k') => {
+                self.selected
+                    .get_mut(self.foc_table)
+                    .map(|selected| *selected = selected.saturating_sub(1));
+                None
+            }
+            // Go down in the current list with j
+            crossterm::event::KeyCode::Down | crossterm::event::KeyCode::Char('J' | 'j') => {
+                self.selected.get_mut(self.foc_table).map(|selected| {
+                    *selected = selected.saturating_add(1).min(
+                        self.links
+                            .get(self.foc_table)
+                            .map(|list| list.len() - 1)
+                            .unwrap_or_default(),
+                    )
+                });
+                None
+            }
+            // Change list with Tab or L
+            crossterm::event::KeyCode::Tab | crossterm::event::KeyCode::Char('L' | 'l') => {
+                self.foc_table = (self.foc_table.wrapping_add(1)) % 4;
+                None
+            }
+            // Change list back with Shift+Tab or H
+            crossterm::event::KeyCode::BackTab | crossterm::event::KeyCode::Char('H' | 'h') => {
+                self.foc_table = (self.foc_table.wrapping_sub(1)) % 4;
+                None
+            }
+            // If enter, switch to that note
+            crossterm::event::KeyCode::Enter => {
+                self.links
+                    // get the correct table
+                    .get(self.foc_table)
+                    // unwrap the current index
+                    .and_then(|table| table.get(self.selected[self.foc_table]))
+                    // and extract the id
+                    .map(|(id, _name)| ui::Message::SwitchDisplay(id.to_owned()))
+            }
             _ => None,
         }
     }
 }
 
 impl DisplayScreen {
-    fn draw_link_table(
-        &self,
-        title: &str,
-        link_list: &[(String, String)],
-        area: Rect,
-        buf: &mut Buffer,
-    ) {
+    fn draw_link_table(&self, index: usize, title: &str, area: Rect, buf: &mut Buffer) {
         // Title
         let title = block::Title::from(Line::from(vec![Span::styled(
             title,
@@ -196,9 +228,15 @@ impl DisplayScreen {
         .alignment(Alignment::Left)
         .position(block::Position::Top);
 
+        let count = self
+            .links
+            .get(index)
+            .map(|list| list.len())
+            .unwrap_or_default();
+
         // Count
         let count = block::Title::from(Line::from(vec![Span::styled(
-            format!("{} Notes", link_list.len()),
+            format!("{} Note{}", count, if count == 1 { "" } else { "s" }),
             self.styles.text_style,
         )]))
         .alignment(Alignment::Right)
@@ -206,17 +244,37 @@ impl DisplayScreen {
 
         // Instructions
 
+        // State
+        let mut state = self
+            .selected
+            .get(index)
+            .map(|selected_index| {
+                TableState::new()
+                    .with_offset(selected_index.saturating_sub(5))
+                    .with_selected(if self.foc_table == index {
+                        Some(*selected_index)
+                    } else {
+                        None
+                    })
+            })
+            .unwrap_or_default();
+
         // Rows
-        let rows = link_list
-            .iter()
-            .map(|(_id, name)| Row::new(vec![Span::from(name)]))
-            .collect_vec();
+        let rows = self
+            .links
+            .get(index)
+            .map(|list| {
+                list.iter()
+                    .map(|(_id, name)| Row::new(vec![Span::from(name)]))
+                    .collect_vec()
+            })
+            .unwrap_or_default();
 
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
             .highlight_style(self.styles.selected_style)
             .block(Block::bordered().title(title).title(count));
 
-        Widget::render(table, area, buf);
+        StatefulWidget::render(table, area, buf, &mut state);
     }
 }
