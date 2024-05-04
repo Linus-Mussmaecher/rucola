@@ -29,20 +29,20 @@ impl DisplayScreen {
         config: &config::Config,
     ) -> color_eyre::Result<Self> {
         // Cache the note
-        let note = index.get(&note_id).cloned().unwrap_or_default();
+        let note = index
+            .get(&note_id)
+            .cloned()
+            .ok_or(eyre::eyre!("No such note."))?;
 
         // Get level 1 links
         let l1links = note
             .links
             .iter()
-            .map(|id| {
-                (
-                    id.to_owned(),
-                    index
-                        .get(id)
-                        .map(|note| note.name.clone())
-                        .unwrap_or_default(),
-                )
+            .flat_map(|id| {
+                index
+                    .get(id)
+                    .map(|note| note.name.clone())
+                    .map(|name| (id.to_owned(), name))
             })
             // remove duplicates
             .collect::<std::collections::HashSet<_>>()
@@ -54,14 +54,11 @@ impl DisplayScreen {
             .iter()
             .filter_map(|(id, _name)| index.get(id).map(|note| &note.links))
             .flatten()
-            .map(|id| {
-                (
-                    id.to_owned(),
-                    index
-                        .get(id)
-                        .map(|note| note.name.clone())
-                        .unwrap_or_default(),
-                )
+            .flat_map(|id| {
+                index
+                    .get(id)
+                    .map(|note| note.name.clone())
+                    .map(|name| (id.to_owned(), name))
             })
             // remove duplicates
             .collect::<std::collections::HashSet<_>>()
