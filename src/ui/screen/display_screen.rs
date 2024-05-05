@@ -187,7 +187,7 @@ impl super::Screen for DisplayScreen {
                     *selected = selected.saturating_add(1).min(
                         self.links
                             .get(self.foc_table)
-                            .map(|list| list.len() - 1)
+                            .map(|list| list.len().saturating_sub(1))
                             .unwrap_or_default(),
                     )
                 });
