@@ -194,12 +194,16 @@ impl super::Screen for DisplayScreen {
                 None
             }
             // Change list with Tab or L
-            crossterm::event::KeyCode::Tab | crossterm::event::KeyCode::Char('L' | 'l') => {
+            crossterm::event::KeyCode::Tab
+            | crossterm::event::KeyCode::Right
+            | crossterm::event::KeyCode::Char('L' | 'l') => {
                 self.foc_table = (self.foc_table.wrapping_add(1)) % 4;
                 None
             }
             // Change list back with Shift+Tab or H
-            crossterm::event::KeyCode::BackTab | crossterm::event::KeyCode::Char('H' | 'h') => {
+            crossterm::event::KeyCode::BackTab
+            | crossterm::event::KeyCode::Left
+            | crossterm::event::KeyCode::Char('H' | 'h') => {
                 self.foc_table = (self.foc_table.wrapping_sub(1)) % 4;
                 None
             }
