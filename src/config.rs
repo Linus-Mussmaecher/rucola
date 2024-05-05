@@ -11,6 +11,8 @@ struct ConfigFile {
     vault_path: Option<String>,
     /// Selected theme
     theme: String,
+    /// The editor to use for notes
+    editor: Option<String>,
 }
 
 impl Default for ConfigFile {
@@ -19,6 +21,7 @@ impl Default for ConfigFile {
             dynamic_filter: true,
             vault_path: None,
             theme: "default_light_theme".to_string(),
+            editor: None,
         }
     }
 }
@@ -60,6 +63,11 @@ impl Config {
     /// Returns the user-selected UI styles.
     pub fn get_ui_styles(&self) -> &ui::UiStyles {
         &self.uistyles
+    }
+
+    /// Return the editor supposed to be used with notes.
+    pub fn get_editor(&self) -> Option<&str> {
+        self.config_file.editor.as_deref()
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
