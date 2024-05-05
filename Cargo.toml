@@ -11,6 +11,9 @@ crossterm = "0.27.0"
 ratatui = {version = "0.26.1", features = ["serde"]}
 ratatui-widgets = "^0.1.4"
 tui-textarea = "0.4.0"
+# Command line parsing
+clap = {version = "^4.5", features = ["derive"]}
+expanduser = "^1.2"
 # Parsing
 regex = "1.10.3"
 walkdir = "2.5.0"
@@ -19,8 +22,6 @@ itertools = "^0.12"
 # Error handling
 eyre = "0.6.12"
 color-eyre = "0.5.7"
-# Rendering
-# mathjax = "0.1.1"
 # Config
 serde = { version = "1.0", features = ["derive"] }
 confy = "^0.6"

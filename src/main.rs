@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::{
     event::{self, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -18,6 +19,17 @@ struct App {
     index: Rc<HashMap<String, data::Note>>,
 }
 
+/// CLI arguments
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Arguments {
+    /// The target folder
+    target_folder: Option<String>,
+    /// Number of times to greet
+    #[arg(short, long)]
+    style: Option<String>,
+}
+
 /// Main function
 fn main() -> color_eyre::Result<()> {
     // Initialize terminal
@@ -32,14 +44,32 @@ fn main() -> color_eyre::Result<()> {
         );
     })?;
 
-    // Initialize state
-
+    // Read config file
     let config = config::Config::load().unwrap_or_default();
+    // Read arguments
+    let arguments = Arguments::parse();
 
-    let index = Rc::new(data::create_index(std::path::Path::new(
-        &config.get_vault_path().unwrap_or("./"),
-    )));
+    // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
+    let path = expanduser::expanduser(
+        // First, try to look for a given argument
+        arguments
+            .target_folder
+            // If none was given, look in the config file.
+            .unwrap_or(
+                config
+                    .get_vault_path()
+                    // If none was given, just take the current directory.
+                    .unwrap_or(".")
+                    .to_string(),
+            ),
+    )
+    // If expanduser fails for some reason, take the current directory.
+    .unwrap_or_default();
 
+    // Index all files in path
+    let index = Rc::new(data::create_index(std::path::Path::new(&path)));
+
+    // Initialize app state
     let mut app = App {
         screen: Box::new(screen::SelectScreen::new(index.clone(), &config)),
         index,

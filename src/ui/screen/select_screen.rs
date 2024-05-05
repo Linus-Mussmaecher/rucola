@@ -274,7 +274,7 @@ impl super::Screen for SelectScreen {
                     self.selected = self
                         .selected
                         .saturating_add(1)
-                        .min(self.local_stats.filtered_stats.len() - 1);
+                        .min(self.local_stats.filtered_stats.len().saturating_sub(1));
                 }
                 // Up
                 KeyCode::Char('k' | 'K') | KeyCode::Up => {
