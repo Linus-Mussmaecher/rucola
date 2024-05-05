@@ -2,6 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 
 use crate::{config, data, ui};
 
+use crossterm::event::KeyCode;
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
@@ -9,8 +10,8 @@ use ratatui::{prelude::*, widgets::*};
 pub struct DisplayScreen {
     /// The internal stats of the displayed note.
     note: data::Note,
-    /// The used styling theme
-    styles: ui::UiStyles,
+    /// The used config
+    config: config::Config,
     /// Array of all the link tables, in the order
     /// - backlinks
     /// - links
@@ -78,7 +79,7 @@ impl DisplayScreen {
             .collect_vec();
 
         Some(Self {
-            styles: config.get_ui_styles().to_owned(),
+            config: config.clone(),
             links: [l1blinks, l1links, l2blinks, l2links],
             note,
             selected: [0; 4],
@@ -93,6 +94,8 @@ impl super::Screen for DisplayScreen {
         area: ratatui::prelude::layout::Rect,
         buf: &mut ratatui::prelude::buffer::Buffer,
     ) {
+        // Cache style
+        let styles = self.config.get_ui_styles();
         // Generate vertical layout
         let vertical = Layout::vertical([
             Constraint::Length(3),
@@ -106,7 +109,7 @@ impl super::Screen for DisplayScreen {
         // Title
         let title = Line::from(vec![Span::styled(
             self.note.name.as_str(),
-            self.styles.title_style,
+            styles.title_style,
         )])
         .alignment(Alignment::Center);
 
@@ -118,8 +121,8 @@ impl super::Screen for DisplayScreen {
             .enumerate()
             .map(|(index, s)| {
                 [
-                    Span::styled(if index == 0 { "" } else { ", " }, self.styles.text_style),
-                    Span::styled(s.as_str(), self.styles.subtitle_style),
+                    Span::styled(if index == 0 { "" } else { ", " }, styles.text_style),
+                    Span::styled(s.as_str(), styles.subtitle_style),
                 ]
             })
             .flatten()
@@ -148,9 +151,20 @@ impl super::Screen for DisplayScreen {
             Constraint::Min(20),
         ];
 
+        let instructions_top = block::Title::from(Line::from(vec![
+            Span::styled("E", styles.hotkey_style),
+            Span::styled("dit Note", styles.text_style),
+        ]))
+        .alignment(Alignment::Right)
+        .position(block::Position::Top);
+
         let stats = Table::new(stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Statistics".set_style(self.styles.title_style)));
+            .block(
+                Block::bordered()
+                    .title("Statistics".set_style(styles.title_style))
+                    .title(instructions_top),
+            );
 
         // === All the links ===
 
@@ -171,18 +185,18 @@ impl super::Screen for DisplayScreen {
     fn update(&mut self, key: crossterm::event::KeyEvent) -> Option<ui::Message> {
         match key.code {
             // Quit with q
-            crossterm::event::KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
+            KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
             // Go back to selection with f
-            crossterm::event::KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
+            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
             // Go up in the current list with k
-            crossterm::event::KeyCode::Up | crossterm::event::KeyCode::Char('K' | 'k') => {
+            KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected
                     .get_mut(self.foc_table)
                     .map(|selected| *selected = selected.saturating_sub(1));
                 None
             }
             // Go down in the current list with j
-            crossterm::event::KeyCode::Down | crossterm::event::KeyCode::Char('J' | 'j') => {
+            KeyCode::Down | KeyCode::Char('J' | 'j') => {
                 self.selected.get_mut(self.foc_table).map(|selected| {
                     *selected = selected.saturating_add(1).min(
                         self.links
@@ -194,21 +208,17 @@ impl super::Screen for DisplayScreen {
                 None
             }
             // Change list with Tab or L
-            crossterm::event::KeyCode::Tab
-            | crossterm::event::KeyCode::Right
-            | crossterm::event::KeyCode::Char('L' | 'l') => {
+            KeyCode::Tab | KeyCode::Right | KeyCode::Char('L' | 'l') => {
                 self.foc_table = (self.foc_table.wrapping_add(1)) % 4;
                 None
             }
             // Change list back with Shift+Tab or H
-            crossterm::event::KeyCode::BackTab
-            | crossterm::event::KeyCode::Left
-            | crossterm::event::KeyCode::Char('H' | 'h') => {
+            KeyCode::BackTab | KeyCode::Left | KeyCode::Char('H' | 'h') => {
                 self.foc_table = (self.foc_table.wrapping_sub(1)) % 4;
                 None
             }
             // If enter, switch to that note
-            crossterm::event::KeyCode::Enter => {
+            KeyCode::Enter => {
                 self.links
                     // get the correct table
                     .get(self.foc_table)
@@ -217,6 +227,20 @@ impl super::Screen for DisplayScreen {
                     // and extract the id
                     .map(|(id, _name)| ui::Message::SwitchDisplay(id.to_owned()))
             }
+            // Open selected item in editor
+            KeyCode::Char('e' | 'E') => {
+                let path = std::path::Path::new(&self.note.path);
+                Some(ui::Message::OpenExternalCommand(
+                    // check if there is an application configured
+                    if let Some(application) = self.config.get_editor() {
+                        // default configures -> create a command for that one
+                        open::with_command(path, application)
+                    } else {
+                        // else -> get system defaults, take the first one
+                        open::commands(path).remove(0)
+                    },
+                ))
+            }
             _ => None,
         }
     }
@@ -224,13 +248,12 @@ impl super::Screen for DisplayScreen {
 
 impl DisplayScreen {
     fn draw_link_table(&self, index: usize, title: &str, area: Rect, buf: &mut Buffer) {
+        // Cache style
+        let styles = self.config.get_ui_styles();
         // Title
-        let title = block::Title::from(Line::from(vec![Span::styled(
-            title,
-            self.styles.title_style,
-        )]))
-        .alignment(Alignment::Left)
-        .position(block::Position::Top);
+        let title = block::Title::from(Line::from(vec![Span::styled(title, styles.title_style)]))
+            .alignment(Alignment::Left)
+            .position(block::Position::Top);
 
         let count = self
             .links
@@ -241,7 +264,7 @@ impl DisplayScreen {
         // Count
         let count = block::Title::from(Line::from(vec![Span::styled(
             format!("{} Note{}", count, if count == 1 { "" } else { "s" }),
-            self.styles.text_style,
+            styles.text_style,
         )]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
@@ -276,7 +299,7 @@ impl DisplayScreen {
 
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
-            .highlight_style(self.styles.selected_style)
+            .highlight_style(styles.selected_style)
             .block(Block::bordered().title(title).title(count));
 
         StatefulWidget::render(table, area, buf, &mut state);

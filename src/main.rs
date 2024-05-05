@@ -34,7 +34,8 @@ struct Arguments {
 fn main() -> color_eyre::Result<()> {
     // Initialize terminal
 
-    let mut terminal = init_hooks_and_terminal()?;
+    init_hooks()?;
+    let mut terminal = init_terminal()?;
 
     // Draw 'loading' screen
     terminal.draw(|frame| {
@@ -77,13 +78,23 @@ fn main() -> color_eyre::Result<()> {
 
     // Main loop
 
+    // Wether there is currently a full-screen redraw requested
+    let mut redraw_requested = false;
+
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame| {
             let area = frame.size();
             let buf = frame.buffer_mut();
+            buf.reset();
 
-            app.screen.draw(area, buf);
+            // If a redraw is requested, fill the screen with red for 1 frame
+            if redraw_requested {
+                Widget::render(ratatui::widgets::Block::new().red(), area, buf);
+                redraw_requested = false;
+            } else {
+                app.screen.draw(area, buf);
+            }
         })?;
 
         // Inform the current screen of events
@@ -94,7 +105,9 @@ fn main() -> color_eyre::Result<()> {
                     // Register input and get message.
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
+                            // Quit => Quit program
                             ui::Message::Quit => break 'main,
+                            // Switches => Replace the current screen with another one
                             ui::Message::SwitchSelect => {
                                 app.screen =
                                     Box::new(screen::SelectScreen::new(app.index.clone(), &config));
@@ -105,6 +118,14 @@ fn main() -> color_eyre::Result<()> {
                                 {
                                     app.screen = Box::new(loaded_note);
                                 }
+                            }
+                            ui::Message::OpenExternalCommand(mut command) => {
+                                // Restore the terminal
+                                restore_terminal()?;
+                                // Execute the given command
+                                command.status()?;
+                                // Re-enter the application
+                                terminal = init_terminal()?;
                             }
                         }
                     }
@@ -118,7 +139,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 /// Ratatui boilerplate to set up panic hooks and put the terminal into a TUI state
-fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
+fn init_hooks() -> color_eyre::Result<()> {
     // Step 1: Set panic hooks (ratatui tutorial boilerplate)
 
     let (panic, error) = color_eyre::config::HookBuilder::default().into_hooks();
@@ -132,7 +153,10 @@ fn init_hooks_and_terminal() -> color_eyre::Result<Terminal<impl ratatui::backen
         let _ = restore_terminal();
         panic(info);
     }));
+    Ok(())
+}
 
+fn init_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
     // Step 2: Initialize terminal
 
     stdout().execute(EnterAlternateScreen)?;

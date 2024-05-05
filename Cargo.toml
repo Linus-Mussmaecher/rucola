@@ -9,11 +9,12 @@ edition = "2021"
 # General TUI
 crossterm = "0.27.0"
 ratatui = {version = "0.26.1", features = ["serde"]}
-ratatui-widgets = "^0.1.4"
 tui-textarea = "0.4.0"
 # Command line parsing
 clap = {version = "^4.5", features = ["derive"]}
 expanduser = "^1.2"
+# Opening
+open = "^5"
 # Parsing
 regex = "1.10.3"
 walkdir = "2.5.0"

@@ -38,8 +38,9 @@ pub struct SelectScreen {
     local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: data::EnvironmentStats,
-    /// The styles used on this screen.
-    styles: ui::UiStyles,
+
+    /// The config used.
+    config: config::Config,
 
     // === UI (state) ===
     /// The text area to type in filters.
@@ -72,7 +73,7 @@ impl SelectScreen {
             index,
             text_area: TextArea::default(),
             mode: SelectMode::Select,
-            styles: config.get_ui_styles().to_owned(),
+            config: config.clone(),
             all_tags: false,
             sorting: SortingMode::Name,
             sorting_asc: true,
@@ -89,16 +90,18 @@ impl SelectScreen {
 
     /// Styling of TextArea extracted from constructor to keep it clean.
     fn style_text_area(&mut self) {
+        let styles = self.config.get_ui_styles();
+
         // The actual title
         let title_top = block::Title::from(Line::from(vec![
-            Span::styled("F", self.styles.hotkey_style),
-            Span::styled("ilter", self.styles.title_style),
+            Span::styled("F", styles.hotkey_style),
+            Span::styled("ilter", styles.title_style),
         ]));
 
         // The hotkey instructions at the bottom.
         let instructions = block::Title::from(Line::from(vec![
-            Span::styled("C", self.styles.hotkey_style),
-            Span::styled("lear filter", self.styles.text_style),
+            Span::styled("C", styles.hotkey_style),
+            Span::styled("lear filter", styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
@@ -106,17 +109,16 @@ impl SelectScreen {
         let instructions_bot = block::Title::from(Line::from(vec![
             Span::styled(
                 if self.all_tags { "All " } else { "Any " },
-                self.styles.text_style,
+                styles.text_style,
             ),
-            Span::styled("T", self.styles.hotkey_style),
-            Span::styled("ags", self.styles.text_style),
+            Span::styled("T", styles.hotkey_style),
+            Span::styled("ags", styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
-        self.text_area.set_style(self.styles.input_style);
-        self.text_area
-            .set_cursor_line_style(self.styles.input_style);
+        self.text_area.set_style(styles.input_style);
+        self.text_area.set_cursor_line_style(styles.input_style);
 
         self.text_area.set_block(
             Block::bordered()
@@ -284,13 +286,37 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('G') => {
                     self.selected = 0;
                 }
-                // Open selected item
+                // Open selected item in display view
                 KeyCode::Enter => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
                         return Some(crate::ui::input::Message::SwitchDisplay(
                             env_stats.id.clone(),
                         ));
                     }
+                }
+                // Open selected item in editor
+                KeyCode::Char('e' | 'E') => {
+                    return self
+                        // get the selected item in the list for the id
+                        .local_stats
+                        .filtered_stats
+                        .get(self.selected)
+                        // use this id in the index to get the note
+                        .and_then(|env_stats| self.index.get(&env_stats.id))
+                        // get the path from the note
+                        .map(|note| {
+                            let path = std::path::Path::new(&note.path);
+                            ui::Message::OpenExternalCommand(
+                                // check if there is an application configured
+                                if let Some(application) = self.config.get_editor() {
+                                    // default configures -> create a command for that one
+                                    open::with_command(path, application)
+                                } else {
+                                    // else -> get system defaults, take the first one
+                                    open::commands(path).remove(0)
+                                },
+                            )
+                        });
                 }
                 _ => {}
             },
@@ -320,6 +346,9 @@ impl super::Screen for SelectScreen {
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
+        // Cache styles
+
+        let styles = self.config.get_ui_styles();
         // Vertical layout
 
         let vertical = Layout::vertical([
@@ -373,7 +402,7 @@ impl super::Screen for SelectScreen {
 
         let global_stats = Table::new(global_stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
+            .block(Block::bordered().title("Global Statistics".set_style(styles.title_style)));
 
         //  === Local stats ===
 
@@ -452,7 +481,7 @@ impl super::Screen for SelectScreen {
 
         let local_stats = Table::new(local_stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
+            .block(Block::bordered().title("Local Statistics".set_style(styles.title_style)));
 
         // === Filter area ===
         // Mostly styled on creation
@@ -501,16 +530,18 @@ impl super::Screen for SelectScreen {
             .collect::<Vec<Row>>();
 
         let instructions_bot = block::Title::from(Line::from(vec![
+            Span::styled("E", styles.hotkey_style),
+            Span::styled("dit Note──", styles.text_style),
             Span::styled(
                 if self.sorting_asc {
                     "Ascending "
                 } else {
                     "Descending "
                 },
-                self.styles.text_style,
+                styles.text_style,
             ),
-            Span::styled("S", self.styles.hotkey_style),
-            Span::styled("orting", self.styles.text_style),
+            Span::styled("S", styles.hotkey_style),
+            Span::styled("orting", styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
@@ -519,41 +550,41 @@ impl super::Screen for SelectScreen {
             .column_spacing(1)
             .header(Row::new(vec![
                 Line::from(vec![
-                    Span::styled("N", self.styles.hotkey_style),
-                    Span::styled("ame", self.styles.title_style),
+                    Span::styled("N", styles.hotkey_style),
+                    Span::styled("ame", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("W", self.styles.hotkey_style),
-                    Span::styled("ords", self.styles.title_style),
+                    Span::styled("W", styles.hotkey_style),
+                    Span::styled("ords", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("Ch", self.styles.title_style),
-                    Span::styled("a", self.styles.hotkey_style),
-                    Span::styled("rs", self.styles.title_style),
+                    Span::styled("Ch", styles.title_style),
+                    Span::styled("a", styles.hotkey_style),
+                    Span::styled("rs", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("Global", self.styles.title_style),
-                    Span::styled("O", self.styles.hotkey_style),
-                    Span::styled("ut", self.styles.title_style),
+                    Span::styled("Global", styles.title_style),
+                    Span::styled("O", styles.hotkey_style),
+                    Span::styled("ut", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("LocalO", self.styles.title_style),
-                    Span::styled("u", self.styles.hotkey_style),
-                    Span::styled("t", self.styles.title_style),
+                    Span::styled("LocalO", styles.title_style),
+                    Span::styled("u", styles.hotkey_style),
+                    Span::styled("t", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("G", self.styles.hotkey_style),
-                    Span::styled("lobalIn", self.styles.title_style),
+                    Span::styled("G", styles.hotkey_style),
+                    Span::styled("lobalIn", styles.title_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("L", self.styles.hotkey_style),
-                    Span::styled("ocalIn", self.styles.title_style),
+                    Span::styled("L", styles.hotkey_style),
+                    Span::styled("ocalIn", styles.title_style),
                 ]),
             ]))
-            .highlight_style(self.styles.selected_style)
+            .highlight_style(styles.selected_style)
             .block(
                 Block::bordered()
-                    .title("Notes".set_style(self.styles.title_style))
+                    .title("Notes".set_style(styles.title_style))
                     .title(instructions_bot),
             );
 

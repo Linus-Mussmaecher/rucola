@@ -1,5 +1,5 @@
 /// Messages sent from the user to the application
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Message {
     /// Quit the application
     Quit,
@@ -7,4 +7,6 @@ pub enum Message {
     SwitchSelect,
     /// Switches to displaying the (markdown) file at the given path
     SwitchDisplay(String),
+    /// Restore the terminal, execute the given command and re-enter
+    OpenExternalCommand(std::process::Command),
 }
