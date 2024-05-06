@@ -1,6 +1,20 @@
+use std::path;
+
+use clap::Parser;
 use eyre::Context;
 
 use crate::ui;
+
+/// CLI arguments
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Arguments {
+    /// The target folder
+    target_folder: Option<String>,
+    /// Number of times to greet
+    #[arg(short, long)]
+    style: Option<String>,
+}
 
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -8,7 +22,7 @@ struct ConfigFile {
     /// Wether or not the select view filters while typing or only on enter.
     dynamic_filter: bool,
     /// Path to the vault to index.
-    vault_path: Option<String>,
+    vault_path: Option<path::PathBuf>,
     /// Selected theme
     theme: String,
     /// The editor to use for notes
@@ -38,9 +52,29 @@ pub struct Config {
 impl Config {
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
     pub fn load() -> color_eyre::Result<Self> {
-        let config_file: ConfigFile = confy::load("rucola", "config")
+        // === Step 1: Load config file ===
+        let mut config_file: ConfigFile = confy::load("rucola", "config")
             .with_context(|| "Attempting to write/read config file.")?;
 
+        // === Step 2: Read command line arguments
+        let arguments = Arguments::parse();
+
+        // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
+        if let Some(arg_path_buf) = arguments
+            .target_folder
+            .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
+        {
+            config_file.vault_path = Some(arg_path_buf);
+        } else {
+            config_file.vault_path = config_file.vault_path.and_then(|conf_path_buf| {
+                expanduser::expanduser(conf_path_buf.to_string_lossy().to_string()).ok()
+            })
+        }
+
+        // Check for a command line argument for the style
+        config_file.theme = arguments.style.unwrap_or(config_file.theme);
+
+        // === Step 3: Load style file ===
         let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())
             .with_context(|| "Attempting to write/read theme file.")?;
 
@@ -76,7 +110,10 @@ impl Config {
     }
 
     /// Returns the default vault path.
-    pub fn get_vault_path(&self) -> Option<&str> {
-        self.config_file.vault_path.as_deref()
+    pub fn get_vault_path(&self) -> std::path::PathBuf {
+        self.config_file
+            .vault_path
+            .clone()
+            .unwrap_or(path::PathBuf::from("."))
     }
 }
