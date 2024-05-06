@@ -13,6 +13,8 @@ enum SelectMode {
     Select,
     /// Typing into the filter box.
     Filter,
+    /// Typing into the create box.
+    Create,
 }
 
 /// Describes the current sorting mode of the displayed list.
@@ -44,7 +46,9 @@ pub struct SelectScreen {
 
     // === UI (state) ===
     /// The text area to type in filters.
-    text_area: TextArea<'static>,
+    filter_area: TextArea<'static>,
+    /// The text area used to create new notes.
+    create_area: TextArea<'static>,
     /// Current input mode
     mode: SelectMode,
     /// Current state of the list
@@ -71,7 +75,8 @@ impl SelectScreen {
             local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             index,
-            text_area: TextArea::default(),
+            filter_area: TextArea::default(),
+            create_area: TextArea::default(),
             mode: SelectMode::Select,
             config: config.clone(),
             all_tags: false,
@@ -91,6 +96,8 @@ impl SelectScreen {
     /// Styling of TextArea extracted from constructor to keep it clean.
     fn style_text_area(&mut self) {
         let styles = self.config.get_ui_styles();
+
+        // === Filter ===
 
         // The actual title
         let title_top = block::Title::from(Line::from(vec![
@@ -117,21 +124,38 @@ impl SelectScreen {
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
-        self.text_area.set_style(styles.input_style);
-        self.text_area.set_cursor_line_style(styles.input_style);
+        // Apply default styles to the filter area
 
-        self.text_area.set_block(
+        self.filter_area.set_style(styles.input_style);
+        self.filter_area.set_cursor_line_style(styles.input_style);
+
+        self.filter_area.set_block(
             Block::bordered()
                 .title(title_top)
                 .title(instructions)
                 .title(instructions_bot),
         );
+
+        // === Create ===
+        // The title
+        let title_top = block::Title::from(Line::from(vec![Span::styled(
+            "Enter note name...",
+            styles.title_style,
+        )]));
+
+        // Apply default styles to the create area
+
+        self.create_area.set_style(styles.input_style);
+        self.create_area.set_cursor_line_style(styles.input_style);
+
+        self.create_area
+            .set_block(Block::bordered().title(title_top));
     }
 
     /// Creates a filter from the current content of the text area.
     fn filter_from_input(&self) -> data::Filter {
         // We should only have one line, read that one
-        if let Some(line) = self.text_area.lines().first() {
+        if let Some(line) = self.filter_area.lines().first() {
             let mut filter = data::Filter::default();
             // default filter is this line with all white space removed
             filter.title = line.chars().filter(|c| !c.is_whitespace()).collect();
@@ -231,10 +255,14 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('f' | 'F') => {
                     self.mode = SelectMode::Filter;
                 }
+                // N: Go to create mode
+                KeyCode::Char('n' | 'N') => {
+                    self.mode = SelectMode::Create;
+                }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
-                    self.text_area.select_all();
-                    self.text_area.cut();
+                    self.filter_area.select_all();
+                    self.filter_area.cut();
                     self.filter(data::Filter::default());
                 }
                 // Q: Quit application
@@ -249,7 +277,7 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('s' | 'S') => {
                     self.set_mode_and_maybe_sort(None, !self.sorting_asc);
                 }
-                KeyCode::Char('n' | 'N') => {
+                KeyCode::Char('m' | 'M') => {
                     self.set_mode_and_maybe_sort(SortingMode::Name, true);
                 }
                 KeyCode::Char('w' | 'W') => {
@@ -264,7 +292,7 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('u' | 'U') => {
                     self.set_mode_and_maybe_sort(SortingMode::LocalOutLinks, false);
                 }
-                KeyCode::Char('g') => {
+                KeyCode::Char('g' | 'G') => {
                     self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
                 }
                 KeyCode::Char('l' | 'L') => {
@@ -283,7 +311,7 @@ impl super::Screen for SelectScreen {
                     self.selected = self.selected.saturating_sub(1);
                 }
                 // To the start
-                KeyCode::Char('G') => {
+                KeyCode::Char('0') => {
                     self.selected = 0;
                 }
                 // Open selected item in display view
@@ -333,10 +361,24 @@ impl super::Screen for SelectScreen {
                     // All other key events are passed on to the text area, then the filter is immediately applied
                     _ => {
                         // Else -> Pass on to the text area
-                        self.text_area.input_without_shortcuts(key);
+                        self.filter_area.input_without_shortcuts(key);
                         if self.dynamic_filter {
                             self.filter(self.filter_from_input());
                         }
+                    }
+                };
+            }
+            // Create mode: Type in note name
+            SelectMode::Create => {
+                match key.code {
+                    // Escape or Enter: Back to main mode
+                    KeyCode::Esc | KeyCode::Enter => {
+                        self.mode = SelectMode::Select;
+                    }
+                    // All other key events are passed on to the text area, then the filter is immediately applied
+                    _ => {
+                        // Else -> Pass on to the text area
+                        self.create_area.input_without_shortcuts(key);
                     }
                 };
             }
@@ -470,7 +512,7 @@ impl super::Screen for SelectScreen {
         // === Filter area ===
 
         // Mostly styled on creation
-        let filter_input = self.text_area.widget();
+        let filter_input = self.filter_area.widget();
 
         // === Table Area ===
 
@@ -504,7 +546,7 @@ impl super::Screen for SelectScreen {
             // If not in filter mode, show a selected element
             .with_selected(match self.mode {
                 SelectMode::Select => Some(self.selected),
-                SelectMode::Filter => None,
+                SelectMode::Filter | SelectMode::Create => None,
             });
 
         // Generate row data
@@ -554,8 +596,9 @@ impl super::Screen for SelectScreen {
             // Add Headers
             .header(Row::new(vec![
                 Line::from(vec![
-                    Span::styled("N", styles.hotkey_style),
-                    Span::styled("ame", styles.title_style),
+                    Span::styled("Na", styles.title_style),
+                    Span::styled("m", styles.hotkey_style),
+                    Span::styled("e", styles.title_style),
                 ]),
                 Line::from(vec![
                     Span::styled("W", styles.hotkey_style),
@@ -593,6 +636,11 @@ impl super::Screen for SelectScreen {
                     .title(instructions_bot),
             );
 
+        // === Create pop-up
+
+        // Mostly styled on creation
+        let create_input = self.create_area.widget();
+
         // === Rendering ===
 
         Widget::render(filter_input, filter_area, buf);
@@ -600,6 +648,26 @@ impl super::Screen for SelectScreen {
         Widget::render(global_stats, global_stats_area, buf);
         Widget::render(local_stats, local_stats_area, buf);
 
-        StatefulWidget::render(table, table_area, buf, &mut state)
+        StatefulWidget::render(table, table_area, buf, &mut state);
+
+        // Render the pop up
+        if self.mode == SelectMode::Create {
+            let popup_layout = Layout::vertical([
+                Constraint::Fill(1),
+                Constraint::Length(3),
+                Constraint::Fill(1),
+            ])
+            .split(area);
+
+            let create_area = Layout::horizontal([
+                Constraint::Fill(1),
+                Constraint::Percentage(60),
+                Constraint::Fill(1),
+            ])
+            .split(popup_layout[1])[1];
+
+            Widget::render(Clear, create_area, buf);
+            Widget::render(create_input, create_area, buf);
+        }
     }
 }
