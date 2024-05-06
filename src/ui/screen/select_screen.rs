@@ -371,8 +371,17 @@ impl super::Screen for SelectScreen {
             // Create mode: Type in note name
             SelectMode::Create => {
                 match key.code {
-                    // Escape or Enter: Back to main mode
-                    KeyCode::Esc | KeyCode::Enter => {
+                    // Escape: Back to main mode, clear the buffer
+                    KeyCode::Esc => {
+                        self.filter_area.select_all();
+                        self.filter_area.cut();
+                        self.mode = SelectMode::Select;
+                    }
+                    // Enter: Create note, back to main mode, clear teh buffer
+                    KeyCode::Enter => {
+                        self.filter_area.select_all();
+                        self.filter_area.cut();
+                        // TODO: Actually create the note
                         self.mode = SelectMode::Select;
                     }
                     // All other key events are passed on to the text area, then the filter is immediately applied
