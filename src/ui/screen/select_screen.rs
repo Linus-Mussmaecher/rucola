@@ -454,10 +454,20 @@ impl super::Screen for SelectScreen {
 
         let local_stats_rows = [
             Row::new(vec![
-                "Total notes:",
-                &local_strings[0],
-                "Total words:",
-                &local_strings[1],
+                Cell::from("Total notes:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.note_count_total,
+                    self.local_stats.note_count_total * 100
+                        / self.global_stats.note_count_total.max(1)
+                )),
+                Cell::from("Total words:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.word_count_total,
+                    self.local_stats.word_count_total * 100
+                        / self.global_stats.word_count_total.max(1)
+                )),
             ]),
             Row::new(vec![
                 "Total unique tags:",
@@ -484,6 +494,7 @@ impl super::Screen for SelectScreen {
             .block(Block::bordered().title("Local Statistics".set_style(styles.title_style)));
 
         // === Filter area ===
+
         // Mostly styled on creation
         let filter_input = self.text_area.widget();
 
@@ -499,12 +510,25 @@ impl super::Screen for SelectScreen {
             Constraint::Length(10),
         ];
 
-        let top_ind = self.selected.saturating_sub(5);
-
+        // Generate state from this top_ind and the selected element
         let mut state = TableState::new()
-            .with_offset(0)
+            .with_offset(
+                self.selected
+                    // try to keep element at above 1/3rd of the total height
+                    .saturating_sub(table_area.height as usize / 3)
+                    .min(
+                        // but when reaching the end of the list, still scroll down
+                        self.local_stats
+                            .filtered_stats
+                            .len()
+                            .saturating_sub(table_area.height as usize)
+                            // correct for table edges
+                            .saturating_add(3),
+                    ),
+            )
+            // If not in filter mode, show a selected element
             .with_selected(match self.mode {
-                SelectMode::Select => Some(self.selected - top_ind),
+                SelectMode::Select => Some(self.selected),
                 SelectMode::Filter => None,
             });
 
@@ -512,8 +536,6 @@ impl super::Screen for SelectScreen {
             .local_stats
             .filtered_stats
             .iter()
-            .skip(top_ind)
-            .take(table_area.height as usize)
             .flat_map(|env_stats| {
                 self.index.get(&env_stats.id).map(|note| {
                     Row::new(vec![
