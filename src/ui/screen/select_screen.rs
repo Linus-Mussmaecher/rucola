@@ -347,10 +347,9 @@ impl super::Screen for SelectScreen {
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
         // Cache styles
-
         let styles = self.config.get_ui_styles();
-        // Vertical layout
 
+        // Vertical layout
         let vertical = Layout::vertical([
             Constraint::Length(5),
             Constraint::Length(6),
@@ -358,8 +357,10 @@ impl super::Screen for SelectScreen {
             Constraint::Min(6),
         ]);
 
+        // Generate areas
         let [global_stats_area, local_stats_area, filter_area, table_area] = vertical.areas(area);
 
+        // Horizontal layout of upper boxes
         let stats_widths = [
             Constraint::Length(20),
             Constraint::Length(16),
@@ -370,87 +371,33 @@ impl super::Screen for SelectScreen {
 
         //  === Global stats ===
 
-        let global_strings = [
-            format!("{:7}", self.global_stats.note_count_total),
-            format!("{:7}", self.global_stats.word_count_total),
-            format!("{:7}", self.global_stats.tag_count_total),
-            format!("{:7}", self.global_stats.char_count_total),
-            format!("{:7}", self.global_stats.local_local_links),
-            format!("{:7}", self.global_stats.broken_links),
-        ];
-
         let global_stats_rows = [
             Row::new(vec![
-                "Total notes:",
-                &global_strings[0],
-                "Total words:",
-                &global_strings[1],
+                Cell::from("Total notes:"),
+                Cell::from(format!("{:7}", self.global_stats.note_count_total)),
+                Cell::from("Total words:"),
+                Cell::from(format!("{:7}", self.global_stats.word_count_total)),
             ]),
             Row::new(vec![
-                "Total unique tags:",
-                &global_strings[2],
-                "Total characters:",
-                &global_strings[3],
+                Cell::from("Total unique tags:"),
+                Cell::from(format!("{:7}", self.global_stats.tag_count_total)),
+                Cell::from("Total characters:"),
+                Cell::from(format!("{:7}", self.global_stats.char_count_total)),
             ]),
             Row::new(vec![
-                "Total links:",
-                &global_strings[4],
-                "Broken links:",
-                &global_strings[5],
+                Cell::from("Total links:"),
+                Cell::from(format!("{:7}", self.global_stats.local_local_links)),
+                Cell::from("Broken links:"),
+                Cell::from(format!("{:7}", self.global_stats.broken_links)),
             ]),
         ];
 
+        // Finalize global table from the row data and the widths
         let global_stats = Table::new(global_stats_rows, stats_widths)
             .column_spacing(1)
             .block(Block::bordered().title("Global Statistics".set_style(styles.title_style)));
 
         //  === Local stats ===
-
-        let local_strings = [
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.note_count_total,
-                self.local_stats.note_count_total * 100 / self.global_stats.note_count_total.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.word_count_total,
-                self.local_stats.word_count_total * 100 / self.global_stats.word_count_total.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.tag_count_total,
-                self.local_stats.tag_count_total * 100 / self.global_stats.tag_count_total.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.char_count_total,
-                self.local_stats.char_count_total * 100 / self.global_stats.char_count_total.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.global_local_links,
-                self.local_stats.global_local_links * 100
-                    / self.global_stats.global_local_links.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.local_global_links,
-                self.local_stats.local_global_links * 100
-                    / self.global_stats.local_global_links.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.local_local_links,
-                self.local_stats.local_local_links * 100
-                    / self.global_stats.local_local_links.max(1)
-            ),
-            format!(
-                "{:7} ({:3}%)",
-                self.local_stats.broken_links,
-                self.local_stats.broken_links * 100 / self.global_stats.broken_links.max(1)
-            ),
-        ];
 
         let local_stats_rows = [
             Row::new(vec![
@@ -470,25 +417,52 @@ impl super::Screen for SelectScreen {
                 )),
             ]),
             Row::new(vec![
-                "Total unique tags:",
-                &local_strings[2],
-                "Total characters:",
-                &local_strings[3],
+                Cell::from("Total unique tags:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.tag_count_total,
+                    self.local_stats.tag_count_total * 100
+                        / self.global_stats.tag_count_total.max(1)
+                )),
+                Cell::from("Total characters:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.char_count_total,
+                    self.local_stats.char_count_total * 100
+                        / self.global_stats.char_count_total.max(1)
+                )),
             ]),
             Row::new(vec![
-                "Incoming links:",
-                &local_strings[4],
-                "Outgoing links:",
-                &local_strings[5],
+                Cell::from("Incoming links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.global_local_links,
+                    self.local_stats.global_local_links * 100
+                )),
+                Cell::from("Outgoing links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.local_global_links,
+                    self.local_stats.local_global_links * 100
+                )),
             ]),
             Row::new(vec![
-                "Internal links:",
-                &local_strings[6],
-                "Broken links:",
-                &local_strings[7],
+                Cell::from("Internal links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.local_local_links,
+                    self.local_stats.local_local_links * 100
+                )),
+                Cell::from("Broken links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_stats.broken_links,
+                    self.local_stats.broken_links * 100 / self.global_stats.broken_links.max(1)
+                )),
             ]),
         ];
 
+        // Finalize local table
         let local_stats = Table::new(local_stats_rows, stats_widths)
             .column_spacing(1)
             .block(Block::bordered().title("Local Statistics".set_style(styles.title_style)));
@@ -500,6 +474,7 @@ impl super::Screen for SelectScreen {
 
         // === Table Area ===
 
+        // Calculate widths
         let notes_table_widths = [
             Constraint::Min(25),
             Constraint::Length(8),
@@ -510,7 +485,7 @@ impl super::Screen for SelectScreen {
             Constraint::Length(10),
         ];
 
-        // Generate state from this top_ind and the selected element
+        // Generate state from selected element
         let mut state = TableState::new()
             .with_offset(
                 self.selected
@@ -532,11 +507,13 @@ impl super::Screen for SelectScreen {
                 SelectMode::Filter => None,
             });
 
+        // Generate row data
         let notes_rows = self
             .local_stats
             .filtered_stats
             .iter()
             .flat_map(|env_stats| {
+                // generate the stats row for each element
                 self.index.get(&env_stats.id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
@@ -551,7 +528,10 @@ impl super::Screen for SelectScreen {
             })
             .collect::<Vec<Row>>();
 
+        // Instructions at the bottom of the page
         let instructions_bot = block::Title::from(Line::from(vec![
+            Span::styled("N", styles.hotkey_style),
+            Span::styled("ew Note──", styles.text_style),
             Span::styled("E", styles.hotkey_style),
             Span::styled("dit Note──", styles.text_style),
             Span::styled(
@@ -568,8 +548,10 @@ impl super::Screen for SelectScreen {
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
+        // Finally generate the table from the generated row and width data
         let table = Table::new(notes_rows, notes_table_widths)
             .column_spacing(1)
+            // Add Headers
             .header(Row::new(vec![
                 Line::from(vec![
                     Span::styled("N", styles.hotkey_style),
@@ -604,6 +586,7 @@ impl super::Screen for SelectScreen {
                 ]),
             ]))
             .highlight_style(styles.selected_style)
+            // Add Instructions and a title
             .block(
                 Block::bordered()
                     .title("Notes".set_style(styles.title_style))
