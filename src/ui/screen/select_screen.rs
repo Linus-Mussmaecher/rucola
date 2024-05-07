@@ -550,9 +550,9 @@ impl super::Screen for SelectScreen {
                         self.local_stats
                             .filtered_stats
                             .len()
-                            .saturating_sub(table_area.height as usize)
                             // correct for table edges
-                            .saturating_add(3),
+                            .saturating_add(3)
+                            .saturating_sub(table_area.height as usize),
                     ),
             )
             // If not in filter mode, show a selected element

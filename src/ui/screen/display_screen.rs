@@ -277,14 +277,34 @@ impl DisplayScreen {
             .get(index)
             .map(|selected_index| {
                 TableState::new()
-                    .with_offset(selected_index.saturating_sub(5))
-                    .with_selected(if self.foc_table == index {
-                        Some(*selected_index)
-                    } else {
-                        None
-                    })
+                    .with_offset(
+                        selected_index.saturating_sub(area.height as usize / 3).min(
+                            // but when reaching the end of the list, still scroll down
+                            self.links
+                                .get(index)
+                                .map(|list| list.len())
+                                .unwrap_or(0)
+                                // correct for table edges
+                                .saturating_add(2)
+                                .saturating_sub(area.height as usize),
+                        ),
+                    )
+                    .with_selected(Some(*selected_index))
             })
             .unwrap_or_default();
+
+        *state.offset_mut() = self.selected[index]
+            .saturating_sub(area.height as usize / 3)
+            .min(
+                // but when reaching the end of the list, still scroll down
+                self.links
+                    .get(index)
+                    .map(|list| list.len())
+                    .unwrap_or(0)
+                    .saturating_sub(area.height as usize)
+                    // correct for table edges
+                    .saturating_add(2),
+            );
 
         // Rows
         let rows = self
@@ -299,7 +319,11 @@ impl DisplayScreen {
 
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
-            .highlight_style(styles.selected_style)
+            .highlight_style(if index == self.foc_table {
+                styles.selected_style
+            } else {
+                styles.text_style
+            })
             .block(Block::bordered().title(title).title(count));
 
         StatefulWidget::render(table, area, buf, &mut state);
