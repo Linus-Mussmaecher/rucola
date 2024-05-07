@@ -4,7 +4,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::*;
-use std::{collections::HashMap, io::stdout, rc::Rc};
+use std::{io::stdout, rc::Rc};
 
 mod config;
 mod data;
@@ -15,13 +15,12 @@ struct App {
     /// The currently displayed UI screen.
     screen: Box<dyn ui::Screen>,
     /// All notes managed by the application, keyed by their ID.
-    index: Rc<HashMap<String, data::Note>>,
+    index: Rc<data::NoteIndex>,
 }
 
 /// Main function
 fn main() -> color_eyre::Result<()> {
-    // Initialize terminal
-
+    // Initialize hooks & terminal
     init_hooks()?;
     let mut terminal = init_terminal()?;
 
@@ -42,7 +41,7 @@ fn main() -> color_eyre::Result<()> {
     let config = config::Config::load().unwrap_or_default();
 
     // Index all files in path
-    let index = Rc::new(data::create_index(&std::path::Path::new(
+    let index = Rc::new(data::NoteIndex::new(&std::path::Path::new(
         &config.get_vault_path(),
     )));
 
@@ -54,23 +53,12 @@ fn main() -> color_eyre::Result<()> {
 
     // Main loop
 
-    // Wether there is currently a full-screen redraw requested
-    let mut redraw_requested = false;
-
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame| {
             let area = frame.size();
             let buf = frame.buffer_mut();
-            buf.reset();
-
-            // If a redraw is requested, fill the screen with red for 1 frame
-            if redraw_requested {
-                Widget::render(ratatui::widgets::Block::new().red(), area, buf);
-                redraw_requested = false;
-            } else {
-                app.screen.draw(area, buf);
-            }
+            app.screen.draw(area, buf);
         })?;
 
         // Inform the current screen of events
@@ -81,17 +69,18 @@ fn main() -> color_eyre::Result<()> {
                     // Register input and get message.
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
-                            // Quit => Quit program
                             ui::Message::Quit => break 'main,
-                            // Switches => Replace the current screen with another one
                             ui::Message::SwitchSelect => {
+                                // Replace the screen with the basic selector
                                 app.screen =
                                     Box::new(screen::SelectScreen::new(app.index.clone(), &config));
                             }
                             ui::Message::SwitchDisplay(id) => {
+                                // check if the note actually can be found
                                 if let Some(loaded_note) =
-                                    screen::DisplayScreen::new(id, app.index.clone(), &config)
+                                    screen::DisplayScreen::new(&id, app.index.clone(), &config)
                                 {
+                                    // if yes, replace the current screen
                                     app.screen = Box::new(loaded_note);
                                 }
                             }
@@ -114,10 +103,8 @@ fn main() -> color_eyre::Result<()> {
     restore_terminal()
 }
 
-/// Ratatui boilerplate to set up panic hooks and put the terminal into a TUI state
+/// Ratatui boilerplate to set up panic hooks
 fn init_hooks() -> color_eyre::Result<()> {
-    // Step 1: Set panic hooks (ratatui tutorial boilerplate)
-
     let (panic, error) = color_eyre::config::HookBuilder::default().into_hooks();
     let panic = panic.into_panic_hook();
     let error = error.into_eyre_hook();
@@ -132,9 +119,8 @@ fn init_hooks() -> color_eyre::Result<()> {
     Ok(())
 }
 
+/// Ratatui boilerplate to put the terminal into a TUI state
 fn init_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
-    // Step 2: Initialize terminal
-
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
