@@ -28,8 +28,13 @@ fn main() -> color_eyre::Result<()> {
     // Draw 'loading' screen
     terminal.draw(|frame| {
         frame.render_widget(
-            ratatui::widgets::Paragraph::new("Indexing..."),
-            frame.size(),
+            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
+            Layout::vertical([
+                Constraint::Fill(1),
+                Constraint::Length(3),
+                Constraint::Fill(1),
+            ])
+            .split(frame.size())[1],
         );
     })?;
 

@@ -489,12 +489,14 @@ impl super::Screen for SelectScreen {
                     "{:7} ({:3}%)",
                     self.local_stats.global_local_links,
                     self.local_stats.global_local_links * 100
+                        / self.global_stats.local_local_links.max(1),
                 )),
                 Cell::from("Outgoing links:"),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.local_stats.local_global_links,
                     self.local_stats.local_global_links * 100
+                        / self.global_stats.local_local_links.max(1),
                 )),
             ]),
             Row::new(vec![
@@ -503,6 +505,7 @@ impl super::Screen for SelectScreen {
                     "{:7} ({:3}%)",
                     self.local_stats.local_local_links,
                     self.local_stats.local_local_links * 100
+                        / self.global_stats.local_local_links.max(1),
                 )),
                 Cell::from("Broken links:"),
                 Cell::from(format!(
