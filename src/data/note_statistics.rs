@@ -1,6 +1,5 @@
 use fuzzy_matcher::FuzzyMatcher;
 
-use super::note;
 use std::collections::HashMap;
 
 /// A struct describing statistics to a note in relation to a containing environment.
@@ -65,12 +64,13 @@ pub struct EnvironmentStats {
 
 impl EnvironmentStats {
     /// Creates a new set of statistics from the subset of the passed index that matches the given filter.
-    pub fn new_with_filters(index: &HashMap<String, note::Note>, filter: Filter) -> Self {
+    pub fn new_with_filters(index: &super::NoteIndex, filter: Filter) -> Self {
         // Create fuzzy matcher
         let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
 
         // Filter the index -> Create an iterator
         let mut filtered_index = index
+            .inner
             .iter()
             .filter_map(|(id, note)| {
                 // Check if any or all the tags specified in the filter are in the note.
@@ -100,7 +100,7 @@ impl EnvironmentStats {
             .collect::<HashMap<_, _>>();
 
         // Count links by iterating over unfiltered index
-        for (id, note) in index.iter() {
+        for (id, note) in index.inner.iter() {
             // Remember if source is from withing the environment.
             let local_source = filtered_index.contains_key(id);
             // Keep track of found local targets.
@@ -111,7 +111,7 @@ impl EnvironmentStats {
             // Then go over its links.
             for link in &note.links {
                 // Check if target exists
-                if index.contains_key(link) {
+                if index.inner.contains_key(link) {
                     // and increase count of valid targets if so.
                     global_targets += 1;
 
@@ -207,9 +207,9 @@ mod tests {
 
     #[test]
     fn test_env_stats_general() {
-        let index = crate::data::create_index(std::path::Path::new("./tests/common/notes/"));
+        let index = crate::data::NoteIndex::new(std::path::Path::new("./tests/common/notes/"));
 
-        assert_eq!(index.len(), 11);
+        assert_eq!(index.inner.len(), 11);
 
         // === Filter 1 ===
 

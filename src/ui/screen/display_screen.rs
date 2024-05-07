@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use crate::{config, data, ui};
 
@@ -8,16 +8,21 @@ use ratatui::{prelude::*, widgets::*};
 
 /// The display screen displays a single note to the user.
 pub struct DisplayScreen {
-    /// The internal stats of the displayed note.
-    note: data::Note,
+    // === CONFIG ===
     /// The used config
     config: config::Config,
+
+    // === DATA ===
+    /// The internal stats of the displayed note.
+    note: data::Note,
     /// Array of all the link tables, in the order
     /// - backlinks
     /// - links
     /// - l2 backlinks
     /// - l2 links
     links: [Vec<(String, String)>; 4],
+
+    // === UI ===
     /// The index of the note selected in each table
     selected: [usize; 4],
     /// The index of the primary table currently focused
@@ -26,57 +31,26 @@ pub struct DisplayScreen {
 
 impl DisplayScreen {
     /// Creates a new display screen for the specified note, remembering relevant parts of the config.
-    pub fn new(
-        note_id: String,
-        index: Rc<HashMap<String, data::Note>>,
-        config: &config::Config,
-    ) -> Option<Self> {
+    pub fn new(note_id: &str, index: Rc<data::NoteIndex>, config: &config::Config) -> Option<Self> {
         // Cache the note
-        let note = index.get(&note_id).cloned()?;
+        let note = index.get(note_id).cloned()?;
 
         // Get level 1 links
-        let l1links = note
-            .links
-            .iter()
-            .flat_map(|id| {
-                index
-                    .get(id)
-                    .map(|note| note.name.clone())
-                    .map(|name| (id.to_owned(), name))
-            })
-            // remove duplicates
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect_vec();
+        let l1links = index.links_vec(note_id);
 
         // Get level 2 links
         let l2links = l1links
             .iter()
-            .filter_map(|(id, _name)| index.get(id).map(|note| &note.links))
-            .flatten()
-            .flat_map(|id| {
-                index
-                    .get(id)
-                    .map(|note| note.name.clone())
-                    .map(|name| (id.to_owned(), name))
-            })
-            // remove duplicates
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
+            .flat_map(|(id, _name)| index.links_vec(id))
             .collect_vec();
 
         // Get level 1 backlinks
-        let l1blinks = index
+        let l1blinks = index.blinks_vec(note_id);
+        // Get level 2 backlinks
+        let l2blinks = l1blinks
             .iter()
-            .filter(|(_key, value)| value.links.contains(&note_id))
-            .map(|(key, value)| (key.to_owned(), value.name.to_owned()))
-            .collect_vec();
-
-        let l2blinks = index
-            .iter()
-            .filter(|(_key, value)| l1blinks.iter().any(|(id, _name)| value.links.contains(id)))
-            .map(|(key, value)| (key.to_owned(), value.name.to_owned()))
-            .collect_vec();
+            .flat_map(|(id, _name)| index.blinks_vec(id))
+            .collect();
 
         Some(Self {
             config: config.clone(),

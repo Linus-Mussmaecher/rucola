@@ -2,7 +2,7 @@ use crate::{config, data, ui};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 use tui_textarea::TextArea;
 
 /// Describes the current mode of the UI.
@@ -33,18 +33,19 @@ enum SortingMode {
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
 pub struct SelectScreen {
-    // === Displayed Data ===
+    // === DATA ===
     /// A reference to the index of all notes
-    index: Rc<HashMap<String, data::Note>>,
+    index: Rc<data::NoteIndex>,
     /// The currently displayed statistics for all notes.
     local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: data::EnvironmentStats,
 
+    // === CONFIG ===
     /// The config used.
     config: config::Config,
 
-    // === UI (state) ===
+    // === UI ===
     /// The text area to type in filters.
     filter_area: TextArea<'static>,
     /// The text area used to create new notes.
@@ -70,7 +71,7 @@ pub struct SelectScreen {
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
-    pub fn new(index: Rc<HashMap<String, data::Note>>, config: &config::Config) -> Self {
+    pub fn new(index: Rc<data::NoteIndex>, config: &config::Config) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
