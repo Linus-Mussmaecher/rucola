@@ -7,7 +7,7 @@ pub use select_screen::SelectScreen;
 mod display_screen;
 pub use display_screen::DisplayScreen;
 
-use crate::ui::input;
+use crate::ui;
 
 /// A trait that is implemented by different screens within the application.
 pub trait Screen {
@@ -15,5 +15,5 @@ pub trait Screen {
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer);
 
     /// Informs the screen of user messages and possibly modifies the content.
-    fn update(&mut self, key: KeyEvent) -> Option<input::Message>;
+    fn update(&mut self, key: KeyEvent) -> Option<ui::Message>;
 }

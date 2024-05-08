@@ -161,7 +161,7 @@ impl super::Screen for DisplayScreen {
             // Quit with q
             KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
             // Go back to selection with f
-            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
+            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect { refresh: false }),
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected

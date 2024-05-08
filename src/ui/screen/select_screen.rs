@@ -247,7 +247,7 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: KeyEvent) -> Option<crate::ui::input::Message> {
+    fn update(&mut self, key: KeyEvent) -> Option<crate::ui::Message> {
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
@@ -260,6 +260,10 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('n' | 'N') => {
                     self.mode = SelectMode::Create;
                 }
+                // R: Refresh index
+                KeyCode::Char('r' | 'R') => {
+                    return Some(ui::Message::SwitchSelect { refresh: true })
+                }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
                     self.filter_area.select_all();
@@ -267,7 +271,7 @@ impl super::Screen for SelectScreen {
                     self.filter(data::Filter::default());
                 }
                 // Q: Quit application
-                KeyCode::Char('q' | 'Q') => return Some(crate::ui::input::Message::Quit),
+                KeyCode::Char('q' | 'Q') => return Some(crate::ui::Message::Quit),
                 // T: Change all/any words requirement
                 KeyCode::Char('t' | 'T') => {
                     self.all_tags = !self.all_tags;
@@ -318,9 +322,7 @@ impl super::Screen for SelectScreen {
                 // Open selected item in display view
                 KeyCode::Enter => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        return Some(crate::ui::input::Message::SwitchDisplay(
-                            env_stats.id.clone(),
-                        ));
+                        return Some(crate::ui::Message::SwitchDisplay(env_stats.id.clone()));
                     }
                 }
                 // Open selected item in editor
@@ -380,9 +382,22 @@ impl super::Screen for SelectScreen {
                     }
                     // Enter: Create note, back to main mode, clear teh buffer
                     KeyCode::Enter => {
-                        self.filter_area.select_all();
-                        self.filter_area.cut();
-                        // TODO: Actually create the note
+                        // Piece together the file path
+                        let mut path = self.config.get_vault_path();
+                        path.push(
+                            self.create_area
+                                .lines()
+                                .first()
+                                .map(|s| s.as_str().trim_start_matches("/"))
+                                .unwrap_or("Untitled"),
+                        );
+                        path.set_extension("md");
+                        // Create the file
+                        let _ = std::fs::File::create(path);
+                        // Clear the input area
+                        self.create_area.select_all();
+                        self.create_area.cut();
+                        // Switch back to base mode
                         self.mode = SelectMode::Select;
                     }
                     // All other key events are passed on to the text area, then the filter is immediately applied
