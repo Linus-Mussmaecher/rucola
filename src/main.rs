@@ -24,18 +24,8 @@ fn main() -> color_eyre::Result<()> {
     init_hooks()?;
     let mut terminal = init_terminal()?;
 
-    // Draw 'loading' screen
-    terminal.draw(|frame| {
-        frame.render_widget(
-            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
-            Layout::vertical([
-                Constraint::Fill(1),
-                Constraint::Length(3),
-                Constraint::Fill(1),
-            ])
-            .split(frame.size())[1],
-        );
-    })?;
+    // draw loading screen
+    draw_loading_screen(&mut terminal)?;
 
     // Read config file. Loading includes listening to command line.
     let config = config::Config::load().unwrap_or_default();
@@ -70,7 +60,14 @@ fn main() -> color_eyre::Result<()> {
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
                             ui::Message::Quit => break 'main,
-                            ui::Message::SwitchSelect => {
+                            ui::Message::SwitchSelect { refresh } => {
+                                // if requested, reload the index
+                                if refresh {
+                                    draw_loading_screen(&mut terminal)?;
+                                    app.index = Rc::new(data::NoteIndex::new(
+                                        &std::path::Path::new(&config.get_vault_path()),
+                                    ))
+                                }
                                 // Replace the screen with the basic selector
                                 app.screen =
                                     Box::new(screen::SelectScreen::new(app.index.clone(), &config));
@@ -101,6 +98,23 @@ fn main() -> color_eyre::Result<()> {
 
     //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
     restore_terminal()
+}
+
+fn draw_loading_screen(
+    terminal: &mut Terminal<impl ratatui::backend::Backend>,
+) -> Result<CompletedFrame, std::io::Error> {
+    // Draw 'loading' screen
+    terminal.draw(|frame| {
+        frame.render_widget(
+            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
+            Layout::vertical([
+                Constraint::Fill(1),
+                Constraint::Length(3),
+                Constraint::Fill(1),
+            ])
+            .split(frame.size())[1],
+        );
+    })
 }
 
 /// Ratatui boilerplate to set up panic hooks
