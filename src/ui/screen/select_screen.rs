@@ -2,6 +2,7 @@ use crate::{config, data, ui};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
+use std::io::Write;
 use std::rc::Rc;
 use tui_textarea::TextArea;
 
@@ -393,7 +394,18 @@ impl super::Screen for SelectScreen {
                         );
                         path.set_extension("md");
                         // Create the file
-                        let _ = std::fs::File::create(path);
+                        let file = std::fs::File::create(path);
+                        if let Ok(mut file) = file {
+                            let _ = write!(
+                                file,
+                                "#{}",
+                                self.create_area
+                                    .lines()
+                                    .first()
+                                    .map(|s| s.as_str())
+                                    .unwrap_or("Untitled")
+                            );
+                        }
                         // Clear the input area
                         self.create_area.select_all();
                         self.create_area.cut();
