@@ -18,8 +18,10 @@ open = "^5"
 # Parsing
 regex = "1.10.3"
 walkdir = "2.5.0"
+# jwalk = "0.5"
 fuzzy-matcher = "^0.3"
 itertools = "^0.12"
+# rayon = "^1.10"
 # Error handling
 eyre = "0.6.12"
 color-eyre = "0.5.7"

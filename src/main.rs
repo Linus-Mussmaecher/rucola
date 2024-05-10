@@ -31,9 +31,10 @@ fn main() -> color_eyre::Result<()> {
     let config = config::Config::load().unwrap_or_default();
 
     // Index all files in path
-    let index = Rc::new(RefCell::new(data::NoteIndex::new(&std::path::Path::new(
-        &config.get_vault_path(),
-    ))));
+    let index = Rc::new(RefCell::new(data::NoteIndex::new(
+        &std::path::Path::new(&config.get_vault_path()),
+        &config,
+    )));
 
     // Initialize app state
     let mut app = App {
