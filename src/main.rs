@@ -4,7 +4,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::*;
-use std::{io::stdout, rc::Rc};
+use std::{cell::RefCell, io::stdout, rc::Rc};
 
 mod config;
 mod data;
@@ -15,7 +15,7 @@ struct App {
     /// The currently displayed UI screen.
     screen: Box<dyn ui::Screen>,
     /// All notes managed by the application, keyed by their ID.
-    index: Rc<data::NoteIndex>,
+    index: data::NoteIndexContainer,
 }
 
 /// Main function
@@ -31,9 +31,9 @@ fn main() -> color_eyre::Result<()> {
     let config = config::Config::load().unwrap_or_default();
 
     // Index all files in path
-    let index = Rc::new(data::NoteIndex::new(&std::path::Path::new(
+    let index = Rc::new(RefCell::new(data::NoteIndex::new(&std::path::Path::new(
         &config.get_vault_path(),
-    )));
+    ))));
 
     // Initialize app state
     let mut app = App {
@@ -60,14 +60,7 @@ fn main() -> color_eyre::Result<()> {
                     if let Some(msg) = app.screen.update(key) {
                         match msg {
                             ui::Message::Quit => break 'main,
-                            ui::Message::SwitchSelect { refresh } => {
-                                // if requested, reload the index
-                                if refresh {
-                                    draw_loading_screen(&mut terminal)?;
-                                    app.index = Rc::new(data::NoteIndex::new(
-                                        &std::path::Path::new(&config.get_vault_path()),
-                                    ))
-                                }
+                            ui::Message::SwitchSelect => {
                                 // Replace the screen with the basic selector
                                 app.screen =
                                     Box::new(screen::SelectScreen::new(app.index.clone(), &config));

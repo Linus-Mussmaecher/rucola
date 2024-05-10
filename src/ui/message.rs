@@ -4,7 +4,7 @@ pub enum Message {
     /// Quit the application
     Quit,
     /// Switch to select screen
-    SwitchSelect { refresh: bool },
+    SwitchSelect,
     /// Switches to displaying the (markdown) file at the given path
     SwitchDisplay(String),
     /// Restore the terminal, execute the given command and re-enter

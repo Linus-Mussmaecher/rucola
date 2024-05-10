@@ -2,8 +2,7 @@ use crate::{config, data, ui};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
-use std::io::Write;
-use std::rc::Rc;
+use std::{io::Write, path};
 use tui_textarea::TextArea;
 
 /// Describes the current mode of the UI.
@@ -36,7 +35,7 @@ enum SortingMode {
 pub struct SelectScreen {
     // === DATA ===
     /// A reference to the index of all notes
-    index: Rc<data::NoteIndex>,
+    index: data::NoteIndexContainer,
     /// The currently displayed statistics for all notes.
     local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
@@ -72,7 +71,7 @@ pub struct SelectScreen {
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
-    pub fn new(index: Rc<data::NoteIndex>, config: &config::Config) -> Self {
+    pub fn new(index: data::NoteIndexContainer, config: &config::Config) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
@@ -190,6 +189,18 @@ impl SelectScreen {
         self.sort();
     }
 
+    fn refresh(&mut self) {
+        // Refresh global stats
+        self.global_stats =
+            data::EnvironmentStats::new_with_filters(&self.index, data::Filter::default());
+        // Refresh local stats
+        self.local_stats =
+            data::EnvironmentStats::new_with_filters(&self.index, self.filter_from_input());
+
+        // Refresh sorting
+        self.sort();
+    }
+
     /// Sets a new sorting mode and direction.
     /// If it did not match the old one, triggers a resort.
     fn set_mode_and_maybe_sort(&mut self, new_mode: impl Into<Option<SortingMode>>, new_asc: bool) {
@@ -219,7 +230,7 @@ impl SelectScreen {
             self.local_stats
                 .filtered_stats
                 .sort_by_cached_key(|env_stats| {
-                    if let Some(note) = self.index.get(&env_stats.id) {
+                    if let Some(note) = self.index.borrow().get(&env_stats.id) {
                         match self.sorting {
                             // This should not appear
                             SortingMode::Name => 0,
@@ -261,9 +272,18 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('n' | 'N') => {
                     self.mode = SelectMode::Create;
                 }
-                // R: Refresh index
-                KeyCode::Char('r' | 'R') => {
-                    return Some(ui::Message::SwitchSelect { refresh: true })
+                // D: Delete note
+                KeyCode::Char('d' | 'D') => {
+                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
+                        if if let Some(note) = self.index.borrow().get(&env_stats.id) {
+                            std::fs::remove_file(path::Path::new(&note.path)).is_ok()
+                        } else {
+                            false
+                        } {
+                            self.index.borrow_mut().remove(&env_stats.id);
+                            self.refresh();
+                        }
+                    }
                 }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
@@ -334,10 +354,14 @@ impl super::Screen for SelectScreen {
                         .filtered_stats
                         .get(self.selected)
                         // use this id in the index to get the note
-                        .and_then(|env_stats| self.index.get(&env_stats.id))
+                        .and_then(|env_stats| {
+                            self.index
+                                .borrow()
+                                .get(&env_stats.id)
+                                .map(|note| note.path.clone())
+                        })
                         // get the path from the note
-                        .map(|note| {
-                            let path = std::path::Path::new(&note.path);
+                        .map(|path| {
                             ui::Message::OpenExternalCommand(
                                 // check if there is an application configured
                                 if let Some(application) = self.config.get_editor() {
@@ -394,7 +418,7 @@ impl super::Screen for SelectScreen {
                         );
                         path.set_extension("md");
                         // Create the file
-                        let file = std::fs::File::create(path);
+                        let file = std::fs::File::create(path.clone());
                         if let Ok(mut file) = file {
                             let _ = write!(
                                 file,
@@ -406,6 +430,10 @@ impl super::Screen for SelectScreen {
                                     .unwrap_or("Untitled")
                             );
                         }
+                        // Add the file to the index
+                        self.index.borrow_mut().register(&path::Path::new(&path));
+                        // Refresh the display
+                        self.refresh();
                         // Clear the input area
                         self.create_area.select_all();
                         self.create_area.cut();
@@ -596,7 +624,7 @@ impl super::Screen for SelectScreen {
             .iter()
             .flat_map(|env_stats| {
                 // generate the stats row for each element
-                self.index.get(&env_stats.id).map(|note| {
+                self.index.borrow().get(&env_stats.id).map(|note| {
                     Row::new(vec![
                         note.name.clone(),
                         format!("{:7}", note.words),
