@@ -2,6 +2,8 @@ use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::path;
 
+use crate::config;
+
 use super::Note;
 
 pub type NoteIndexContainer = std::rc::Rc<std::cell::RefCell<NoteIndex>>;
@@ -19,7 +21,7 @@ impl NoteIndex {
     ///  - The value will be an instance of Note containing metadata of the file.
     ///
     /// All files that lead to IO errors when loading are ignored.
-    pub fn new(directory: &path::Path) -> Self {
+    pub fn new(directory: &path::Path, config: &config::Config) -> Self {
         Self {
             inner: walkdir::WalkDir::new(directory)
                 .into_iter()
@@ -28,7 +30,7 @@ impl NoteIndex {
                 // Check only OKs
                 .flatten()
                 // Check only markdown files
-                .filter(is_markdown)
+                .filter(|entry| valid_ending(entry, config))
                 // Convert tiles to notes and skip errors
                 .flat_map(|entry| Note::from_path(entry.path()))
                 // Extract name and convert to id
@@ -92,9 +94,16 @@ fn is_not_hidden(entry: &walkdir::DirEntry) -> bool {
         .map(|s| entry.depth() == 0 || !s.starts_with('.'))
         .unwrap_or(false)
 }
-/// Checks if the given dir entry is a markdown file, i.e. a file whose name ends in '.md'
-fn is_markdown(entry: &walkdir::DirEntry) -> bool {
-    entry.file_type().is_file() && entry.file_name().to_string_lossy().ends_with(".md")
+/// Checks if the given dir entry is a valid file, i.e. a file whose name ends one of the endings configured in the config file.
+fn valid_ending(entry: &walkdir::DirEntry, config: &config::Config) -> bool {
+    entry.file_type().is_file()
+        && (config.get_endings().contains(&"*".to_string())
+            || match entry.path().extension() {
+                Some(ending) => config
+                    .get_endings()
+                    .contains(&ending.to_string_lossy().to_string()),
+                None => config.get_endings().contains(&"".to_string()),
+            })
 }
 
 #[cfg(test)]
@@ -103,7 +112,10 @@ mod tests {
 
     #[test]
     fn test_indexing() {
-        let index = NoteIndex::new(std::path::Path::new("./tests/common/notes/"));
+        let index = NoteIndex::new(
+            std::path::Path::new("./tests/common/notes/"),
+            &config::Config::default(),
+        );
 
         assert_eq!(index.inner.len(), 11);
 
@@ -124,7 +136,10 @@ mod tests {
 
     #[test]
     fn test_links_blinks() {
-        let index = NoteIndex::new(std::path::Path::new("./tests/common/notes/"));
+        let index = NoteIndex::new(
+            std::path::Path::new("./tests/common/notes/"),
+            &config::Config::default(),
+        );
 
         assert_eq!(index.inner.len(), 11);
 

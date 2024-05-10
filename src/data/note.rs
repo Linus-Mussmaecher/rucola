@@ -41,8 +41,8 @@ impl Note {
         Ok(Self {
             // Name: Remove file extension
             name: path
-                .file_name()
-                .map(|s| s.to_string_lossy().replace(".md", ""))
+                .file_stem()
+                .map(|os| os.to_string_lossy().to_string())
                 .unwrap_or_default(),
             // Path: Already given - convert to owned version.
             path: path.to_path_buf(),

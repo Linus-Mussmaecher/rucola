@@ -27,6 +27,8 @@ struct ConfigFile {
     theme: String,
     /// The editor to use for notes
     editor: Option<String>,
+    /// File endings to consider notes
+    file_endings: Vec<String>,
 }
 
 impl Default for ConfigFile {
@@ -36,6 +38,7 @@ impl Default for ConfigFile {
             vault_path: None,
             theme: "default_light_theme".to_string(),
             editor: None,
+            file_endings: vec![String::from("md")],
         }
     }
 }
@@ -102,6 +105,12 @@ impl Config {
     /// Return the editor supposed to be used with notes.
     pub fn get_editor(&self) -> Option<&str> {
         self.config_file.editor.as_deref()
+    }
+
+    /// Return the valid file endings to be considered a note file.
+    /// An empty string indicates that files with no extension ought to be accepted.
+    pub fn get_endings(&self) -> &[String] {
+        &self.config_file.file_endings
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
