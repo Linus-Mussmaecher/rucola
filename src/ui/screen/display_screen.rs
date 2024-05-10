@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::{config, data, ui};
 
 use crossterm::event::KeyCode;
@@ -31,7 +29,12 @@ pub struct DisplayScreen {
 
 impl DisplayScreen {
     /// Creates a new display screen for the specified note, remembering relevant parts of the config.
-    pub fn new(note_id: &str, index: Rc<data::NoteIndex>, config: &config::Config) -> Option<Self> {
+    pub fn new(
+        note_id: &str,
+        index: data::NoteIndexContainer,
+        config: &config::Config,
+    ) -> Option<Self> {
+        let index = index.borrow();
         // Cache the note
         let note = index.get(note_id).cloned()?;
 
@@ -161,7 +164,7 @@ impl super::Screen for DisplayScreen {
             // Quit with q
             KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
             // Go back to selection with f
-            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect { refresh: false }),
+            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected

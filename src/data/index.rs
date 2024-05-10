@@ -1,7 +1,10 @@
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::path;
 
 use super::Note;
+
+pub type NoteIndexContainer = std::rc::Rc<std::cell::RefCell<NoteIndex>>;
 
 /// Contains an indexed and hashed list of notes
 pub struct NoteIndex {
@@ -38,6 +41,18 @@ impl NoteIndex {
     /// Wrapper of the HashMap::get() Function
     pub fn get(&self, key: &str) -> Option<&Note> {
         self.inner.get(key)
+    }
+
+    /// Registers a new note found in the given path in this index.
+    pub fn register(&mut self, note_path: &path::Path) {
+        if let Ok(note) = Note::from_path(note_path) {
+            self.inner.insert(super::name_to_id(&note.name), note);
+        }
+    }
+
+    /// Removes a note
+    pub fn remove(&mut self, id: &str) {
+        self.inner.borrow_mut().remove(id);
     }
 
     /// Returns an iterator over id pairs of notes linked from this note.

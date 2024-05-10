@@ -64,9 +64,11 @@ pub struct EnvironmentStats {
 
 impl EnvironmentStats {
     /// Creates a new set of statistics from the subset of the passed index that matches the given filter.
-    pub fn new_with_filters(index: &super::NoteIndex, filter: Filter) -> Self {
+    pub fn new_with_filters(index: &super::NoteIndexContainer, filter: Filter) -> Self {
         // Create fuzzy matcher
         let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
+
+        let index = index.borrow();
 
         // Filter the index -> Create an iterator
         let mut filtered_index = index
@@ -210,6 +212,8 @@ mod tests {
         let index = crate::data::NoteIndex::new(std::path::Path::new("./tests/common/notes/"));
 
         assert_eq!(index.inner.len(), 11);
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // === Filter 1 ===
 
