@@ -15,6 +15,7 @@ pub fn rename_note_file(index: &mut NoteIndexContainer, id: &str, new_name: Stri
         // re-insert under new index
         table.insert(new_id, note);
         // TODO: Update links
+        // TODO: Actually change the file and path
         true
     } else {
         false
@@ -47,7 +48,7 @@ pub fn create_note_file(
         name.map(|s| s.trim_start_matches("/"))
             .unwrap_or("Untitled"),
     );
-    path.set_extension("md");
+    path.set_extension(config.get_default_ending());
     // Create the file
     let file = std::fs::File::create(path.clone());
     if let Ok(mut file) = file {
