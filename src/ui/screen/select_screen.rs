@@ -2,7 +2,6 @@ use crate::{config, data, ui};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
-use std::{io::Write, path};
 use tui_textarea::TextArea;
 
 /// Describes the current mode of the UI.
@@ -11,10 +10,18 @@ enum SelectMode {
     /// Selecting a note from the list.
     #[default]
     Select,
+    /// File managment submenu
+    SubmenuFile,
+    /// Sorting submenu
+    SubmenuSorting,
     /// Typing into the filter box.
     Filter,
     /// Typing into the create box.
     Create,
+    /// Typing into the create box to rename a note.
+    Rename,
+    /// Typing into the create box to move a note.
+    Move,
 }
 
 /// Describes the current sorting mode of the displayed list.
@@ -264,26 +271,19 @@ impl super::Screen for SelectScreen {
         match self.mode {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
+                // Q: Quit application
+                KeyCode::Char('q' | 'Q') => return Some(crate::ui::Message::Quit),
+                // R: Got to file management submenu
+                KeyCode::Char('r' | 'R') => {
+                    self.mode = SelectMode::SubmenuFile;
+                }
+                // S: Got to sorting submenu
+                KeyCode::Char('s' | 'S') => {
+                    self.mode = SelectMode::SubmenuSorting;
+                }
                 // F: Go to filter mode
                 KeyCode::Char('f' | 'F') => {
                     self.mode = SelectMode::Filter;
-                }
-                // N: Go to create mode
-                KeyCode::Char('n' | 'N') => {
-                    self.mode = SelectMode::Create;
-                }
-                // D: Delete note
-                KeyCode::Char('d' | 'D') => {
-                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        if if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                            std::fs::remove_file(path::Path::new(&note.path)).is_ok()
-                        } else {
-                            false
-                        } {
-                            self.index.borrow_mut().remove(&env_stats.id);
-                            self.refresh();
-                        }
-                    }
                 }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
@@ -291,17 +291,11 @@ impl super::Screen for SelectScreen {
                     self.filter_area.cut();
                     self.filter(data::Filter::default());
                 }
-                // Q: Quit application
-                KeyCode::Char('q' | 'Q') => return Some(crate::ui::Message::Quit),
                 // T: Change all/any words requirement
                 KeyCode::Char('t' | 'T') => {
                     self.all_tags = !self.all_tags;
                     self.filter(self.filter_from_input());
                     self.style_text_area();
-                }
-                // R: Reverse sorting
-                KeyCode::Char('s' | 'S') => {
-                    self.set_mode_and_maybe_sort(None, !self.sorting_asc);
                 }
                 KeyCode::Char('m' | 'M') => {
                     self.set_mode_and_maybe_sort(SortingMode::Name, true);
@@ -396,6 +390,41 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
+            // File mode: Wait for second input
+            SelectMode::SubmenuFile => {
+                match key.code {
+                    // D: Delete note
+                    KeyCode::Char('d' | 'D') => {
+                        // Get selected element, extract its id
+                        if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
+                        {
+                            // delete it from index & filesystem
+                            if data::notefile::delete_note_file(&mut self.index, &env_stats.id) {
+                                // if successfull, refresh the ui
+                                self.refresh();
+                            }
+                        }
+                        self.mode = SelectMode::Select;
+                    }
+                    // N: Create note
+                    KeyCode::Char('n' | 'N') => {
+                        self.mode = SelectMode::Create;
+                    }
+                    // R: Rename note
+                    KeyCode::Char('r' | 'R') => {
+                        self.mode = SelectMode::Rename;
+                    }
+                    // M: Move note
+                    KeyCode::Char('m' | 'M') => {
+                        self.mode = SelectMode::Move;
+                    }
+                    // Back to select mode
+                    KeyCode::Esc => {
+                        self.mode = SelectMode::Select;
+                    }
+                    _ => {}
+                }
+            }
             // Create mode: Type in note name
             SelectMode::Create => {
                 match key.code {
@@ -405,35 +434,17 @@ impl super::Screen for SelectScreen {
                         self.filter_area.cut();
                         self.mode = SelectMode::Select;
                     }
-                    // Enter: Create note, back to main mode, clear teh buffer
+                    // Enter: Create note, back to main mode, clear the buffer
                     KeyCode::Enter => {
-                        // Piece together the file path
-                        let mut path = self.config.get_vault_path();
-                        path.push(
-                            self.create_area
-                                .lines()
-                                .first()
-                                .map(|s| s.as_str().trim_start_matches("/"))
-                                .unwrap_or("Untitled"),
-                        );
-                        path.set_extension("md");
-                        // Create the file
-                        let file = std::fs::File::create(path.clone());
-                        if let Ok(mut file) = file {
-                            let _ = write!(
-                                file,
-                                "#{}",
-                                self.create_area
-                                    .lines()
-                                    .first()
-                                    .map(|s| s.as_str())
-                                    .unwrap_or("Untitled")
-                            );
+                        // Create & register the note
+                        if data::notefile::create_note_file(
+                            &mut self.index,
+                            self.create_area.lines().first(),
+                            &self.config,
+                        ) {
+                            // if successfull, refresh the ui
+                            self.refresh();
                         }
-                        // Add the file to the index
-                        self.index.borrow_mut().register(&path::Path::new(&path));
-                        // Refresh the display
-                        self.refresh();
                         // Clear the input area
                         self.create_area.select_all();
                         self.create_area.cut();
@@ -447,6 +458,27 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
+            // Renaming mode: Type into a text box, then initiate rename on enter
+            SelectMode::Rename => match key.code {
+                KeyCode::Esc => {
+                    self.mode = SelectMode::Select;
+                }
+                _ => {} // TODO
+            },
+            // Move mode: Type into a text box, then initiate move on enter
+            SelectMode::Move => match key.code {
+                KeyCode::Esc => {
+                    self.mode = SelectMode::Select;
+                }
+                _ => {} // TODO
+            },
+            // Sorting submenu: Wait for second input
+            SelectMode::SubmenuSorting => match key.code {
+                KeyCode::Esc => {
+                    self.mode = SelectMode::Select;
+                }
+                _ => {} // TODO
+            },
         }
 
         None
@@ -611,9 +643,13 @@ impl super::Screen for SelectScreen {
                             .saturating_sub(table_area.height as usize),
                     ),
             )
-            // If not in filter mode, show a selected element
+            // In certain modes, show a selected element
             .with_selected(match self.mode {
-                SelectMode::Select => Some(self.selected),
+                SelectMode::Select
+                | SelectMode::Rename
+                | SelectMode::Move
+                | SelectMode::SubmenuFile
+                | SelectMode::SubmenuSorting => Some(self.selected),
                 SelectMode::Filter | SelectMode::Create => None,
             });
 
