@@ -430,8 +430,8 @@ impl super::Screen for SelectScreen {
                 match key.code {
                     // Escape: Back to main mode, clear the buffer
                     KeyCode::Esc => {
-                        self.filter_area.select_all();
-                        self.filter_area.cut();
+                        self.create_area.select_all();
+                        self.create_area.cut();
                         self.mode = SelectMode::Select;
                     }
                     // Enter: Create note, back to main mode, clear the buffer
@@ -451,7 +451,7 @@ impl super::Screen for SelectScreen {
                         // Switch back to base mode
                         self.mode = SelectMode::Select;
                     }
-                    // All other key events are passed on to the text area, then the filter is immediately applied
+                    // All other key events are passed on to the text area
                     _ => {
                         // Else -> Pass on to the text area
                         self.create_area.input_without_shortcuts(key);
@@ -460,10 +460,40 @@ impl super::Screen for SelectScreen {
             }
             // Renaming mode: Type into a text box, then initiate rename on enter
             SelectMode::Rename => match key.code {
+                // Escape: Back to main mode, clear the buffer
                 KeyCode::Esc => {
+                    self.create_area.select_all();
+                    self.create_area.cut();
                     self.mode = SelectMode::Select;
                 }
-                _ => {} // TODO
+                // Enter: Rename note, back to main mode, clear the buffer
+                KeyCode::Enter => {
+                    // Create & register the note
+                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
+                        if data::notefile::rename_note_file(
+                            &mut self.index,
+                            &env_stats.id,
+                            self.create_area
+                                .lines()
+                                .first()
+                                .cloned()
+                                .unwrap_or_else(|| String::from("Untitled")),
+                        ) {
+                            // if successfull, refresh the ui
+                            self.refresh();
+                        }
+                    }
+                    // Clear the input area
+                    self.create_area.select_all();
+                    self.create_area.cut();
+                    // Switch back to base mode
+                    self.mode = SelectMode::Select;
+                }
+                // All other key events are passed on to the text area
+                _ => {
+                    // Else -> Pass on to the text area
+                    self.create_area.input_without_shortcuts(key);
+                }
             },
             // Move mode: Type into a text box, then initiate move on enter
             SelectMode::Move => match key.code {

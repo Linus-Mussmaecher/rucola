@@ -4,6 +4,24 @@ use crate::config;
 
 use super::*;
 
+/// Deletes the note of the given id from the index, then follows its path and deletes it in the file system.
+pub fn rename_note_file(index: &mut NoteIndexContainer, id: &str, new_name: String) -> bool {
+    let table = &mut index.borrow_mut().inner;
+    // Remove the old version from the table
+    if let Some(mut note) = table.remove(id) {
+        let new_id = super::name_to_id(&new_name);
+        // update its name
+        note.name = new_name;
+        // re-insert under new index
+        table.insert(new_id, note);
+        // TODO: Update links
+        true
+    } else {
+        false
+    }
+}
+
+/// Deletes the note of the given id from the index, then follows its path and deletes it in the file system.
 pub fn delete_note_file(index: &mut NoteIndexContainer, id: &str) -> bool {
     if if let Some(note) = index.borrow().get(id) {
         std::fs::remove_file(path::Path::new(&note.path)).is_ok()
@@ -17,6 +35,7 @@ pub fn delete_note_file(index: &mut NoteIndexContainer, id: &str) -> bool {
     }
 }
 
+/// Creates a note of the given name in the file system (relative to the vault) and registers it in the given index.
 pub fn create_note_file(
     index: &mut NoteIndexContainer,
     name: Option<&String>,
