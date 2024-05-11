@@ -29,6 +29,8 @@ struct ConfigFile {
     editor: Option<String>,
     /// File endings to consider notes
     file_endings: Vec<String>,
+    /// Default file ending for newly created notes
+    default_ending: String,
 }
 
 impl Default for ConfigFile {
@@ -39,6 +41,7 @@ impl Default for ConfigFile {
             theme: "default_light_theme".to_string(),
             editor: None,
             file_endings: vec![String::from("md")],
+            default_ending: String::from("md"),
         }
     }
 }
@@ -111,6 +114,11 @@ impl Config {
     /// An empty string indicates that files with no extension ought to be accepted.
     pub fn get_endings(&self) -> &[String] {
         &self.config_file.file_endings
+    }
+
+    /// Returns the default file ending for a newly created note.
+    pub fn get_default_ending(&self) -> &String {
+        &self.config_file.default_ending
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
