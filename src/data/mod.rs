@@ -9,6 +9,8 @@ mod index;
 pub use index::NoteIndex;
 pub use index::NoteIndexContainer;
 
+pub mod notefile;
+
 /// Turns a file name into its id in the following steps:
 ///  - All characters are turned to lowercase
 ///  - Spaces ` ` are replaced by dashes `-`.
