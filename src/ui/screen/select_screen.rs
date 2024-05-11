@@ -274,7 +274,7 @@ impl super::Screen for SelectScreen {
                 // Q: Quit application
                 KeyCode::Char('q' | 'Q') => return Some(crate::ui::Message::Quit),
                 // R: Got to file management submenu
-                KeyCode::Char('r' | 'R') => {
+                KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
                 }
                 // S: Got to sorting submenu
@@ -297,9 +297,9 @@ impl super::Screen for SelectScreen {
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }
-                KeyCode::Char('m' | 'M') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Name, true);
-                }
+                // KeyCode::Char('m' | 'M') => {
+                //     self.set_mode_and_maybe_sort(SortingMode::Name, true);
+                // }
                 KeyCode::Char('w' | 'W') => {
                     self.set_mode_and_maybe_sort(SortingMode::Words, false);
                 }
@@ -706,18 +706,10 @@ impl super::Screen for SelectScreen {
 
         // Instructions at the bottom of the page
         let instructions_bot = block::Title::from(Line::from(vec![
-            Span::styled("N", styles.hotkey_style),
-            Span::styled("ew Note──", styles.text_style),
+            Span::styled("M", styles.hotkey_style),
+            Span::styled("anage Files──", styles.text_style),
             Span::styled("E", styles.hotkey_style),
             Span::styled("dit Note──", styles.text_style),
-            Span::styled(
-                if self.sorting_asc {
-                    "Ascending "
-                } else {
-                    "Descending "
-                },
-                styles.text_style,
-            ),
             Span::styled("S", styles.hotkey_style),
             Span::styled("orting", styles.text_style),
         ]))
@@ -785,7 +777,10 @@ impl super::Screen for SelectScreen {
         StatefulWidget::render(table, table_area, buf, &mut state);
 
         // Render the pop up
-        if self.mode == SelectMode::Create {
+        if self.mode == SelectMode::Create
+            || self.mode == SelectMode::Rename
+            || self.mode == SelectMode::Move
+        {
             let popup_layout = Layout::vertical([
                 Constraint::Fill(1),
                 Constraint::Length(3),
