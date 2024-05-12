@@ -297,27 +297,6 @@ impl super::Screen for SelectScreen {
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }
-                // KeyCode::Char('m' | 'M') => {
-                //     self.set_mode_and_maybe_sort(SortingMode::Name, true);
-                // }
-                KeyCode::Char('w' | 'W') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Words, false);
-                }
-                KeyCode::Char('a' | 'A') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Chars, false);
-                }
-                KeyCode::Char('o' | 'O') => {
-                    self.set_mode_and_maybe_sort(SortingMode::GlobalOutLinks, false);
-                }
-                KeyCode::Char('u' | 'U') => {
-                    self.set_mode_and_maybe_sort(SortingMode::LocalOutLinks, false);
-                }
-                KeyCode::Char('g' | 'G') => {
-                    self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
-                }
-                KeyCode::Char('l' | 'L') => {
-                    self.set_mode_and_maybe_sort(SortingMode::LocalInLinks, false);
-                }
                 // Selection
                 // Down
                 KeyCode::Char('j' | 'J') | KeyCode::Down => {
@@ -335,38 +314,10 @@ impl super::Screen for SelectScreen {
                     self.selected = 0;
                 }
                 // Open selected item in display view
-                KeyCode::Enter => {
+                KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
                         return Some(crate::ui::Message::SwitchDisplay(env_stats.id.clone()));
                     }
-                }
-                // Open selected item in editor
-                KeyCode::Char('e' | 'E') => {
-                    return self
-                        // get the selected item in the list for the id
-                        .local_stats
-                        .filtered_stats
-                        .get(self.selected)
-                        // use this id in the index to get the note
-                        .and_then(|env_stats| {
-                            self.index
-                                .borrow()
-                                .get(&env_stats.id)
-                                .map(|note| note.path.clone())
-                        })
-                        // get the path from the note
-                        .map(|path| {
-                            ui::Message::OpenExternalCommand(
-                                // check if there is an application configured
-                                if let Some(application) = self.config.get_editor() {
-                                    // default configures -> create a command for that one
-                                    open::with_command(path, application)
-                                } else {
-                                    // else -> get system defaults, take the first one
-                                    open::commands(path).remove(0)
-                                },
-                            )
-                        });
                 }
                 _ => {}
             },
@@ -405,6 +356,34 @@ impl super::Screen for SelectScreen {
                             }
                         }
                         self.mode = SelectMode::Select;
+                    }
+                    // Open selected item in editor
+                    KeyCode::Char('e' | 'E') => {
+                        return self
+                            // get the selected item in the list for the id
+                            .local_stats
+                            .filtered_stats
+                            .get(self.selected)
+                            // use this id in the index to get the note
+                            .and_then(|env_stats| {
+                                self.index
+                                    .borrow()
+                                    .get(&env_stats.id)
+                                    .map(|note| note.path.clone())
+                            })
+                            // get the path from the note
+                            .map(|path| {
+                                ui::Message::OpenExternalCommand(
+                                    // check if there is an application configured
+                                    if let Some(application) = self.config.get_editor() {
+                                        // default configures -> create a command for that one
+                                        open::with_command(path, application)
+                                    } else {
+                                        // else -> get system defaults, take the first one
+                                        open::commands(path).remove(0)
+                                    },
+                                )
+                            });
                     }
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
@@ -504,10 +483,42 @@ impl super::Screen for SelectScreen {
             },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
-                KeyCode::Esc => {
+                KeyCode::Char('a' | 'A') => {
+                    self.set_mode_and_maybe_sort(SortingMode::Name, true);
                     self.mode = SelectMode::Select;
                 }
-                _ => {} // TODO
+                KeyCode::Char('w' | 'W') => {
+                    self.set_mode_and_maybe_sort(SortingMode::Words, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('c' | 'C') => {
+                    self.set_mode_and_maybe_sort(SortingMode::Chars, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('o' | 'O') => {
+                    self.set_mode_and_maybe_sort(SortingMode::GlobalOutLinks, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('u' | 'U') => {
+                    self.set_mode_and_maybe_sort(SortingMode::LocalOutLinks, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('i' | 'I') => {
+                    self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('n' | 'N') => {
+                    self.set_mode_and_maybe_sort(SortingMode::LocalInLinks, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('r' | 'R') => {
+                    self.set_mode_and_maybe_sort(None, !self.sorting_asc);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Esc | KeyCode::Char('s' | 'S') => {
+                    self.mode = SelectMode::Select;
+                }
+                _ => {}
             },
         }
 
@@ -708,8 +719,6 @@ impl super::Screen for SelectScreen {
         let instructions_bot = block::Title::from(Line::from(vec![
             Span::styled("M", styles.hotkey_style),
             Span::styled("anage Files──", styles.text_style),
-            Span::styled("E", styles.hotkey_style),
-            Span::styled("dit Note──", styles.text_style),
             Span::styled("S", styles.hotkey_style),
             Span::styled("orting", styles.text_style),
         ]))
@@ -721,38 +730,13 @@ impl super::Screen for SelectScreen {
             .column_spacing(1)
             // Add Headers
             .header(Row::new(vec![
-                Line::from(vec![
-                    Span::styled("Na", styles.title_style),
-                    Span::styled("m", styles.hotkey_style),
-                    Span::styled("e", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("W", styles.hotkey_style),
-                    Span::styled("ords", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("Ch", styles.title_style),
-                    Span::styled("a", styles.hotkey_style),
-                    Span::styled("rs", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("Global", styles.title_style),
-                    Span::styled("O", styles.hotkey_style),
-                    Span::styled("ut", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("LocalO", styles.title_style),
-                    Span::styled("u", styles.hotkey_style),
-                    Span::styled("t", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("G", styles.hotkey_style),
-                    Span::styled("lobalIn", styles.title_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("L", styles.hotkey_style),
-                    Span::styled("ocalIn", styles.title_style),
-                ]),
+                Span::styled("Name", styles.subtitle_style),
+                Span::styled("  Words", styles.subtitle_style),
+                Span::styled("  Chars", styles.subtitle_style),
+                Span::styled("GlobalOut", styles.subtitle_style),
+                Span::styled(" LocalOut", styles.subtitle_style),
+                Span::styled("GlobalIn", styles.subtitle_style),
+                Span::styled(" LocalIn", styles.subtitle_style),
             ]))
             .highlight_style(styles.selected_style)
             // Add Instructions and a title
@@ -761,11 +745,6 @@ impl super::Screen for SelectScreen {
                     .title("Notes".set_style(styles.title_style))
                     .title(instructions_bot),
             );
-
-        // === Create pop-up
-
-        // Mostly styled on creation
-        let create_input = self.create_area.widget();
 
         // === Rendering ===
 
@@ -776,27 +755,90 @@ impl super::Screen for SelectScreen {
 
         StatefulWidget::render(table, table_area, buf, &mut state);
 
-        // Render the pop up
-        if self.mode == SelectMode::Create
-            || self.mode == SelectMode::Rename
-            || self.mode == SelectMode::Move
-        {
-            let popup_layout = Layout::vertical([
-                Constraint::Fill(1),
-                Constraint::Length(3),
-                Constraint::Fill(1),
-            ])
-            .split(area);
+        // Render eventual pop-ups
+        match self.mode {
+            SelectMode::SubmenuFile | SelectMode::SubmenuSorting => {
+                let contents = if self.mode == SelectMode::SubmenuFile {
+                    vec![
+                        ("N", "New note"),
+                        ("E", "Edit selected note"),
+                        ("R", "Rename selected note"),
+                        ("M", "Move selected note"),
+                        ("D", "Delete selected note"),
+                    ]
+                } else {
+                    vec![
+                        ("A", "Sort by name"),
+                        ("W", "Sort by words"),
+                        ("C", "Sort by characters"),
+                        ("O", "Sort by global outlinks"),
+                        ("U", "Sort by local outlinks"),
+                        ("I", "Sort by global inlinks"),
+                        ("N", "Sort by local inlinks"),
+                        ("R", "Reverse sorting"),
+                    ]
+                };
 
-            let create_area = Layout::horizontal([
-                Constraint::Fill(1),
-                Constraint::Percentage(60),
-                Constraint::Fill(1),
-            ])
-            .split(popup_layout[1])[1];
+                let popup_areas = Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(contents.len() as u16 + 2),
+                    Constraint::Length(1),
+                ])
+                .split(area);
 
-            Widget::render(Clear, create_area, buf);
-            Widget::render(create_input, create_area, buf);
+                let br_area = Layout::horizontal([
+                    Constraint::Fill(1),
+                    Constraint::Length(
+                        contents
+                            .iter()
+                            .map(|(_key, desc)| desc.len())
+                            .max()
+                            .unwrap_or_default() as u16
+                            + 5,
+                    ),
+                    Constraint::Length(1),
+                ])
+                .split(popup_areas[1])[1];
+
+                let rows = contents
+                    .into_iter()
+                    .map(|(key, description)| {
+                        Row::new(vec![
+                            Span::styled(key, styles.hotkey_style),
+                            Span::styled(description, styles.text_style),
+                        ])
+                    })
+                    .collect::<Vec<_>>();
+
+                let widths = [Constraint::Length(2), Constraint::Fill(1)];
+
+                let popup_table = Table::new(rows, widths)
+                    .block(Block::bordered())
+                    .column_spacing(1);
+
+                Widget::render(Clear, br_area, buf);
+                Widget::render(popup_table, br_area, buf);
+            }
+            SelectMode::Filter | SelectMode::Select => {}
+            SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
+                let create_input = self.create_area.widget();
+
+                let popup_areas = Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(3),
+                    Constraint::Fill(1),
+                ])
+                .split(area);
+
+                let center_area = Layout::horizontal([
+                    Constraint::Fill(1),
+                    Constraint::Percentage(60),
+                    Constraint::Fill(1),
+                ])
+                .split(popup_areas[1])[1];
+                Widget::render(Clear, center_area, buf);
+                Widget::render(create_input, center_area, buf);
+            }
         }
     }
 }
