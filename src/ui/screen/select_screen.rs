@@ -716,34 +716,85 @@ impl super::Screen for SelectScreen {
             .collect::<Vec<Row>>();
 
         // Instructions at the bottom of the page
-        let instructions_bot = block::Title::from(Line::from(vec![
+        let instructions_bot_left = block::Title::from(Line::from(vec![
+            Span::styled("J", styles.hotkey_style),
+            Span::styled("/", styles.text_style),
+            Span::styled("", styles.hotkey_style),
+            Span::styled(": Down──", styles.text_style),
+            Span::styled("K", styles.hotkey_style),
+            Span::styled("/", styles.text_style),
+            Span::styled("", styles.hotkey_style),
+            Span::styled(": Up──", styles.text_style),
+            Span::styled("Enter", styles.hotkey_style),
+            Span::styled("/", styles.text_style),
+            Span::styled("", styles.hotkey_style),
+            Span::styled(": Open──", styles.text_style),
+        ]))
+        .alignment(Alignment::Left)
+        .position(block::Position::Bottom);
+
+        let instructions_bot_right = block::Title::from(Line::from(vec![
             Span::styled("M", styles.hotkey_style),
             Span::styled("anage Files──", styles.text_style),
             Span::styled("S", styles.hotkey_style),
-            Span::styled("orting", styles.text_style),
+            Span::styled("orting──", styles.text_style),
+            Span::styled("Q", styles.hotkey_style),
+            Span::styled("uit", styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
+
+        let table_heading_key_style = if self.mode == SelectMode::SubmenuSorting {
+            styles.hotkey_style
+        } else {
+            styles.subtitle_style
+        };
 
         // Finally generate the table from the generated row and width data
         let table = Table::new(notes_rows, notes_table_widths)
             .column_spacing(1)
             // Add Headers
             .header(Row::new(vec![
-                Span::styled("Name", styles.subtitle_style),
-                Span::styled("  Words", styles.subtitle_style),
-                Span::styled("  Chars", styles.subtitle_style),
-                Span::styled("GlobalOut", styles.subtitle_style),
-                Span::styled(" LocalOut", styles.subtitle_style),
-                Span::styled("GlobalIn", styles.subtitle_style),
-                Span::styled(" LocalIn", styles.subtitle_style),
+                Line::from(vec![
+                    Span::styled("N", styles.subtitle_style),
+                    Span::styled("a", table_heading_key_style),
+                    Span::styled("me", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("W", table_heading_key_style),
+                    Span::styled("ords", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("C", table_heading_key_style),
+                    Span::styled("hars", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("Global", styles.subtitle_style),
+                    Span::styled("O", table_heading_key_style),
+                    Span::styled("ut", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("LocalO", styles.subtitle_style),
+                    Span::styled("u", table_heading_key_style),
+                    Span::styled("t", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("Global", styles.subtitle_style),
+                    Span::styled("I", table_heading_key_style),
+                    Span::styled("n", styles.subtitle_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("LocalI", styles.subtitle_style),
+                    Span::styled("n", table_heading_key_style),
+                ]),
             ]))
             .highlight_style(styles.selected_style)
             // Add Instructions and a title
             .block(
                 Block::bordered()
                     .title("Notes".set_style(styles.title_style))
-                    .title(instructions_bot),
+                    .title(instructions_bot_left)
+                    .title(instructions_bot_right),
             );
 
         // === Rendering ===
