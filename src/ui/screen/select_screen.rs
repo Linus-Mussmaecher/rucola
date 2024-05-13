@@ -359,6 +359,7 @@ impl super::Screen for SelectScreen {
                     }
                     // Open selected item in editor
                     KeyCode::Char('e' | 'E') => {
+                        self.mode = SelectMode::Select;
                         return self
                             // get the selected item in the list for the id
                             .local_stats

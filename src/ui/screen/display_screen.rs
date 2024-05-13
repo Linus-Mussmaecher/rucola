@@ -164,7 +164,9 @@ impl super::Screen for DisplayScreen {
             // Quit with q
             KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
             // Go back to selection with f
-            KeyCode::Char('F' | 'f') => Some(ui::Message::SwitchSelect),
+            KeyCode::Char('F' | 'f') | KeyCode::Left | KeyCode::Char('H' | 'h') => {
+                Some(ui::Message::SwitchSelect)
+            }
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected
@@ -184,18 +186,18 @@ impl super::Screen for DisplayScreen {
                 });
                 None
             }
-            // Change list with Tab or L
-            KeyCode::Tab | KeyCode::Right | KeyCode::Char('L' | 'l') => {
+            // Change list with Tab
+            KeyCode::Tab => {
                 self.foc_table = (self.foc_table.wrapping_add(1)) % 4;
                 None
             }
             // Change list back with Shift+Tab or H
-            KeyCode::BackTab | KeyCode::Left | KeyCode::Char('H' | 'h') => {
+            KeyCode::BackTab => {
                 self.foc_table = (self.foc_table.wrapping_sub(1)) % 4;
                 None
             }
             // If enter, switch to that note
-            KeyCode::Enter => {
+            KeyCode::Enter | KeyCode::Right | KeyCode::Char('L' | 'l') => {
                 self.links
                     // get the correct table
                     .get(self.foc_table)
