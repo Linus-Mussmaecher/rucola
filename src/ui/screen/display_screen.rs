@@ -207,19 +207,9 @@ impl super::Screen for DisplayScreen {
                     .map(|(id, _name)| ui::Message::SwitchDisplay(id.to_owned()))
             }
             // Open selected item in editor
-            KeyCode::Char('e' | 'E') => {
-                let path = std::path::Path::new(&self.note.path);
-                Some(ui::Message::OpenExternalCommand(
-                    // check if there is an application configured
-                    if let Some(application) = self.config.get_editor() {
-                        // default configures -> create a command for that one
-                        open::with_command(path, application)
-                    } else {
-                        // else -> get system defaults, take the first one
-                        open::commands(path).remove(0)
-                    },
-                ))
-            }
+            KeyCode::Char('e' | 'E') => Some(ui::Message::OpenExternalCommand(
+                self.config.create_opening_command(&self.note.path),
+            )),
             _ => None,
         }
     }

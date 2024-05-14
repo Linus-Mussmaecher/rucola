@@ -105,9 +105,15 @@ impl Config {
         &self.uistyles
     }
 
-    /// Return the editor supposed to be used with notes.
-    pub fn get_editor(&self) -> Option<&str> {
-        self.config_file.editor.as_deref()
+    /// Reads the config file and the
+    pub fn create_opening_command(&self, path: &path::PathBuf) -> std::process::Command {
+        if let Some(application) = &self.config_file.editor {
+            // default configured -> create a command for that one
+            open::with_command(path, application)
+        } else {
+            // else -> get system defaults, take the first one
+            open::commands(path).remove(0)
+        }
     }
 
     /// Wether or not the given string constitutes a valid extension to be crawled by rucola.
@@ -117,9 +123,20 @@ impl Config {
             .contains(&String::from(ext))
     }
 
-    /// Returns the default file ending for a newly created note.
-    pub fn get_default_extension(&self) -> &String {
-        &self.config_file.default_extension
+    /// Takes in a PathBuf and, if the current file extension is not one of the valid ones in the configuration, appends the default file extension.
+    pub fn validate_file_extension(&self, path: &mut path::PathBuf) {
+        match path.extension() {
+            Some(ext) => {
+                if !self.is_valid_extension(&String::from(ext.to_string_lossy())) {
+                    path.set_extension(&self.config_file.default_extension);
+                }
+            }
+            None => {
+                if !self.is_valid_extension("") {
+                    path.set_extension(&self.config_file.default_extension);
+                }
+            }
+        }
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
