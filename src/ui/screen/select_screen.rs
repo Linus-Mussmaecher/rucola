@@ -454,6 +454,7 @@ impl super::Screen for SelectScreen {
                             &mut self.index,
                             &env_stats.id,
                             self.create_area.lines().first().cloned(),
+                            &self.config,
                         ) {
                             // if successfull, refresh the ui
                             self.refresh();
