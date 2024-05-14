@@ -161,12 +161,12 @@ impl super::Screen for DisplayScreen {
 
     fn update(&mut self, key: crossterm::event::KeyEvent) -> Option<ui::Message> {
         match key.code {
-            // Quit with q
+            // Quit with Q
             KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
             // Go back to selection with f
-            KeyCode::Char('F' | 'f') | KeyCode::Left | KeyCode::Char('H' | 'h') => {
-                Some(ui::Message::SwitchSelect)
-            }
+            KeyCode::Char('F' | 'f') => Some(ui::Message::DisplayStackClear),
+            // Return to selection or previous note with left or H
+            KeyCode::Left | KeyCode::Char('H' | 'h') => Some(ui::Message::DisplayStackPop),
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected
@@ -204,7 +204,7 @@ impl super::Screen for DisplayScreen {
                     // unwrap the current index
                     .and_then(|table| table.get(self.selected[self.foc_table]))
                     // and extract the id
-                    .map(|(id, _name)| ui::Message::SwitchDisplay(id.to_owned()))
+                    .map(|(id, _name)| ui::Message::DisplayStackPush(id.to_owned()))
             }
             // Open selected item in editor
             KeyCode::Char('e' | 'E') => Some(ui::Message::OpenExternalCommand(
