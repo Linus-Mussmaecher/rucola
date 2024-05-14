@@ -321,7 +321,7 @@ impl super::Screen for SelectScreen {
                 // Open selected item in display view
                 KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        return Some(crate::ui::Message::SwitchDisplay(env_stats.id.clone()));
+                        return Some(crate::ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
                 _ => {}

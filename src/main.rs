@@ -9,13 +9,15 @@ use std::{cell::RefCell, io::stdout, rc::Rc};
 mod config;
 mod data;
 mod ui;
-use ui::screen;
+use ui::{screen, Screen};
 /// The main state of the application.
 struct App {
     /// The currently displayed UI screen.
-    screen: Box<dyn ui::Screen>,
-    /// All notes managed by the application, keyed by their ID.
-    index: data::NoteIndexContainer,
+    select: screen::SelectScreen,
+    /// The top of the display stack, if present.
+    display: Option<screen::DisplayScreen>,
+    /// The ids of note on the display stack
+    display_stack: Vec<String>,
 }
 
 /// Main function
@@ -38,18 +40,23 @@ fn main() -> color_eyre::Result<()> {
 
     // Initialize app state
     let mut app = App {
-        screen: Box::new(screen::SelectScreen::new(index.clone(), &config)),
-        index,
+        select: screen::SelectScreen::new(index.clone(), &config),
+        display: None,
+        display_stack: Vec::new(),
     };
 
     // Main loop
 
     'main: loop {
         // Draw the current screen.
-        terminal.draw(|frame| {
+        terminal.draw(|frame: &mut Frame| {
             let area = frame.size();
             let buf = frame.buffer_mut();
-            app.screen.draw(area, buf);
+            if let Some(display) = &app.display {
+                display.draw(area, buf);
+            } else {
+                app.select.draw(area, buf);
+            }
         })?;
 
         // Inform the current screen of events
@@ -57,24 +64,16 @@ fn main() -> color_eyre::Result<()> {
             if let event::Event::Key(key) = event::read()? {
                 // Check for key preses
                 if key.kind == KeyEventKind::Press {
-                    // Register input and get message.
-                    if let Some(msg) = app.screen.update(key) {
+                    // Update appropriate screen
+                    let msg = if let Some(display) = &mut app.display {
+                        display.update(key)
+                    } else {
+                        app.select.update(key)
+                    };
+                    // Act on the potentially returned message.
+                    if let Some(msg) = msg {
                         match msg {
                             ui::Message::Quit => break 'main,
-                            ui::Message::SwitchSelect => {
-                                // Replace the screen with the basic selector
-                                app.screen =
-                                    Box::new(screen::SelectScreen::new(app.index.clone(), &config));
-                            }
-                            ui::Message::SwitchDisplay(id) => {
-                                // check if the note actually can be found
-                                if let Some(loaded_note) =
-                                    screen::DisplayScreen::new(&id, app.index.clone(), &config)
-                                {
-                                    // if yes, replace the current screen
-                                    app.screen = Box::new(loaded_note);
-                                }
-                            }
                             ui::Message::OpenExternalCommand(mut command) => {
                                 // Restore the terminal
                                 restore_terminal()?;
@@ -82,6 +81,23 @@ fn main() -> color_eyre::Result<()> {
                                 command.status()?;
                                 // Re-enter the application
                                 terminal = init_terminal()?;
+                            }
+                            ui::Message::DisplayStackClear => {
+                                app.display_stack.clear();
+                                app.display = None;
+                            }
+                            ui::Message::DisplayStackPop => {
+                                app.display_stack.pop();
+                                app.display = app.display_stack.last().and_then(|id| {
+                                    screen::DisplayScreen::new(id, index.clone(), &config)
+                                })
+                            }
+                            ui::Message::DisplayStackPush(new_id) => {
+                                app.display_stack.push(new_id);
+
+                                app.display = app.display_stack.last().and_then(|id| {
+                                    screen::DisplayScreen::new(id, index.clone(), &config)
+                                })
                             }
                         }
                     }
