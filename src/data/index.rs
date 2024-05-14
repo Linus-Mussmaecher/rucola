@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::path;
 
@@ -52,11 +51,6 @@ impl NoteIndex {
         }
     }
 
-    /// Removes a note
-    pub fn remove(&mut self, id: &str) {
-        self.inner.borrow_mut().remove(id);
-    }
-
     /// Returns an iterator over id pairs of notes linked from this note.
     pub fn links_vec(&self, source_id: &str) -> Vec<(String, String)> {
         self.inner
@@ -97,12 +91,10 @@ fn is_not_hidden(entry: &walkdir::DirEntry) -> bool {
 /// Checks if the given dir entry is a valid file, i.e. a file whose name ends one of the endings configured in the config file.
 fn valid_ending(entry: &walkdir::DirEntry, config: &config::Config) -> bool {
     entry.file_type().is_file()
-        && (config.get_endings().contains(&"*".to_string())
+        && ((config.is_valid_extension("*"))
             || match entry.path().extension() {
-                Some(ending) => config
-                    .get_endings()
-                    .contains(&ending.to_string_lossy().to_string()),
-                None => config.get_endings().contains(&"".to_string()),
+                Some(ending) => config.is_valid_extension(&ending.to_string_lossy()),
+                None => config.is_valid_extension(""),
             })
 }
 

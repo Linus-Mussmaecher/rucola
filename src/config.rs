@@ -28,9 +28,9 @@ struct ConfigFile {
     /// The editor to use for notes
     editor: Option<String>,
     /// File endings to consider notes
-    file_endings: Vec<String>,
+    file_extensions: Vec<String>,
     /// Default file ending for newly created notes
-    default_ending: String,
+    default_extension: String,
 }
 
 impl Default for ConfigFile {
@@ -40,8 +40,8 @@ impl Default for ConfigFile {
             vault_path: None,
             theme: "default_light_theme".to_string(),
             editor: None,
-            file_endings: vec![String::from("md")],
-            default_ending: String::from("md"),
+            file_extensions: vec![String::from("md")],
+            default_extension: String::from("md"),
         }
     }
 }
@@ -110,15 +110,16 @@ impl Config {
         self.config_file.editor.as_deref()
     }
 
-    /// Return the valid file endings to be considered a note file.
-    /// An empty string indicates that files with no extension ought to be accepted.
-    pub fn get_endings(&self) -> &[String] {
-        &self.config_file.file_endings
+    /// Wether or not the given string constitutes a valid extension to be crawled by rucola.
+    pub fn is_valid_extension(&self, ext: &str) -> bool {
+        self.config_file
+            .file_extensions
+            .contains(&String::from(ext))
     }
 
     /// Returns the default file ending for a newly created note.
     pub fn get_default_extension(&self) -> &String {
-        &self.config_file.default_ending
+        &self.config_file.default_extension
     }
 
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).

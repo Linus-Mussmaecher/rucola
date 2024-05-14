@@ -9,6 +9,7 @@ pub fn rename_note_file(
     index: &mut NoteIndexContainer,
     id: &str,
     new_name: Option<String>,
+    config: &config::Config,
 ) -> bool {
     let table = &mut index.borrow_mut().inner;
     // Remove the old version from the table
@@ -25,7 +26,7 @@ pub fn rename_note_file(
                 .unwrap_or("Untitled"),
         );
         // If this new name has not introduced an extension, re-set the previous one.
-        if new_path.extension().is_none() {
+        if new_path.extension().is_none() && !config.is_valid_extension("") {
             if let Some(ext) = old_path.extension() {
                 new_path.set_extension(ext);
             }
@@ -53,8 +54,14 @@ pub fn move_note_file(
         } else {
             note.path.clone()
         };
-        // If this new name has not introduced an extension, re-set the previous one.
-        if new_path.extension().is_none() {
+        // If this has not introduced a file name, re-use the previous one
+        if new_path.file_name().is_none() {
+            if let Some(name) = note.path.file_name() {
+                new_path.set_file_name(name);
+            }
+        }
+        // If this new name has not introduced an extension, and no-extension is not allowed per the config, re-set the previous one.
+        if new_path.extension().is_none() && !config.is_valid_extension("") {
             if let Some(ext) = note.path.extension() {
                 new_path.set_extension(ext);
             }
@@ -67,23 +74,24 @@ pub fn move_note_file(
     }
 }
 
-/// Removes the file with the given id from the table, then moves the file from source to target and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
+/// Moves the file from source to target, if successful removes the old note from the table and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
 fn move_note_file_inner(
     id: &str,
     table: &mut std::collections::HashMap<String, Note>,
     source: path::PathBuf,
     target: path::PathBuf,
 ) -> bool {
-    if let Some(mut note) = table.remove(id) {
-        let new_name = target
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-        let new_id = super::name_to_id(&new_name);
+    // create new name and id
+    let new_name = target
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let new_id = super::name_to_id(&new_name);
 
-        // acutal fs copy
-
-        if std::fs::rename(source, target.clone()).is_ok() {
+    // acutal fs copy
+    if std::fs::rename(source, target.clone()).is_ok() {
+        // If successful, remove old note, update it and re-insert at new id
+        if let Some(mut note) = table.remove(id) {
             note.name = new_name;
             note.path = target;
             table.insert(new_id, note);
@@ -95,12 +103,13 @@ fn move_note_file_inner(
 
 /// Deletes the note of the given id from the index, then follows its path and deletes it in the file system.
 pub fn delete_note_file(index: &mut NoteIndexContainer, id: &str) -> bool {
+    let table = &mut index.borrow_mut().inner;
     // Get the note
-    if let Some(note) = index.borrow().get(id) {
+    if let Some(note) = table.get(id) {
         // Follow its path and delete it
         if std::fs::remove_file(path::Path::new(&note.path)).is_ok() {
             // If that both worked, remove it from the index.
-            index.borrow_mut().remove(id);
+            table.remove(id);
             return true;
         }
     }
