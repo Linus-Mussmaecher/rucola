@@ -9,20 +9,34 @@ pub fn rename_note_file(index: &mut NoteIndexContainer, id: &str, new_name: Stri
     let table = &mut index.borrow_mut().inner;
     // Remove the old version from the table
     if let Some(mut note) = table.remove(id) {
-        let new_id = super::name_to_id(&new_name);
-        // Change the path
+        // Remember old path
         let old_path = note.path.clone();
-        note.path.set_file_name(&new_name);
-        if let Some(ext) = old_path.extension() {
-            note.path.set_extension(ext);
+        // Create a new path from the input.
+        // This handles splitting into name and extension and gets rid of folders etc. in the path.
+        let new_path = path::Path::new(&new_name);
+        // Replace the old file name with the new one
+        if let Some(name) = new_path.file_name() {
+            note.path.set_file_name(name);
         }
-        // update its name
-        note.name = new_name;
-        // TODO: Actually change the file and path
-        let _ = std::fs::rename(old_path, note.path.clone());
-        // re-insert under new index
-        table.insert(new_id, note);
-        // TODO: Update links
+        // If this new name has not introduced an extension, re-set the previous one.
+        if new_path.extension().is_none() {
+            if let Some(ext) = old_path.extension() {
+                note.path.set_extension(ext);
+            }
+        }
+        // update its name & id
+        note.name = note
+            .path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or(new_name);
+        let new_id = super::name_to_id(&note.name);
+        // Actually change values in the file system
+        if std::fs::rename(old_path, note.path.clone()).is_ok() {
+            // This only happens on success
+            // re-insert into map under new index
+            table.insert(new_id, note);
+        }
         true
     } else {
         false
