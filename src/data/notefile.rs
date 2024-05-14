@@ -10,12 +10,19 @@ pub fn rename_note_file(index: &mut NoteIndexContainer, id: &str, new_name: Stri
     // Remove the old version from the table
     if let Some(mut note) = table.remove(id) {
         let new_id = super::name_to_id(&new_name);
+        // Change the path
+        let old_path = note.path.clone();
+        note.path.set_file_name(&new_name);
+        if let Some(ext) = old_path.extension() {
+            note.path.set_extension(ext);
+        }
         // update its name
         note.name = new_name;
+        // TODO: Actually change the file and path
+        let _ = std::fs::rename(old_path, note.path.clone());
         // re-insert under new index
         table.insert(new_id, note);
         // TODO: Update links
-        // TODO: Actually change the file and path
         true
     } else {
         false
