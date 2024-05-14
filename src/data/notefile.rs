@@ -119,16 +119,14 @@ pub fn delete_note_file(index: &mut NoteIndexContainer, id: &str) -> bool {
 /// Creates a note of the given name in the file system (relative to the vault) and registers it in the given index.
 pub fn create_note_file(
     index: &mut NoteIndexContainer,
-    input_path: Option<&String>,
+    input_path: Option<String>,
     config: &config::Config,
 ) -> bool {
     // Piece together the file path
     let mut path = config.get_vault_path();
-    path.push(input_path.map(|s| s.as_str()).unwrap_or("Untitled"));
+    path.push(input_path.unwrap_or_else(|| "Untitled".to_owned()));
     // If there was no manual extension set, take the default one
-    if path.extension().is_none() {
-        path.set_extension(config.get_default_extension());
-    }
+    config.validate_file_extension(&mut path);
     // Create the file
     let file = std::fs::File::create(path.clone());
     if let Ok(mut file) = file {

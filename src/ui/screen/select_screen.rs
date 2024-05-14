@@ -65,15 +65,13 @@ pub struct SelectScreen {
     /// This allows us to convert only the neccessary notes to ListItems and save some time.
     selected: usize,
 
-    // === UI options ===
+    // === Sortin options ===
     /// UI mode wether the user wants to filter for all tags or any tags.
     all_tags: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
     /// Sort ascedingly
     sorting_asc: bool,
-    /// Refilter while typing or not (to save resources)
-    dynamic_filter: bool,
 }
 
 impl SelectScreen {
@@ -91,7 +89,6 @@ impl SelectScreen {
             sorting: SortingMode::Name,
             sorting_asc: true,
             selected: 0,
-            dynamic_filter: config.get_dynamic_filter(),
         };
 
         res.sort();
@@ -160,7 +157,7 @@ impl SelectScreen {
             .set_block(Block::bordered().title(title_top));
     }
 
-    /// Creates a filter from the current content of the text area.
+    /// Creates a filter from the current content of the filter area.
     fn filter_from_input(&self) -> data::Filter {
         // We should only have one line, read that one
         if let Some(line) = self.filter_area.lines().first() {
@@ -196,6 +193,8 @@ impl SelectScreen {
         self.sort();
     }
 
+    /// Re-creates the global and local stats from the index.
+    /// To be performed after file management operations.
     fn refresh(&mut self) {
         // Refresh global stats
         self.global_stats =
@@ -263,6 +262,13 @@ impl SelectScreen {
         // Always select the first element whenever a resort is triggered.
         self.selected = 0;
     }
+
+    fn extract_string_and_clear(area: &mut TextArea<'static>) -> Option<String> {
+        let res = area.lines().first().cloned();
+        area.select_all();
+        area.cut();
+        res
+    }
 }
 
 impl super::Screen for SelectScreen {
@@ -287,8 +293,7 @@ impl super::Screen for SelectScreen {
                 }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
-                    self.filter_area.select_all();
-                    self.filter_area.cut();
+                    let _ = Self::extract_string_and_clear(&mut self.filter_area);
                     self.filter(data::Filter::default());
                 }
                 // T: Change all/any words requirement
@@ -327,7 +332,7 @@ impl super::Screen for SelectScreen {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Enter => {
                         self.mode = SelectMode::Select;
-                        if key.code == KeyCode::Enter && !self.dynamic_filter {
+                        if key.code == KeyCode::Enter && !self.config.get_dynamic_filter() {
                             self.filter(self.filter_from_input());
                         }
                     }
@@ -335,7 +340,7 @@ impl super::Screen for SelectScreen {
                     _ => {
                         // Else -> Pass on to the text area
                         self.filter_area.input_without_shortcuts(key);
-                        if self.dynamic_filter {
+                        if self.config.get_dynamic_filter() {
                             self.filter(self.filter_from_input());
                         }
                     }
@@ -367,23 +372,12 @@ impl super::Screen for SelectScreen {
                             .get(self.selected)
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
-                                self.index
-                                    .borrow()
-                                    .get(&env_stats.id)
-                                    .map(|note| note.path.clone())
-                            })
-                            // get the path from the note
-                            .map(|path| {
-                                ui::Message::OpenExternalCommand(
-                                    // check if there is an application configured
-                                    if let Some(application) = self.config.get_editor() {
-                                        // default configures -> create a command for that one
-                                        open::with_command(path, application)
-                                    } else {
-                                        // else -> get system defaults, take the first one
-                                        open::commands(path).remove(0)
-                                    },
-                                )
+                                self.index.borrow().get(&env_stats.id).map(|note| {
+                                    // then extract the path from the note and use the config to create a valid opening command.
+                                    ui::Message::OpenExternalCommand(
+                                        self.config.create_opening_command(&note.path),
+                                    )
+                                })
                             });
                     }
                     // N: Create note
@@ -405,29 +399,65 @@ impl super::Screen for SelectScreen {
                     _ => {}
                 }
             }
-            // Create mode: Type in note name
-            SelectMode::Create => {
+            // Modes that require input in the text box.
+            SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
                 match key.code {
                     // Escape: Back to main mode, clear the buffer
                     KeyCode::Esc => {
-                        self.create_area.select_all();
-                        self.create_area.cut();
+                        let _ = Self::extract_string_and_clear(&mut self.create_area);
                         self.mode = SelectMode::Select;
                     }
                     // Enter: Create note, back to main mode, clear the buffer
                     KeyCode::Enter => {
-                        // Create & register the note
-                        if data::notefile::create_note_file(
-                            &mut self.index,
-                            self.create_area.lines().first(),
-                            &self.config,
-                        ) {
-                            // if successfull, refresh the ui
-                            self.refresh();
+                        // Here, we need to check which mode we are in again
+                        match self.mode {
+                            SelectMode::Create => {
+                                // Create & register the note
+                                if data::notefile::create_note_file(
+                                    &mut self.index,
+                                    Self::extract_string_and_clear(&mut self.create_area),
+                                    &self.config,
+                                ) {
+                                    // if successfull, refresh the ui
+                                    self.refresh();
+                                }
+                            }
+                            SelectMode::Rename => {
+                                // Get the id of currently selected, then delegate to note_file::rename.
+                                if let Some(env_stats) =
+                                    self.local_stats.filtered_stats.get(self.selected)
+                                {
+                                    if data::notefile::rename_note_file(
+                                        &mut self.index,
+                                        &env_stats.id,
+                                        Self::extract_string_and_clear(&mut self.create_area),
+                                        &self.config,
+                                    ) {
+                                        // if successfull, refresh the ui
+                                        self.refresh();
+                                    }
+                                }
+                            }
+                            SelectMode::Move => {
+                                // Get the id of currently selected, then delegate to note_file::move.
+                                if let Some(env_stats) =
+                                    self.local_stats.filtered_stats.get(self.selected)
+                                {
+                                    if data::notefile::move_note_file(
+                                        &mut self.index,
+                                        &env_stats.id,
+                                        Self::extract_string_and_clear(&mut self.create_area),
+                                        &self.config,
+                                    ) {
+                                        // if successfull, refresh the ui
+                                        self.refresh();
+                                    }
+                                }
+                            }
+                            _ => {
+                                //This should NOT happen
+                            }
                         }
-                        // Clear the input area
-                        self.create_area.select_all();
-                        self.create_area.cut();
                         // Switch back to base mode
                         self.mode = SelectMode::Select;
                     }
@@ -438,74 +468,6 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
-            // Renaming mode: Type into a text box, then initiate rename on enter
-            SelectMode::Rename => match key.code {
-                // Escape: Back to main mode, clear the buffer
-                KeyCode::Esc => {
-                    self.create_area.select_all();
-                    self.create_area.cut();
-                    self.mode = SelectMode::Select;
-                }
-                // Enter: Rename note, back to main mode, clear the buffer
-                KeyCode::Enter => {
-                    // Create & register the note
-                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        if data::notefile::rename_note_file(
-                            &mut self.index,
-                            &env_stats.id,
-                            self.create_area.lines().first().cloned(),
-                            &self.config,
-                        ) {
-                            // if successfull, refresh the ui
-                            self.refresh();
-                        }
-                    }
-                    // Clear the input area
-                    self.create_area.select_all();
-                    self.create_area.cut();
-                    // Switch back to base mode
-                    self.mode = SelectMode::Select;
-                }
-                // All other key events are passed on to the text area
-                _ => {
-                    // Else -> Pass on to the text area
-                    self.create_area.input_without_shortcuts(key);
-                }
-            },
-            // Move mode: Type into a text box, then initiate move on enter
-            SelectMode::Move => match key.code {
-                // Escape: Back to main mode, clear the buffer
-                KeyCode::Esc => {
-                    self.create_area.select_all();
-                    self.create_area.cut();
-                    self.mode = SelectMode::Select;
-                }
-                // Enter: Move note, back to main mode, clear the buffer
-                KeyCode::Enter => {
-                    // Create & register the note
-                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        if data::notefile::move_note_file(
-                            &mut self.index,
-                            &env_stats.id,
-                            self.create_area.lines().first().cloned(),
-                            &self.config,
-                        ) {
-                            // if successfull, refresh the ui
-                            self.refresh();
-                        }
-                    }
-                    // Clear the input area
-                    self.create_area.select_all();
-                    self.create_area.cut();
-                    // Switch back to base mode
-                    self.mode = SelectMode::Select;
-                }
-                // All other key events are passed on to the text area
-                _ => {
-                    // Else -> Pass on to the text area
-                    self.create_area.input_without_shortcuts(key);
-                }
-            },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
                 KeyCode::Char('a' | 'A') => {
