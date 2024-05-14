@@ -117,7 +117,7 @@ impl Config {
     }
 
     /// Returns the default file ending for a newly created note.
-    pub fn get_default_ending(&self) -> &String {
+    pub fn get_default_extension(&self) -> &String {
         &self.config_file.default_ending
     }
 
