@@ -272,13 +272,13 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: KeyEvent) -> Option<crate::ui::Message> {
+    fn update(&mut self, key: KeyEvent) -> Option<ui::Message> {
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
                 // Q: Quit application
-                KeyCode::Char('q' | 'Q') => return Some(crate::ui::Message::Quit),
+                KeyCode::Char('q' | 'Q') => return Some(ui::Message::Quit),
                 // R: Got to file management submenu
                 KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
@@ -321,7 +321,7 @@ impl super::Screen for SelectScreen {
                 // Open selected item in display view
                 KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        return Some(crate::ui::Message::DisplayStackPush(env_stats.id.clone()));
+                        return Some(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
                 _ => {}
@@ -713,6 +713,8 @@ impl super::Screen for SelectScreen {
             Span::styled("", styles.hotkey_style),
             Span::styled(": Up──", styles.text_style),
             Span::styled("Enter", styles.hotkey_style),
+            Span::styled("/", styles.text_style),
+            Span::styled("L", styles.hotkey_style),
             Span::styled("/", styles.text_style),
             Span::styled("", styles.hotkey_style),
             Span::styled(": Open──", styles.text_style),

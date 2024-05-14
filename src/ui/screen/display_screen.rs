@@ -286,6 +286,48 @@ impl DisplayScreen {
             })
             .unwrap_or_default();
 
+        // create default surrounding block
+        let block = Block::bordered().title(title).title(count);
+
+        // in some places, add instructions
+        let block = match index {
+            2 => block.title(
+                block::Title::from(Line::from(vec![
+                    Span::styled("J", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("", styles.hotkey_style),
+                    Span::styled(": Down──", styles.text_style),
+                    Span::styled("K", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("", styles.hotkey_style),
+                    Span::styled(": Up──", styles.text_style),
+                    Span::styled("Enter", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("L", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("", styles.hotkey_style),
+                    Span::styled(": Open──", styles.text_style),
+                    Span::styled("H", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("", styles.hotkey_style),
+                    Span::styled(": Back", styles.text_style),
+                ]))
+                .alignment(Alignment::Left)
+                .position(block::Position::Bottom),
+            ),
+            3 => block.title(
+                block::Title::from(Line::from(vec![
+                    Span::styled("Tab", styles.hotkey_style),
+                    Span::styled(": Next Table──", styles.text_style),
+                    Span::styled("Shift+Tab", styles.hotkey_style),
+                    Span::styled(": Previous Table", styles.text_style),
+                ]))
+                .alignment(Alignment::Right)
+                .position(block::Position::Bottom),
+            ),
+            _ => block,
+        };
+
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
             .highlight_style(if index == self.foc_table {
@@ -293,7 +335,7 @@ impl DisplayScreen {
             } else {
                 styles.text_style
             })
-            .block(Block::bordered().title(title).title(count));
+            .block(block);
 
         StatefulWidget::render(table, area, buf, &mut state);
     }
