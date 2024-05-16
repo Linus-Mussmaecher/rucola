@@ -11,7 +11,8 @@ Terminal-based browser and information aggregator for markdown file structures.
 > [!CAUTION]
 > This is a work-in-progress hobby project.
 > Many Features are still lacking and bugs may appear frequently.
-> All features described in the [features](#features) part are **target features** for version `1.0.0` and not neccessarily implemented yet.
+>
+> All features described on this page are functional as far as I am aware, but the feature set is still incomplete.
 
 ## Contents
  - [Goals](#Goals)
@@ -20,8 +21,10 @@ Terminal-based browser and information aggregator for markdown file structures.
     - [Overview Screen](#overview-screen)
        - [Statistics](#statistics)
        - [Filtering](#filtering)
+       - [File Management](#file-management)
     - [Single-Note Screen](#single-note-screen)
     - [Configuration](#configuration)
+ - [Planned Features](#planned-features)
  - [Technology & License](#technology-license)
 
 ## Goals
@@ -92,6 +95,16 @@ After that, the remaining filter string is fuzzy-matched with every note title, 
 
 The list can also be sorted by any column, and the sorting can be switched between ascending and descending at will.
 
+#### File Management
+From the select view, you can access a couple of file management options for your notes:
+ - Create a new note
+ - Delete the selected note
+ - Rename the selected note (with automatic link-renaming being a WIP)
+ - Move the selected to another location relative to your current vault path
+ - View/Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
+   The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
+
+
 ### Single-Note Screen
 The single note screen shows a number of statistics about a single note:
  - Word count
@@ -107,8 +120,22 @@ But more importantly, displays for that note lists of...
 
 This allows to you to get an overview about a note's connections in your network, and maybe find inspiration or unexpected correlations.
 
+You can follow the links to given notes, and go back in your journey to previously visited notes.
+
 ### Configuration
 Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
+
+## Planned Features
+Planned features include:
+ - More powerful search options, such as
+   - Full text search through your files
+   - Search for notes linked from or linking to a certain note
+ - Integration of Obisidan URI for opening notes in obsidian
+ - Performance improvements
+ - Link updating on moving or renaming files
+ - Auto-Fixing for broken links
+ - Display of runtime errors within the program instead of frequent panics
+ - Support nested tags in search
 
 ## Technology & License
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
