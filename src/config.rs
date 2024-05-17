@@ -1,9 +1,8 @@
 use std::path;
 
 use clap::Parser;
-use eyre::Context;
 
-use crate::ui;
+use crate::{error, ui};
 
 /// CLI arguments
 #[derive(Parser)]
@@ -57,10 +56,9 @@ pub struct Config {
 
 impl Config {
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
-    pub fn load() -> color_eyre::Result<Self> {
+    pub fn load() -> Result<Self, error::RucolaError> {
         // === Step 1: Load config file ===
-        let mut config_file: ConfigFile = confy::load("rucola", "config")
-            .with_context(|| "Attempting to write/read config file.")?;
+        let mut config_file: ConfigFile = confy::load("rucola", "config")?;
 
         // === Step 2: Read command line arguments
         let arguments = Arguments::parse();
@@ -81,8 +79,7 @@ impl Config {
         config_file.theme = arguments.style.unwrap_or(config_file.theme);
 
         // === Step 3: Load style file ===
-        let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())
-            .with_context(|| "Attempting to write/read theme file.")?;
+        let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())?;
 
         Ok(Self {
             config_file,
@@ -93,7 +90,7 @@ impl Config {
     /// Stores this config file in the default locations.
     /// As currently the config cannot be manipulated from within the program, this is unused.
     #[allow(dead_code)]
-    pub fn store(self) -> color_eyre::Result<()> {
+    pub fn store(self) -> Result<(), error::RucolaError> {
         confy::store("rucola", self.config_file.theme.as_str(), self.uistyles)?;
         confy::store("rucola", "config", self.config_file)?;
 
@@ -106,13 +103,19 @@ impl Config {
     }
 
     /// Reads the config file and the
-    pub fn create_opening_command(&self, path: &path::PathBuf) -> std::process::Command {
-        if let Some(application) = &self.config_file.editor {
-            // default configured -> create a command for that one
-            open::with_command(path, application)
+    pub fn create_opening_command(
+        &self,
+        path: &path::PathBuf,
+    ) -> Result<std::process::Command, error::RucolaError> {
+        if let Some(configured_app) = &self.config_file.editor {
+            Ok(open::with_command(path, configured_app))
         } else {
-            // else -> get system defaults, take the first one
-            open::commands(path).remove(0)
+            let mut default_commands = open::commands(path);
+            if !default_commands.is_empty() {
+                Ok(default_commands.remove(0))
+            } else {
+                Err(error::RucolaError::EditorMissing)
+            }
         }
     }
 
@@ -123,13 +126,14 @@ impl Config {
             .contains(&String::from(ext))
     }
 
-    /// Takes in a PathBuf and, if the current file extension is not one of the valid ones in the configuration, appends the default file extension.
+    /// Takes in a PathBuf and, if the current file extension is not set, append the default one.
     pub fn validate_file_extension(&self, path: &mut path::PathBuf) {
         match path.extension() {
-            Some(ext) => {
-                if !self.is_valid_extension(&String::from(ext.to_string_lossy())) {
-                    path.set_extension(&self.config_file.default_extension);
-                }
+            Some(_ext) => {
+                // Previous version allowed only configured extensions.
+                // if !self.is_valid_extension(&String::from(ext.to_string_lossy())) {
+                //     path.set_extension(&self.config_file.default_extension);
+                // }
             }
             None => {
                 if !self.is_valid_extension("") {

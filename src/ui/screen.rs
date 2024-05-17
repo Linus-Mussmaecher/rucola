@@ -15,5 +15,5 @@ pub trait Screen {
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer);
 
     /// Informs the screen of user messages and possibly modifies the content.
-    fn update(&mut self, key: KeyEvent) -> Option<ui::Message>;
+    fn update(&mut self, key: KeyEvent) -> ui::Message;
 }
