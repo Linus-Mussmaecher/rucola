@@ -48,7 +48,7 @@ fn main() -> Result<(), error::RucolaError> {
         })?;
 
         // Inform the current screen of events
-        if !event::poll(std::time::Duration::from_millis(16))? {
+        if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 // when a key event, first reset the current error
                 current_error = None;

@@ -60,7 +60,7 @@ impl App {
         };
 
         // Act on the potentially returned message.
-        match msg {
+        match msg? {
             ui::Message::None => {}
             ui::Message::Quit => return Ok(ui::TerminalMessage::Quit),
             ui::Message::OpenExternalCommand(command) => {
@@ -99,10 +99,6 @@ impl App {
                     )?),
                     None => None,
                 };
-            }
-            // Errors are passed up to the main loop
-            ui::Message::Error(e) => {
-                return Err(e);
             }
         }
 
