@@ -35,7 +35,7 @@ fn main() -> Result<(), error::RucolaError> {
             let area = frame.size();
 
             // Make sure area is large enough or show error
-            if area.width < 90 || area.height < 25 {
+            if (area.width < 90 || area.height < 25) && current_error.is_none() {
                 current_error = Some(error::RucolaError::SmallArea)
             }
 
