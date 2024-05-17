@@ -1,6 +1,5 @@
 #lietheo 
 ## Definition
-[[Linux]]
 A *Lie group* is a group $G$ with a smooth structure, i.e. a [[Manifold]], whose group multiplication and inversion
 $$
 \begin{align*}
