@@ -38,6 +38,7 @@ enum SortingMode {
     GlobalInLinks,
     LocalInLinks,
     Score,
+    Broken,
 }
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
@@ -249,6 +250,7 @@ impl SelectScreen {
                             SortingMode::GlobalInLinks => env_stats.inlinks_global,
                             SortingMode::LocalInLinks => env_stats.inlinks_local,
                             SortingMode::Score => env_stats.match_score as usize,
+                            SortingMode::Broken => env_stats.broken_links as usize,
                         }
                     } else {
                         0
@@ -495,6 +497,10 @@ impl super::Screen for SelectScreen {
                 }
                 KeyCode::Char('n' | 'N') => {
                     self.set_mode_and_maybe_sort(SortingMode::LocalInLinks, false);
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('b' | 'B') => {
+                    self.set_mode_and_maybe_sort(SortingMode::Broken, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('r' | 'R') => {
@@ -832,6 +838,7 @@ impl super::Screen for SelectScreen {
                         ("U", "Sort by local outlinks"),
                         ("I", "Sort by global inlinks"),
                         ("N", "Sort by local inlinks"),
+                        ("B", "Sort by broken links"),
                         ("R", "Reverse sorting"),
                     ]
                 };
