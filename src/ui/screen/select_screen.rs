@@ -22,6 +22,8 @@ enum SelectMode {
     Rename,
     /// Typing into the create box to move a note.
     Move,
+    /// User has initiated an edit to the selected note.
+    Edit,
 }
 
 /// Describes the current sorting mode of the displayed list.
@@ -272,13 +274,13 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: KeyEvent) -> Option<ui::Message> {
+    fn update(&mut self, key: KeyEvent) -> ui::Message {
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
                 // Q: Quit application
-                KeyCode::Char('q' | 'Q') => return Some(ui::Message::Quit),
+                KeyCode::Char('q' | 'Q') => return ui::Message::Quit,
                 // R: Got to file management submenu
                 KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
@@ -321,7 +323,7 @@ impl super::Screen for SelectScreen {
                 // Open selected item in display view
                 KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        return Some(ui::Message::DisplayStackPush(env_stats.id.clone()));
+                        return ui::Message::DisplayStackPush(env_stats.id.clone());
                     }
                 }
                 _ => {}
@@ -364,7 +366,7 @@ impl super::Screen for SelectScreen {
                     }
                     // Open selected item in editor
                     KeyCode::Char('e' | 'E') => {
-                        self.mode = SelectMode::Select;
+                        self.mode = SelectMode::Edit;
                         return self
                             // get the selected item in the list for the id
                             .local_stats
@@ -374,11 +376,14 @@ impl super::Screen for SelectScreen {
                             .and_then(|env_stats| {
                                 self.index.borrow().get(&env_stats.id).map(|note| {
                                     // then extract the path from the note and use the config to create a valid opening command.
-                                    ui::Message::OpenExternalCommand(
-                                        self.config.create_opening_command(&note.path),
-                                    )
+
+                                    match self.config.create_opening_command(&note.path) {
+                                        Ok(cmd) => ui::Message::OpenExternalCommand(cmd),
+                                        Err(e) => ui::Message::Error(e),
+                                    }
                                 })
-                            });
+                            })
+                            .unwrap_or(ui::Message::None);
                     }
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
@@ -507,9 +512,26 @@ impl super::Screen for SelectScreen {
                 }
                 _ => {}
             },
+            // Edit mode: As this mode is mostly handeled out-of-program, just re-exit it in any case.
+            SelectMode::Edit => {
+                // Refresh the note that was edited.
+                if let Some(id) = self
+                    // get the selected item in the list for the id
+                    .local_stats
+                    .filtered_stats
+                    .get(self.selected)
+                    .map(|env_stats| &env_stats.id)
+                {
+                    // Refresh it within the index.
+                    self.index.borrow_mut().refresh_note(id);
+                    // Then refresh stats.
+                    self.refresh();
+                }
+                self.mode = SelectMode::Select;
+            }
         }
 
-        None
+        ui::Message::None
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
@@ -678,7 +700,7 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Move
                 | SelectMode::SubmenuFile
                 | SelectMode::SubmenuSorting => Some(self.selected),
-                SelectMode::Filter | SelectMode::Create => None,
+                SelectMode::Filter | SelectMode::Edit | SelectMode::Create => None,
             });
 
         // Generate row data
@@ -857,10 +879,11 @@ impl super::Screen for SelectScreen {
                     .block(Block::bordered())
                     .column_spacing(1);
 
+                // Clear the area and then render the widget on top.
                 Widget::render(Clear, br_area, buf);
                 Widget::render(popup_table, br_area, buf);
             }
-            SelectMode::Filter | SelectMode::Select => {}
+            SelectMode::Filter | SelectMode::Select | SelectMode::Edit => {}
             SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
                 let create_input = self.create_area.widget();
 
@@ -877,6 +900,8 @@ impl super::Screen for SelectScreen {
                     Constraint::Fill(1),
                 ])
                 .split(popup_areas[1])[1];
+
+                // Clear the area and then render the widget on top.
                 Widget::render(Clear, center_area, buf);
                 Widget::render(create_input, center_area, buf);
             }

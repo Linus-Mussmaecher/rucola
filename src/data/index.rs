@@ -51,6 +51,23 @@ impl NoteIndex {
         }
     }
 
+    /// Reloads this note from file, then checks if the id has changed. If yes, moves it to the new id.
+    pub fn refresh_note(&mut self, id: &str) {
+        // Check if given id is valid
+        if let Some(old_note) = self.inner.get(id) {
+            // Reload from path
+            if let Ok(new_note) = Note::from_path(&old_note.path) {
+                let new_id = super::name_to_id(&new_note.name);
+                // If id has changed -> Remove old one first
+                if new_id != id {
+                    self.inner.remove(id);
+                }
+                // Now insert new one, possibly replacing old one.
+                self.inner.insert(new_id, new_note);
+            }
+        }
+    }
+
     /// Returns an iterator over id pairs of notes linked from this note.
     pub fn links_vec(&self, source_id: &str) -> Vec<(String, String)> {
         self.inner

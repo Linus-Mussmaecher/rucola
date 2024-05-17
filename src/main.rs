@@ -1,27 +1,20 @@
 use crossterm::{
-    event::{self, KeyEventKind},
+    event,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
 use ratatui::prelude::*;
-use std::{cell::RefCell, io::stdout, rc::Rc};
+use std::io;
+use std::panic;
 
+mod app;
 mod config;
 mod data;
+mod error;
 mod ui;
-use ui::{screen, Screen};
-/// The main state of the application.
-struct App {
-    /// The currently displayed UI screen.
-    select: screen::SelectScreen,
-    /// The top of the display stack, if present.
-    display: Option<screen::DisplayScreen>,
-    /// The ids of note on the display stack
-    display_stack: Vec<String>,
-}
 
 /// Main function
-fn main() -> color_eyre::Result<()> {
+fn main() -> Result<(), error::RucolaError> {
     // Initialize hooks & terminal
     init_hooks()?;
     let mut terminal = init_terminal()?;
@@ -29,90 +22,67 @@ fn main() -> color_eyre::Result<()> {
     // draw loading screen
     draw_loading_screen(&mut terminal)?;
 
-    // Read config file. Loading includes listening to command line.
-    let config = config::Config::load().unwrap_or_default();
+    // Create the app state
+    let mut app = app::App::new();
 
-    // Index all files in path
-    let index = Rc::new(RefCell::new(data::NoteIndex::new(
-        &std::path::Path::new(&config.get_vault_path()),
-        &config,
-    )));
-
-    // Initialize app state
-    let mut app = App {
-        select: screen::SelectScreen::new(index.clone(), &config),
-        display: None,
-        display_stack: Vec::new(),
-    };
+    let mut current_error: Option<error::RucolaError> = None;
 
     // Main loop
 
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame: &mut Frame| {
-            let area = frame.size();
-            let buf = frame.buffer_mut();
-            if let Some(display) = &app.display {
-                display.draw(area, buf);
-            } else {
-                app.select.draw(area, buf);
-            }
+            let app_area = match &current_error {
+                // If there is an error to be displayed, reduce the size for the app and display it at the bottom.
+                Some(e) => {
+                    let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+                        .split(frame.size());
+
+                    Widget::render(e.to_ratatui(), areas[1], frame.buffer_mut());
+
+                    areas[0]
+                }
+                None => frame.size(),
+            };
+            app.draw(app_area, frame.buffer_mut());
         })?;
 
         // Inform the current screen of events
-        if event::poll(std::time::Duration::from_millis(16))? {
+        if !event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
-                // Check for key preses
-                if key.kind == KeyEventKind::Press {
-                    // Update appropriate screen
-                    let msg = if let Some(display) = &mut app.display {
-                        display.update(key)
-                    } else {
-                        app.select.update(key)
-                    };
-                    // Act on the potentially returned message.
-                    if let Some(msg) = msg {
-                        match msg {
-                            ui::Message::Quit => break 'main,
-                            ui::Message::OpenExternalCommand(mut command) => {
-                                // Restore the terminal
-                                restore_terminal()?;
-                                // Execute the given command
-                                command.status()?;
-                                // Re-enter the application
-                                terminal = init_terminal()?;
-                            }
-                            ui::Message::DisplayStackClear => {
-                                app.display_stack.clear();
-                                app.display = None;
-                            }
-                            ui::Message::DisplayStackPop => {
-                                app.display_stack.pop();
-                                app.display = app.display_stack.last().and_then(|id| {
-                                    screen::DisplayScreen::new(id, index.clone(), &config)
-                                })
-                            }
-                            ui::Message::DisplayStackPush(new_id) => {
-                                app.display_stack.push(new_id);
-
-                                app.display = app.display_stack.last().and_then(|id| {
-                                    screen::DisplayScreen::new(id, index.clone(), &config)
-                                })
-                            }
-                        }
+                // when a key event, first reset the current error
+                current_error = None;
+                // Then update the app.
+                match app.update(key) {
+                    Ok(ui::TerminalMessage::Quit) => {
+                        break 'main;
                     }
+                    Ok(ui::TerminalMessage::None) => {}
+                    Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
+                        // Restore the terminal
+                        restore_terminal()?;
+                        // Execute the given command
+                        cmd.status()?;
+                        // Re-enter the selflication
+                        terminal = init_terminal()?;
+                    }
+                    Err(e) => current_error = Some(e),
                 }
             }
         }
     }
 
     //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
-    restore_terminal()
+    restore_terminal()?;
+
+    Ok(())
 }
 
+/// Draws nothing but a loading screen with an indexing message.
+/// Temporary screen while the programm is indexing.
 fn draw_loading_screen(
     terminal: &mut Terminal<impl ratatui::backend::Backend>,
-) -> Result<CompletedFrame, std::io::Error> {
+) -> Result<CompletedFrame, io::Error> {
     // Draw 'loading' screen
     terminal.draw(|frame| {
         frame.render_widget(
@@ -128,33 +98,30 @@ fn draw_loading_screen(
 }
 
 /// Ratatui boilerplate to set up panic hooks
-fn init_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = color_eyre::config::HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
+fn init_hooks() -> Result<(), error::RucolaError> {
+    // Get a default panic hook
+    let original_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        // intentionally ignore errors here since we're already in a panic
+        // Just restore the terminal.
         let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
+        original_hook(panic_info);
     }));
     Ok(())
 }
 
 /// Ratatui boilerplate to put the terminal into a TUI state
-fn init_terminal() -> color_eyre::Result<Terminal<impl ratatui::backend::Backend>> {
-    stdout().execute(EnterAlternateScreen)?;
+fn init_terminal() -> io::Result<Terminal<impl ratatui::backend::Backend>> {
+    io::stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
     terminal.clear()?;
     Ok(terminal)
 }
 
 /// Ratatui boilerplate to restore the terminal to a usable state after program exits (regularly or by panic)
-fn restore_terminal() -> color_eyre::Result<()> {
-    stdout().execute(LeaveAlternateScreen)?;
+fn restore_terminal() -> io::Result<()> {
+    io::stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
 }

@@ -23,8 +23,7 @@ fuzzy-matcher = "^0.3"
 itertools = "^0.12"
 # rayon = "^1.10"
 # Error handling
-eyre = "0.6.12"
-color-eyre = "0.5.7"
+thiserror = "^1.0"
 # Config
 serde = { version = "1.0", features = ["derive"] }
 confy = "^0.6"

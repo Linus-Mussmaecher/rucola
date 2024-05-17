@@ -1,4 +1,4 @@
-use crate::{config, data, ui};
+use crate::{config, data, error, ui};
 
 use crossterm::event::KeyCode;
 use itertools::Itertools;
@@ -33,10 +33,13 @@ impl DisplayScreen {
         note_id: &str,
         index: data::NoteIndexContainer,
         config: &config::Config,
-    ) -> Option<Self> {
+    ) -> Result<Self, error::RucolaError> {
         let index = index.borrow();
         // Cache the note
-        let note = index.get(note_id).cloned()?;
+        let note = index
+            .get(note_id)
+            .ok_or_else(|| error::RucolaError::NoteNoteFound(note_id.to_owned()))
+            .cloned()?;
 
         // Get level 1 links
         let l1links = index.links_vec(note_id);
@@ -55,7 +58,7 @@ impl DisplayScreen {
             .flat_map(|(id, _name)| index.blinks_vec(id))
             .collect();
 
-        Some(Self {
+        Ok(Self {
             config: config.clone(),
             links: [l1blinks, l1links, l2blinks, l2links],
             note,
@@ -159,20 +162,20 @@ impl super::Screen for DisplayScreen {
         self.draw_link_table(3, "Level 2 Links", links2, buf);
     }
 
-    fn update(&mut self, key: crossterm::event::KeyEvent) -> Option<ui::Message> {
+    fn update(&mut self, key: crossterm::event::KeyEvent) -> ui::Message {
         match key.code {
             // Quit with Q
-            KeyCode::Char('Q' | 'q') => Some(ui::Message::Quit),
+            KeyCode::Char('Q' | 'q') => ui::Message::Quit,
             // Go back to selection with f
-            KeyCode::Char('F' | 'f') => Some(ui::Message::DisplayStackClear),
+            KeyCode::Char('F' | 'f') => ui::Message::DisplayStackClear,
             // Return to selection or previous note with left or H
-            KeyCode::Left | KeyCode::Char('H' | 'h') => Some(ui::Message::DisplayStackPop),
+            KeyCode::Left | KeyCode::Char('H' | 'h') => ui::Message::DisplayStackPop,
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
                 self.selected
                     .get_mut(self.foc_table)
                     .map(|selected| *selected = selected.saturating_sub(1));
-                None
+                ui::Message::None
             }
             // Go down in the current list with j
             KeyCode::Down | KeyCode::Char('J' | 'j') => {
@@ -184,17 +187,17 @@ impl super::Screen for DisplayScreen {
                             .unwrap_or_default(),
                     )
                 });
-                None
+                ui::Message::None
             }
             // Change list with Tab
             KeyCode::Tab => {
                 self.foc_table = (self.foc_table.wrapping_add(1)) % 4;
-                None
+                ui::Message::None
             }
             // Change list back with Shift+Tab or H
             KeyCode::BackTab => {
                 self.foc_table = (self.foc_table.wrapping_sub(1)) % 4;
-                None
+                ui::Message::None
             }
             // If enter, switch to that note
             KeyCode::Enter | KeyCode::Right | KeyCode::Char('L' | 'l') => {
@@ -205,12 +208,15 @@ impl super::Screen for DisplayScreen {
                     .and_then(|table| table.get(self.selected[self.foc_table]))
                     // and extract the id
                     .map(|(id, _name)| ui::Message::DisplayStackPush(id.to_owned()))
+                    .unwrap_or(ui::Message::None)
             }
             // Open selected item in editor
-            KeyCode::Char('e' | 'E') => Some(ui::Message::OpenExternalCommand(
-                self.config.create_opening_command(&self.note.path),
-            )),
-            _ => None,
+            KeyCode::Char('e' | 'E') => match self.config.create_opening_command(&self.note.path) {
+                Ok(cmd) => ui::Message::OpenExternalCommand(cmd),
+                Err(e) => ui::Message::Error(e),
+            },
+
+            _ => ui::Message::None,
         }
     }
 }
