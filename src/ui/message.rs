@@ -13,8 +13,6 @@ pub enum Message {
     DisplayStackPush(String),
     /// Restore the terminal, execute the given command and re-enter
     OpenExternalCommand(std::process::Command),
-    /// An error has happened and needs to be displayed,
-    Error(crate::error::RucolaError),
 }
 
 /// Messages sent from the application to the terminal.

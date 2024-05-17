@@ -1,4 +1,4 @@
-use crate::{config, data, ui};
+use crate::{config, data, error, ui};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{prelude::*, widgets::*};
 
@@ -274,13 +274,13 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: KeyEvent) -> ui::Message {
+    fn update(&mut self, key: KeyEvent) -> Result<ui::Message, error::RucolaError> {
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
             SelectMode::Select => match key.code {
                 // Q: Quit application
-                KeyCode::Char('q' | 'Q') => return ui::Message::Quit,
+                KeyCode::Char('q' | 'Q') => return Ok(ui::Message::Quit),
                 // R: Got to file management submenu
                 KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
@@ -323,7 +323,7 @@ impl super::Screen for SelectScreen {
                 // Open selected item in display view
                 KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
                     if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        return ui::Message::DisplayStackPush(env_stats.id.clone());
+                        return Ok(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
                 _ => {}
@@ -357,17 +357,16 @@ impl super::Screen for SelectScreen {
                         if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
                         {
                             // delete it from index & filesystem
-                            if data::notefile::delete_note_file(&mut self.index, &env_stats.id) {
-                                // if successfull, refresh the ui
-                                self.refresh();
-                            }
+                            data::notefile::delete_note_file(&mut self.index, &env_stats.id)?;
+                            // if successfull, refresh the ui
+                            self.refresh();
                         }
                         self.mode = SelectMode::Select;
                     }
                     // Open selected item in editor
                     KeyCode::Char('e' | 'E') => {
                         self.mode = SelectMode::Edit;
-                        return self
+                        if let Some(res) = self
                             // get the selected item in the list for the id
                             .local_stats
                             .filtered_stats
@@ -376,14 +375,12 @@ impl super::Screen for SelectScreen {
                             .and_then(|env_stats| {
                                 self.index.borrow().get(&env_stats.id).map(|note| {
                                     // then extract the path from the note and use the config to create a valid opening command.
-
-                                    match self.config.create_opening_command(&note.path) {
-                                        Ok(cmd) => ui::Message::OpenExternalCommand(cmd),
-                                        Err(e) => ui::Message::Error(e),
-                                    }
+                                    self.config.create_opening_command(&note.path)
                                 })
                             })
-                            .unwrap_or(ui::Message::None);
+                        {
+                            return Ok(ui::Message::OpenExternalCommand(res?));
+                        }
                     }
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
@@ -418,29 +415,27 @@ impl super::Screen for SelectScreen {
                         match self.mode {
                             SelectMode::Create => {
                                 // Create & register the note
-                                if data::notefile::create_note_file(
+                                data::notefile::create_note_file(
                                     &mut self.index,
                                     Self::extract_string_and_clear(&mut self.create_area),
                                     &self.config,
-                                ) {
-                                    // if successfull, refresh the ui
-                                    self.refresh();
-                                }
+                                )?;
+                                // if successfull, refresh the ui
+                                self.refresh();
                             }
                             SelectMode::Rename => {
                                 // Get the id of currently selected, then delegate to note_file::rename.
                                 if let Some(env_stats) =
                                     self.local_stats.filtered_stats.get(self.selected)
                                 {
-                                    if data::notefile::rename_note_file(
+                                    data::notefile::rename_note_file(
                                         &mut self.index,
                                         &env_stats.id,
                                         Self::extract_string_and_clear(&mut self.create_area),
                                         &self.config,
-                                    ) {
-                                        // if successfull, refresh the ui
-                                        self.refresh();
-                                    }
+                                    )?;
+                                    // if successfull, refresh the ui
+                                    self.refresh();
                                 }
                             }
                             SelectMode::Move => {
@@ -448,15 +443,14 @@ impl super::Screen for SelectScreen {
                                 if let Some(env_stats) =
                                     self.local_stats.filtered_stats.get(self.selected)
                                 {
-                                    if data::notefile::move_note_file(
+                                    data::notefile::move_note_file(
                                         &mut self.index,
                                         &env_stats.id,
                                         Self::extract_string_and_clear(&mut self.create_area),
                                         &self.config,
-                                    ) {
-                                        // if successfull, refresh the ui
-                                        self.refresh();
-                                    }
+                                    )?;
+                                    // if successfull, refresh the ui
+                                    self.refresh();
                                 }
                             }
                             _ => {
@@ -529,9 +523,9 @@ impl super::Screen for SelectScreen {
                 }
                 self.mode = SelectMode::Select;
             }
-        }
+        };
 
-        ui::Message::None
+        Ok(ui::Message::None)
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {

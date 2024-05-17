@@ -162,8 +162,11 @@ impl super::Screen for DisplayScreen {
         self.draw_link_table(3, "Level 2 Links", links2, buf);
     }
 
-    fn update(&mut self, key: crossterm::event::KeyEvent) -> ui::Message {
-        match key.code {
+    fn update(
+        &mut self,
+        key: crossterm::event::KeyEvent,
+    ) -> Result<ui::Message, error::RucolaError> {
+        Ok(match key.code {
             // Quit with Q
             KeyCode::Char('Q' | 'q') => ui::Message::Quit,
             // Go back to selection with f
@@ -211,13 +214,12 @@ impl super::Screen for DisplayScreen {
                     .unwrap_or(ui::Message::None)
             }
             // Open selected item in editor
-            KeyCode::Char('e' | 'E') => match self.config.create_opening_command(&self.note.path) {
-                Ok(cmd) => ui::Message::OpenExternalCommand(cmd),
-                Err(e) => ui::Message::Error(e),
-            },
+            KeyCode::Char('e' | 'E') => ui::Message::OpenExternalCommand(
+                self.config.create_opening_command(&self.note.path)?,
+            ),
 
             _ => ui::Message::None,
-        }
+        })
     }
 }
 
