@@ -32,6 +32,13 @@ fn main() -> Result<(), error::RucolaError> {
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame: &mut Frame| {
+            let area = frame.size();
+
+            // Make sure area is large enough or show error
+            if area.width < 90 || area.height < 25 {
+                current_error = Some(error::RucolaError::SmallArea)
+            }
+
             let app_area = match &current_error {
                 // If there is an error to be displayed, reduce the size for the app and display it at the bottom.
                 Some(e) => {
@@ -44,6 +51,8 @@ fn main() -> Result<(), error::RucolaError> {
                 }
                 None => frame.size(),
             };
+
+            // Draw the actual application
             app.draw(app_area, frame.buffer_mut());
         })?;
 

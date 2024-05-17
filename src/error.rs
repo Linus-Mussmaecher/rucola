@@ -11,6 +11,8 @@ pub enum RucolaError {
     ConfigLoad(#[from] confy::ConfyError),
     #[error("Could not find a default application for this file type.")]
     EditorMissing,
+    #[error("Area too small, main window might not display correctly.")]
+    SmallArea,
 }
 
 impl RucolaError {
