@@ -328,6 +328,14 @@ impl super::Screen for SelectScreen {
                         return Ok(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
+                // Open view mode
+                KeyCode::Char('v' | 'V') => {
+                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
+                        if let Some(note) = self.index.borrow().get(&env_stats.id) {
+                            data::notefile::create_html(note, &self.config)?;
+                        }
+                    }
+                }
                 _ => {}
             },
             // Filter mode: Type in filter values
@@ -400,6 +408,19 @@ impl super::Screen for SelectScreen {
                     KeyCode::Char('f' | 'F') => {
                         self.mode = SelectMode::Select;
                         return Ok(ui::Message::Refresh);
+                    }
+                    // H: Create HTMLs
+                    KeyCode::Char('h' | 'H') => {
+                        self.mode = SelectMode::Select;
+                        let index_b = self.index.borrow();
+                        for note in self
+                            .local_stats
+                            .filtered_stats
+                            .iter()
+                            .flat_map(|env_stats| index_b.get(&env_stats.id))
+                        {
+                            data::notefile::create_html(note, &self.config)?;
+                        }
                     }
                     // Back to select mode
                     KeyCode::Esc => {
@@ -834,6 +855,7 @@ impl super::Screen for SelectScreen {
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
                         ("F", "Refresh external changes"),
+                        ("H", "Create HTML files from all notes"),
                     ]
                 } else {
                     vec![

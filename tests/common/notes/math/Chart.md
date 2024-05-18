@@ -2,7 +2,11 @@
 
 ## Definition
 
-A *chart* or *local parameter representation* $x$ of a [[Manifold]] $M$ is a bijective map $U \to V$ for $U \subseteq M$ and $V \subseteq \mathbb{R}^n$.
+A *chart* or *local parameter representation* $x$ of a [[Manifold]] $M$ is a bijective map 
+$$
+ U \to V
+$$
+for $U \subseteq M$ and $V \subseteq \mathbb{R}^n$.
 
 We write $(U, x)$ and call the projection $x^i := \mathrm{pr}_i x$ onto the $i$th component as $i$th *coordinate function*.
 If $x(p) = 0$, $(U, x)$ is *centered* in $p$.

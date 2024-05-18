@@ -176,6 +176,61 @@ pub fn create_note_file(
     Ok(())
 }
 
+pub fn create_html(note: &Note, config: &config::Config) -> Result<(), error::RucolaError> {
+    // Read content of markdown(plaintext) file
+    let content = fs::read_to_string(&note.path)?;
+
+    // Parse markdown into AST
+    let arena = comrak::Arena::new();
+    let root = comrak::parse_document(
+        &arena,
+        &content,
+        &comrak::Options {
+            extension: comrak::ExtensionOptionsBuilder::default()
+                .wikilinks_title_after_pipe(true)
+                // .math_dollars(true)
+                .build()
+                .unwrap(),
+            ..Default::default()
+        },
+    );
+
+    // correct id urls for wiki links
+    for node in root.descendants() {
+        if let comrak::nodes::NodeValue::WikiLink(ref mut link) = node.data.borrow_mut().value {
+            link.url = format!("{}.html", super::name_to_id(&link.url));
+        }
+    }
+
+    // calculate target path
+    let mut tar_path = config.get_vault_path();
+    tar_path.push(".html/");
+
+    std::fs::create_dir_all(tar_path.clone())?;
+
+    tar_path.set_file_name(format!(".html/{}", super::name_to_id(&note.name)));
+    tar_path.set_extension("html");
+
+    let mut tar_file = std::fs::File::create(tar_path)?;
+
+    config.prepend_to_html(&mut tar_file)?;
+
+    comrak::format_html(
+        root,
+        &comrak::Options {
+            extension: comrak::ExtensionOptionsBuilder::default()
+                .wikilinks_title_after_pipe(true)
+                // .math_dollars(true)
+                .build()
+                .unwrap(),
+            ..Default::default()
+        },
+        &mut tar_file,
+    )?;
+
+    Ok(())
+}
+
 // #[cfg(test)]
 // mod tests {
 //     use std::io::Read;
