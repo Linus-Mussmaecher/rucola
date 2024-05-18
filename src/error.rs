@@ -13,6 +13,8 @@ pub enum RucolaError {
     EditorMissing,
     #[error("Area too small, main window might not display correctly.")]
     SmallArea,
+    #[error("Invalid input: {0}")]
+    Input(String),
 }
 
 impl RucolaError {

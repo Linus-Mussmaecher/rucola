@@ -413,8 +413,10 @@ impl super::Screen for SelectScreen {
                     }
                     // Enter: Create note, back to main mode, clear the buffer
                     KeyCode::Enter => {
+                        // Switch back to base mode
+                        let mode = std::mem::replace(&mut self.mode, SelectMode::Select);
                         // Here, we need to check which mode we are in again
-                        match self.mode {
+                        match mode {
                             SelectMode::Create => {
                                 // Create & register the note
                                 data::notefile::create_note_file(
@@ -459,8 +461,6 @@ impl super::Screen for SelectScreen {
                                 //This should NOT happen
                             }
                         }
-                        // Switch back to base mode
-                        self.mode = SelectMode::Select;
                     }
                     // All other key events are passed on to the text area
                     _ => {

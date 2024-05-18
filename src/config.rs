@@ -64,16 +64,16 @@ impl Config {
         let arguments = Arguments::parse();
 
         // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
-        if let Some(arg_path_buf) = arguments
+        config_file.vault_path = arguments
             .target_folder
+            // first attempt to extend the command line given path if one was passed
             .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
-        {
-            config_file.vault_path = Some(arg_path_buf);
-        } else {
-            config_file.vault_path = config_file.vault_path.and_then(|conf_path_buf| {
-                expanduser::expanduser(conf_path_buf.to_string_lossy().to_string()).ok()
-            })
-        }
+            // if none was given, expand the path given from the config file
+            .or_else(|| {
+                config_file.vault_path.and_then(|conf_path_buf| {
+                    expanduser::expanduser(conf_path_buf.to_string_lossy().to_string()).ok()
+                })
+            });
 
         // Check for a command line argument for the style
         config_file.theme = arguments.style.unwrap_or(config_file.theme);
@@ -107,16 +107,16 @@ impl Config {
         &self,
         path: &path::PathBuf,
     ) -> Result<std::process::Command, error::RucolaError> {
-        if let Some(configured_app) = &self.config_file.editor {
-            Ok(open::with_command(path, configured_app))
-        } else {
-            let mut default_commands = open::commands(path);
-            if !default_commands.is_empty() {
-                Ok(default_commands.remove(0))
-            } else {
-                Err(error::RucolaError::EditorMissing)
-            }
-        }
+        self.config_file
+            // take the editor from the config file
+            .editor
+            .as_ref()
+            // create a command from it
+            .map(|editor_string| open::with_command(path, editor_string))
+            // if it was not there, take the default command
+            .or_else(|| open::commands(path).pop())
+            // if it was also not there, throw an error
+            .ok_or_else(|| error::RucolaError::EditorMissing)
     }
 
     /// Wether or not the given string constitutes a valid extension to be crawled by rucola.
@@ -128,18 +128,8 @@ impl Config {
 
     /// Takes in a PathBuf and, if the current file extension is not set, append the default one.
     pub fn validate_file_extension(&self, path: &mut path::PathBuf) {
-        match path.extension() {
-            Some(_ext) => {
-                // Previous version allowed only configured extensions.
-                // if !self.is_valid_extension(&String::from(ext.to_string_lossy())) {
-                //     path.set_extension(&self.config_file.default_extension);
-                // }
-            }
-            None => {
-                if !self.is_valid_extension("") {
-                    path.set_extension(&self.config_file.default_extension);
-                }
-            }
+        if path.extension().is_none() && !self.is_valid_extension("") {
+            path.set_extension(&self.config_file.default_extension);
         }
     }
 
