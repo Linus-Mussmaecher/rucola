@@ -1,5 +1,6 @@
 #topology
 
+## Definition
 A *topology* of/on a set $X$ is a collection $\mathcal{O} \subseteq \mathcal{P}(X)$ of subsets such that
  - $\emptyset, X \in \mathcal{O}$.
  - If $O_1, \dots, O_n \in \mathcal{O}$, then $\bigcap_{j = 1}^n O_j \in \mathcal{O}$ as well.

@@ -10,7 +10,7 @@ pub enum RucolaError {
     #[error("Failed to load config file, defaulting: {0}")]
     ConfigLoad(#[from] confy::ConfyError),
     #[error("Could not find a default application for this file type.")]
-    EditorMissing,
+    ApplicationMissing,
     #[error("Area too small, main window might not display correctly.")]
     SmallArea,
     #[error("Invalid input: {0}")]

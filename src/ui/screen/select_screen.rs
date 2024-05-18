@@ -328,14 +328,6 @@ impl super::Screen for SelectScreen {
                         return Ok(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
-                // Open view mode
-                KeyCode::Char('v' | 'V') => {
-                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
-                        if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                            data::notefile::create_html(note, &self.config)?;
-                        }
-                    }
-                }
                 _ => {}
             },
             // Filter mode: Type in filter values
@@ -420,6 +412,20 @@ impl super::Screen for SelectScreen {
                             .flat_map(|env_stats| index_b.get(&env_stats.id))
                         {
                             data::notefile::create_html(note, &self.config)?;
+                        }
+                    }
+                    // Open view mode
+                    KeyCode::Char('v' | 'V') => {
+                        if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
+                        {
+                            if let Some(note) = self.index.borrow().get(&env_stats.id) {
+                                // Create an html file from the note, then use the config file to create an opening command and execute it.
+                                return Ok(ui::Message::OpenExternalCommand(
+                                    self.config.create_view_command(
+                                        &data::notefile::create_html(note, &self.config)?,
+                                    )?,
+                                ));
+                            }
                         }
                     }
                     // Back to select mode
@@ -856,6 +862,7 @@ impl super::Screen for SelectScreen {
                         ("D", "Delete selected note"),
                         ("F", "Refresh external changes"),
                         ("H", "Create HTML files from all notes"),
+                        ("V", "Open HTML in external viewer"),
                     ]
                 } else {
                     vec![

@@ -20,10 +20,10 @@ pub enum Message {
 /// Messages sent from the application to the terminal.
 #[derive(Debug)]
 pub enum TerminalMessage {
+    /// No message
+    None,
     /// Quit the application
     Quit,
     /// Restore the terminal, execute the given command and re-enter
     OpenExternalCommand(std::process::Command),
-    /// No message
-    None,
 }

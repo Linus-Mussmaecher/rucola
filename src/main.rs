@@ -38,11 +38,11 @@ fn main() -> Result<(), error::RucolaError> {
     let mut app = app::App::new(config);
 
     // Main loop
-
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame: &mut Frame| {
             let area = frame.size();
+            let buf = frame.buffer_mut();
 
             // Make sure area is large enough or show error
             if (area.width < 90 || area.height < 25) && current_error.is_none() {
@@ -52,18 +52,18 @@ fn main() -> Result<(), error::RucolaError> {
             let app_area = match &current_error {
                 // If there is an error to be displayed, reduce the size for the app and display it at the bottom.
                 Some(e) => {
-                    let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
-                        .split(frame.size());
+                    let areas =
+                        Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
 
-                    Widget::render(e.to_ratatui(), areas[1], frame.buffer_mut());
+                    Widget::render(e.to_ratatui(), areas[1], buf);
 
                     areas[0]
                 }
-                None => frame.size(),
+                None => area,
             };
 
             // Draw the actual application
-            app.draw(app_area, frame.buffer_mut());
+            app.draw(app_area, buf);
         })?;
 
         // Inform the current screen of events

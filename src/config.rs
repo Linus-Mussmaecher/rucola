@@ -32,6 +32,8 @@ struct ConfigFile {
     default_extension: String,
     /// String to prepend to all generated html documents (e.g. for MathJax)
     html_prepend: Option<String>,
+    /// Viewer to open html files with
+    viewer: Option<String>,
 }
 
 impl Default for ConfigFile {
@@ -44,6 +46,7 @@ impl Default for ConfigFile {
             file_extensions: vec![String::from("md")],
             default_extension: String::from("md"),
             html_prepend: None,
+            viewer: None,
         }
     }
 }
@@ -105,7 +108,13 @@ impl Config {
         &self.uistyles
     }
 
-    /// Reads the config file and the
+    /// Attempts to create a command to open the file at the given path to edit it.
+    /// Target should be a markdown file.
+    /// Checks:
+    ///  - The config file
+    ///  - The $EDITOR environment variable
+    ///  - the systems default programms
+    /// for an applicable program.
     pub fn create_opening_command(
         &self,
         path: &path::PathBuf,
@@ -125,7 +134,29 @@ impl Config {
             // if it was not there, take the default command
             .or_else(|| open::commands(path).pop())
             // if it was also not there, throw an error
-            .ok_or_else(|| error::RucolaError::EditorMissing)
+            .ok_or_else(|| error::RucolaError::ApplicationMissing)
+    }
+
+    /// Attempts to create a command to open the file at the given path to view it.
+    /// Target should be an html file.
+    /// Checks:
+    ///  - The config file
+    ///  - the systems default programms
+    /// for an applicable program.
+    pub fn create_view_command(
+        &self,
+        path: &path::PathBuf,
+    ) -> Result<std::process::Command, error::RucolaError> {
+        self.config_file
+            // take the editor from the config file
+            .viewer
+            .as_ref()
+            // create a command from it
+            .map(|viewer_string| open::with_command(path, viewer_string))
+            // if it was not there, take the default command
+            .or_else(|| open::commands(path).pop())
+            // if it was also not there, throw an error
+            .ok_or_else(|| error::RucolaError::ApplicationMissing)
     }
 
     /// Wether or not the given string constitutes a valid extension to be crawled by rucola.
