@@ -113,6 +113,12 @@ impl Config {
             .as_ref()
             // create a command from it
             .map(|editor_string| open::with_command(path, editor_string))
+            // Try the $EDITOR variable
+            .or_else(|| {
+                std::env::var("EDITOR")
+                    .ok()
+                    .map(|editor| open::with_command(path, editor))
+            })
             // if it was not there, take the default command
             .or_else(|| open::commands(path).pop())
             // if it was also not there, throw an error
@@ -144,5 +150,88 @@ impl Config {
             .vault_path
             .clone()
             .unwrap_or(path::PathBuf::from("."))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    use crate::config::Config;
+
+    #[test]
+    fn test_opening() {
+        let editor = std::env::var("EDITOR");
+
+        let config = Config::default();
+        let path = std::path::Path::new("./tests/common/notes/Books.md");
+
+        if let Ok(_editor) = editor {
+            // if we can unwrap the env variable, then we should be able to create a command
+            config.create_opening_command(&path.to_path_buf()).unwrap();
+        }
+
+        let config = Config {
+            config_file: super::ConfigFile {
+                editor: Some("helix".to_owned()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        // if we use  a config with set editor path, we should also be able to create a command
+        config.create_opening_command(&path.to_path_buf()).unwrap();
+    }
+
+    #[test]
+    fn test_file_endings() {
+        let no_ending_tar = std::path::PathBuf::from("./tests/common/test");
+        let md_ending_tar = std::path::PathBuf::from("./tests/common/test.md");
+        let txt_ending_tar = std::path::PathBuf::from("./tests/common/test.txt");
+
+        let mut config = Config::default();
+
+        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
+        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
+        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
+
+        config.validate_file_extension(&mut no_ending);
+        config.validate_file_extension(&mut md_ending);
+        config.validate_file_extension(&mut txt_ending);
+
+        assert_eq!(no_ending, md_ending_tar);
+        assert_eq!(md_ending, md_ending_tar);
+        assert_eq!(txt_ending, txt_ending_tar);
+
+        assert!(!config.is_valid_extension("txt"));
+        assert!(!config.is_valid_extension(""));
+        assert!(config.is_valid_extension("md"));
+
+        config.config_file.file_extensions = vec!["md".to_owned(), "".to_owned()];
+
+        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
+        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
+        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
+
+        config.validate_file_extension(&mut no_ending);
+        config.validate_file_extension(&mut md_ending);
+        config.validate_file_extension(&mut txt_ending);
+
+        assert_eq!(no_ending, no_ending_tar);
+        assert_eq!(md_ending, md_ending_tar);
+        assert_eq!(txt_ending, txt_ending_tar);
+
+        config.config_file.file_extensions = vec!["md".to_owned(), "*".to_owned()];
+
+        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
+        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
+        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
+
+        config.validate_file_extension(&mut no_ending);
+        config.validate_file_extension(&mut md_ending);
+        config.validate_file_extension(&mut txt_ending);
+
+        assert_eq!(no_ending, md_ending);
+        assert_eq!(md_ending, md_ending_tar);
+        assert_eq!(txt_ending, txt_ending_tar);
     }
 }
