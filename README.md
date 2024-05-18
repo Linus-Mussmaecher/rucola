@@ -132,8 +132,6 @@ Planned features include:
  - Integration of Obisidan URI for opening notes in obsidian
  - Performance improvements
  - Link updating on moving or renaming files
- - Auto-Fixing for broken links
- - Display of runtime errors within the program instead of frequent panics
  - Support nested tags in search
 
 ## Technology & License
