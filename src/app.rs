@@ -23,10 +23,7 @@ impl App {
     ///  - Loading a config file
     ///  - Indexing notes from the given path
     ///  - Creating an initial select screen and empty display stack
-    pub fn new() -> Self {
-        // Read config file. Loading includes listening to command line.
-        let config = config::Config::load().unwrap_or_default();
-
+    pub fn new(config: config::Config) -> Self {
         // Index all files in path
         let index = Rc::new(RefCell::new(data::NoteIndex::new(
             &std::path::Path::new(&config.get_vault_path()),

@@ -22,10 +22,20 @@ fn main() -> Result<(), error::RucolaError> {
     // draw loading screen
     draw_loading_screen(&mut terminal)?;
 
-    // Create the app state
-    let mut app = app::App::new();
-
+    // Displayed error
     let mut current_error: Option<error::RucolaError> = None;
+
+    // Read config file. Loading includes listening to command line.
+    let config = match config::Config::load() {
+        Ok(conf) => conf,
+        Err(e) => {
+            current_error = Some(e);
+            config::Config::default()
+        }
+    };
+
+    // Create the app state
+    let mut app = app::App::new(config);
 
     // Main loop
 
