@@ -175,3 +175,18 @@ pub fn create_note_file(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_reparsing() {
+        let index = NoteIndex::new(
+            std::path::Path::new("./tests/common/notes/"),
+            &config::Config::default(),
+        );
+
+        assert_eq!(index.inner.len(), 11);
+    }
+}
