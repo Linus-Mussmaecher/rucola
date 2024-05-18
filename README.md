@@ -1,18 +1,17 @@
 # 🌱 Rucola
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
-![actions](https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&style=flat-square)
-![commits](https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?style=flat-square)
-[![tech1](https://img.shields.io/badge/-Rust-f74c00?logo=rust&style=flat-square)](https://www.rust-lang.org/)
-[![tech2](https://img.shields.io/badge/-Ratatui-2563eb?logo=gnome-terminal&style=flat-square)](https://ratatui.rs)
+[<img alt="github" src="https://img.shields.io/badge/github-Linus--Mussmaecher/rucola-8da0cb?style=for-the-badge&labelColor=555555&color=8da0cb&logo=github">](https://github.com/Linus-Mussmaecher/rucola)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?labelColor=555555&style=for-the-badge&logo=gnu)](https://www.gnu.org/licenses/gpl-3.0)
+[<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
+[<img alt="commit status" src="https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?style=for-the-badge&labelColor=555555&color=66c2a5">](https://github.com/Linus-Mussmaecher/rucola/commits/main)
+[<img alt="rust" src="https://img.shields.io/badge/Rust-2021_Edition-ed9974?labelColor=555555&logo=rust&style=for-the-badge">](https://www.rust-lang.org/)
+[<img alt="ratatui" src="https://img.shields.io/badge/Ratatui-0.26-7fa4f5?labelColor=555555&logo=gnome-terminal&style=for-the-badge">](https://www.ratatui.rs/)
 
 Terminal-based browser and information aggregator for markdown file structures.
 
 > [!CAUTION]
 > This is a work-in-progress hobby project.
-> Many Features are still lacking and bugs may appear frequently.
->
-> All features described on this page are functional as far as I am aware, but the feature set is still incomplete.
+> All features described on this page are functional, but many are still lacking and bugs may appear frequently.
 
 ## Contents
  - [Goals](#Goals)
