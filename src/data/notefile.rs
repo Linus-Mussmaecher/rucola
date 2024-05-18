@@ -176,7 +176,10 @@ pub fn create_note_file(
     Ok(())
 }
 
-pub fn create_html(note: &Note, config: &config::Config) -> Result<(), error::RucolaError> {
+pub fn create_html(
+    note: &Note,
+    config: &config::Config,
+) -> Result<path::PathBuf, error::RucolaError> {
     // Read content of markdown(plaintext) file
     let content = fs::read_to_string(&note.path)?;
 
@@ -211,7 +214,7 @@ pub fn create_html(note: &Note, config: &config::Config) -> Result<(), error::Ru
     tar_path.set_file_name(format!(".html/{}", super::name_to_id(&note.name)));
     tar_path.set_extension("html");
 
-    let mut tar_file = std::fs::File::create(tar_path)?;
+    let mut tar_file = std::fs::File::create(tar_path.clone())?;
 
     config.prepend_to_html(&mut tar_file)?;
 
@@ -228,7 +231,7 @@ pub fn create_html(note: &Note, config: &config::Config) -> Result<(), error::Ru
         &mut tar_file,
     )?;
 
-    Ok(())
+    Ok(tar_path)
 }
 
 // #[cfg(test)]

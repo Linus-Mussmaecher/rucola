@@ -3,8 +3,8 @@
 A *Lie group* is a group $G$ with a smooth structure, i.e. a [[Manifold]], whose group multiplication and inversion
 $$
 \begin{align*}
- &m: G \times G \to G, &(g_{1}, g_{2}) &\mapsto g_{1}\times g_{2} \\
- &i: G \to G, &g &\mapsto g^{-1}
+ m: G \times G \to G, &(g_{1}, g_{2}) \mapsto g_{1}\times g_{2} \\
+ i: G \to G, &g \mapsto g^{-1}
 \end{align*}
 $$
 are [[Smooth Map|smooth]].
