@@ -5,6 +5,8 @@ pub enum Message {
     None,
     /// Quit the application
     Quit,
+    /// Fully refresh the file index
+    Refresh,
     ///
     DisplayStackClear,
     ///
