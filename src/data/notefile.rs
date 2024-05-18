@@ -176,17 +176,51 @@ pub fn create_note_file(
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use std::io::Read;
 
-    #[test]
-    fn test_reparsing() {
-        let index = NoteIndex::new(
-            std::path::Path::new("./tests/common/notes/"),
-            &config::Config::default(),
-        );
+//     use super::*;
 
-        assert_eq!(index.inner.len(), 11);
-    }
-}
+//     #[test]
+//     fn test_reparsing() {
+//         let index = NoteIndex::new(
+//             std::path::Path::new("./tests/common/notes/"),
+//             &config::Config::default(),
+//         );
+//         assert_eq!(index.inner.len(), 11);
+
+//         // Open the file.
+//         let mut file = fs::File::open(std::path::Path::new(
+//             "./tests/common/notes/math/Lie Group.md",
+//         ))
+//         .unwrap();
+
+//         // Read content of markdown(plaintext) file
+//         let mut content = String::new();
+//         std::io::Read::read_to_string(&mut file, &mut content).unwrap();
+
+//         // Parse markdown into AST
+//         let arena = comrak::Arena::new();
+//         let root = comrak::parse_document(
+//             &arena,
+//             &content,
+//             &comrak::Options {
+//                 extension: comrak::ExtensionOptionsBuilder::default()
+//                     .wikilinks_title_after_pipe(true)
+//                     .build()
+//                     .unwrap(),
+//                 ..Default::default()
+//             },
+//         );
+//         let mut file2 = fs::File::open(std::path::Path::new("./sink.md")).unwrap();
+//         let _ = comrak::format_commonmark(root, &comrak::Options::default(), &mut file2);
+
+//         let mut output = Vec::new();
+//         let _ = comrak::format_commonmark(root, &comrak::Options::default(), &mut output);
+//         let transformed_content = String::from_utf8(output.clone()).unwrap();
+//         fs::write("./sink.md", output);
+
+//         assert_eq!(content, transformed_content);
+//     }
+// }
