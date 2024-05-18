@@ -1,7 +1,7 @@
 use super::{config, data, error, ui, ui::Screen};
 use crossterm::event::{self, KeyEventKind};
 use ratatui::prelude::*;
-use std::{cell::RefCell, rc::Rc};
+use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
 
 /// The main state of the application.
 /// Consists of a select screen that is always existent, a stack of notes the user has navigated through and that he can navigate through by popping, reversing its navigation. Lastly, there is a display screen of the currently displayed note, which should always correspond to the top of the stack.
@@ -96,6 +96,13 @@ impl App {
                     )?),
                     None => None,
                 };
+            }
+            ui::Message::Refresh => {
+                self.index.borrow_mut().replace(data::NoteIndex::new(
+                    &self.config.get_vault_path(),
+                    &self.config,
+                ));
+                self.select.refresh();
             }
         }
 

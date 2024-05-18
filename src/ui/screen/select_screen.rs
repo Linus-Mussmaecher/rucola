@@ -198,7 +198,7 @@ impl SelectScreen {
 
     /// Re-creates the global and local stats from the index.
     /// To be performed after file management operations.
-    fn refresh(&mut self) {
+    pub fn refresh(&mut self) {
         // Refresh global stats
         self.global_stats =
             data::EnvironmentStats::new_with_filters(&self.index, data::Filter::default());
@@ -395,6 +395,11 @@ impl super::Screen for SelectScreen {
                     // M: Move note
                     KeyCode::Char('m' | 'M') => {
                         self.mode = SelectMode::Move;
+                    }
+                    // F: Refresh
+                    KeyCode::Char('f' | 'F') => {
+                        self.mode = SelectMode::Select;
+                        return Ok(ui::Message::Refresh);
                     }
                     // Back to select mode
                     KeyCode::Esc => {
@@ -828,6 +833,7 @@ impl super::Screen for SelectScreen {
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
+                        ("F", "Refresh external changes"),
                     ]
                 } else {
                     vec![
