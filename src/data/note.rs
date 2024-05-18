@@ -23,11 +23,7 @@ impl Note {
     /// Opens the file from the given path (if possible) and extracts metadata.
     pub fn from_path(path: &path::Path) -> io::Result<Self> {
         // Open the file.
-        let mut file = fs::File::open(path)?;
-
-        // Read content of markdown(plaintext) file
-        let mut content = String::new();
-        io::Read::read_to_string(&mut file, &mut content)?;
+        let content = fs::read_to_string(path)?;
 
         // Parse markdown into AST
         let arena = comrak::Arena::new();

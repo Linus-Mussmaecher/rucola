@@ -30,6 +30,8 @@ struct ConfigFile {
     file_extensions: Vec<String>,
     /// Default file ending for newly created notes
     default_extension: String,
+    /// String to prepend to all generated html documents (e.g. for MathJax)
+    html_prepend: Option<String>,
 }
 
 impl Default for ConfigFile {
@@ -41,6 +43,7 @@ impl Default for ConfigFile {
             editor: None,
             file_extensions: vec![String::from("md")],
             default_extension: String::from("md"),
+            html_prepend: None,
         }
     }
 }
@@ -139,6 +142,16 @@ impl Config {
         }
     }
 
+    /// Prepends relevant data to a generated html file
+    pub fn prepend_to_html(
+        &self,
+        target: &mut impl std::io::Write,
+    ) -> Result<(), error::RucolaError> {
+        if let Some(prep) = &self.config_file.html_prepend {
+            target.write(prep.as_bytes())?;
+        }
+        Ok(())
+    }
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
     pub fn get_dynamic_filter(&self) -> bool {
         self.config_file.dynamic_filter
