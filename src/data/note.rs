@@ -1,6 +1,6 @@
 use std::{fs, io, path};
 
-use regex::Regex;
+use itertools::Itertools;
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
 #[derive(Clone, Debug, Default)]
@@ -29,14 +29,19 @@ impl Note {
         let mut content = String::new();
         io::Read::read_to_string(&mut file, &mut content)?;
 
-        // Create regexes to match tags and links
-
-        // Both regexes are hard-coded in, so we can expect as we know they are valid.
-        // Anything starting with a single #, then all non-whitespace chars until a whitespace
-        let tag_regex = Regex::new(r"(\s|^)(\#[^\s\#]+)").expect("Invalid static regex.");
-        // Anything between two sets of brackets. If the inner area is split by a |, only take the text before.
-        let link_regex = Regex::new(r"\[\[([^\[\]\|\#]+)[\#]?[\|]?[^\[\]\|]*\]\]")
-            .expect("Invalid static regex.");
+        // Parse markdown into AST
+        let arena = comrak::Arena::new();
+        let root = comrak::parse_document(
+            &arena,
+            &content,
+            &comrak::Options {
+                extension: comrak::ExtensionOptionsBuilder::default()
+                    .wikilinks_title_after_pipe(true)
+                    .build()
+                    .unwrap(),
+                ..Default::default()
+            },
+        );
 
         Ok(Self {
             // Name: Remove file extension
@@ -46,19 +51,24 @@ impl Note {
                 .unwrap_or_default(),
             // Path: Already given - convert to owned version.
             path: path.to_path_buf(),
-            // Tags: Use the regex to extract a list of captures, then convert them to strings
-            tags: tag_regex
-                .captures_iter(&content)
-                .filter_map(|c| c.extract::<2>().1.get(1).map(|ss| String::from(*ss)))
+            // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
+            tags: root
+                .descendants()
+                .flat_map(|node| match &node.data.borrow().value {
+                    comrak::nodes::NodeValue::Text(content) => content
+                        .split_whitespace()
+                        .filter(|s| s.starts_with('#'))
+                        .map(|s| s.to_owned())
+                        .collect_vec(),
+                    _ => vec![],
+                })
                 .collect(),
-            // Links: Use the regex to extract a list of captures, then convert them to strings
-            links: link_regex
-                .captures_iter(&content)
-                .filter_map(|c| {
-                    c.extract::<1>()
-                        .1
-                        .first()
-                        .map(|ss| String::from(*ss).to_lowercase().replace(' ', "-"))
+            // Links: Go though all wikilinks in the syntax tree and map them
+            links: root
+                .descendants()
+                .flat_map(|node| match &node.data.borrow().value {
+                    comrak::nodes::NodeValue::WikiLink(link) => Some(super::name_to_id(&link.url)),
+                    _ => None,
                 })
                 .collect(),
             // Words: Split at whitespace, grouping multiple consecutive instances of whitespace together.

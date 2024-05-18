@@ -16,7 +16,7 @@ expanduser = "^1.2"
 # Opening
 open = "^5"
 # Parsing
-regex = "1.10.3"
+comrak = {git = "https://github.com/kivikakk/comrak.git"}
 walkdir = "2.5.0"
 # jwalk = "0.5"
 fuzzy-matcher = "^0.3"
