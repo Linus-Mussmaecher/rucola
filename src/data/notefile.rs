@@ -191,17 +191,34 @@ pub fn create_html(
         &comrak::Options {
             extension: comrak::ExtensionOptionsBuilder::default()
                 .wikilinks_title_after_pipe(true)
-                // .math_dollars(true)
+                .math_dollars(true)
                 .build()
                 .unwrap(),
             ..Default::default()
         },
     );
 
-    // correct id urls for wiki links
     for node in root.descendants() {
-        if let comrak::nodes::NodeValue::WikiLink(ref mut link) = node.data.borrow_mut().value {
-            link.url = format!("{}.html", super::name_to_id(&link.url));
+        // correct id urls for wiki links
+        match node.data.borrow_mut().value {
+            comrak::nodes::NodeValue::WikiLink(ref mut link) => {
+                link.url = format!("{}.html", super::name_to_id(&link.url));
+            }
+            comrak::nodes::NodeValue::Math(ref mut math) => {
+                let x = &mut math.literal;
+                // re-insert the dollar at beginning and end to make mathjax pick it up
+                x.insert(0, '$');
+                x.push('$');
+                // if display math, do it again.
+                if math.display_math {
+                    x.insert(0, '$');
+                    x.push('$');
+                }
+                *x = x.replace("\\field", "\\mathbb");
+                *x = x.replace("\\liealg", "\\mathfrak");
+                *x = x.replace("\\operator", "\\mathrm");
+            }
+            _ => {}
         }
     }
 
