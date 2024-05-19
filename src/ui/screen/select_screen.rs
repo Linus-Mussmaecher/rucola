@@ -191,10 +191,14 @@ impl SelectScreen {
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     /// Every filtering neccessarily triggers a non-stable resort.
     fn filter(&mut self, filter: data::Filter) {
+        // actual filtering
         self.local_stats = data::EnvironmentStats::new_with_filters(&self.index, filter);
+        // reset sorting
         self.sorting_asc = false;
         self.sorting = SortingMode::Score;
         self.sort();
+        // on a new filter, select the first element
+        self.selected = 0;
     }
 
     /// Re-creates the global and local stats from the index.
