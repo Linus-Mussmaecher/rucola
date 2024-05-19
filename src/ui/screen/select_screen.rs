@@ -208,17 +208,18 @@ impl SelectScreen {
             data::EnvironmentStats::new_with_filters(&self.index, self.filter_from_input());
 
         // Refresh sorting
-        // self.sort();
+        self.sort();
     }
 
     /// Sets a new sorting mode and direction.
     /// If it did not match the old one, triggers a resort.
     fn set_mode_and_maybe_sort(&mut self, new_mode: impl Into<Option<SortingMode>>, new_asc: bool) {
-        // if the sorting mode has changed, resort
+        // if the sorting mode has changed, resort and select the first element
         if let Some(new_mode) = new_mode.into() {
             if new_mode != self.sorting {
                 self.sorting = new_mode;
                 self.sort();
+                self.selected = 0;
             }
         }
         // if the asc has changed, reverse
@@ -230,12 +231,13 @@ impl SelectScreen {
 
     /// Sorts the note display according to the current sorting mode.
     fn sort(&mut self) {
-        if self.sorting == SortingMode::Name {
-            // Name: Sort-string by name
-            self.local_stats
-                .filtered_stats
-                .sort_by_cached_key(|env_stats| env_stats.id.clone());
-        } else {
+        // Always sort by name first
+        self.local_stats
+            .filtered_stats
+            .sort_by_cached_key(|env_stats| env_stats.id.clone());
+
+        // If the sorting mode is not name, now sort by the actual sorting mode.
+        if self.sorting != SortingMode::Name {
             // all others are usize and can be done in one thing
             self.local_stats
                 .filtered_stats
@@ -244,6 +246,7 @@ impl SelectScreen {
                         match self.sorting {
                             // This should not appear
                             SortingMode::Name => 0,
+                            // These should appear
                             SortingMode::Words => note.words,
                             SortingMode::Chars => note.characters,
                             SortingMode::GlobalOutLinks => env_stats.outlinks_global,
@@ -263,9 +266,6 @@ impl SelectScreen {
         if !self.sorting_asc {
             self.local_stats.filtered_stats.reverse();
         }
-
-        // Always select the first element whenever a resort is triggered.
-        self.selected = 0;
     }
 
     fn extract_string_and_clear(area: &mut TextArea<'static>) -> Option<String> {
