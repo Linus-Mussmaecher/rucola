@@ -68,7 +68,12 @@ fn main() -> Result<(), error::RucolaError> {
 
         // Inform the current screen of events
         if event::poll(std::time::Duration::from_millis(16))? {
+            // Check if the event was a keypress
             if let event::Event::Key(key) = event::read()? {
+                // Check for key presses
+                if key.kind != event::KeyEventKind::Press {
+                    continue 'main;
+                }
                 // when a key event, first reset the current error
                 current_error = None;
                 // Then update the app.

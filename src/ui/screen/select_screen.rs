@@ -1,5 +1,5 @@
 use crate::{config, data, error, ui};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
 use tui_textarea::TextArea;
@@ -22,8 +22,6 @@ enum SelectMode {
     Rename,
     /// Typing into the create box to move a note.
     Move,
-    /// User has initiated an edit to the selected note.
-    Edit,
 }
 
 /// Describes the current sorting mode of the displayed list.
@@ -50,6 +48,8 @@ pub struct SelectScreen {
     local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: data::EnvironmentStats,
+    /// A note id that was sent to edit and needs to be updated the next time this screen gets to an update loop.
+    to_update: Option<String>,
 
     // === CONFIG ===
     /// The config used.
@@ -84,6 +84,7 @@ impl SelectScreen {
             local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
             index,
+            to_update: None,
             filter_area: TextArea::default(),
             create_area: TextArea::default(),
             mode: SelectMode::Select,
@@ -198,7 +199,7 @@ impl SelectScreen {
 
     /// Re-creates the global and local stats from the index.
     /// To be performed after file management operations.
-    pub fn refresh(&mut self) {
+    pub fn refresh_env_stats(&mut self) {
         // Refresh global stats
         self.global_stats =
             data::EnvironmentStats::new_with_filters(&self.index, data::Filter::default());
@@ -264,7 +265,7 @@ impl SelectScreen {
         }
 
         // Always select the first element whenever a resort is triggered.
-        self.selected = 0;
+        // self.selected = 0;
     }
 
     fn extract_string_and_clear(area: &mut TextArea<'static>) -> Option<String> {
@@ -276,7 +277,17 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: KeyEvent) -> Result<ui::Message, error::RucolaError> {
+    fn update(
+        &mut self,
+        key: crossterm::event::KeyEvent,
+    ) -> Result<ui::Message, error::RucolaError> {
+        // Check if we need to reload/update a note
+        if let Some(note_to_update) = self.to_update.take() {
+            // Refresh it within the index.
+            self.index.borrow_mut().refresh_note(&note_to_update);
+            // Then refresh stats.
+            self.refresh_env_stats();
+        }
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
@@ -361,13 +372,13 @@ impl super::Screen for SelectScreen {
                             // delete it from index & filesystem
                             data::notefile::delete_note_file(&mut self.index, &env_stats.id)?;
                             // if successfull, refresh the ui
-                            self.refresh();
+                            self.refresh_env_stats();
                         }
                         self.mode = SelectMode::Select;
                     }
                     // Open selected item in editor
                     KeyCode::Char('e' | 'E') => {
-                        self.mode = SelectMode::Edit;
+                        self.mode = SelectMode::Select;
                         if let Some(res) = self
                             // get the selected item in the list for the id
                             .local_stats
@@ -375,8 +386,11 @@ impl super::Screen for SelectScreen {
                             .get(self.selected)
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
+                                // remember to reload this note later
+                                self.to_update = Some(env_stats.id.clone());
+                                // use the id to get the path
                                 self.index.borrow().get(&env_stats.id).map(|note| {
-                                    // then extract the path from the note and use the config to create a valid opening command.
+                                    // use the config to create a valid opening command
                                     self.config.create_opening_command(&note.path)
                                 })
                             })
@@ -416,6 +430,7 @@ impl super::Screen for SelectScreen {
                     }
                     // Open view mode
                     KeyCode::Char('v' | 'V') => {
+                        self.mode = SelectMode::Select;
                         if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
                         {
                             if let Some(note) = self.index.borrow().get(&env_stats.id) {
@@ -457,7 +472,7 @@ impl super::Screen for SelectScreen {
                                     &self.config,
                                 )?;
                                 // if successfull, refresh the ui
-                                self.refresh();
+                                self.refresh_env_stats();
                             }
                             SelectMode::Rename => {
                                 // Get the id of currently selected, then delegate to note_file::rename.
@@ -471,7 +486,7 @@ impl super::Screen for SelectScreen {
                                         &self.config,
                                     )?;
                                     // if successfull, refresh the ui
-                                    self.refresh();
+                                    self.refresh_env_stats();
                                 }
                             }
                             SelectMode::Move => {
@@ -486,7 +501,7 @@ impl super::Screen for SelectScreen {
                                         &self.config,
                                     )?;
                                     // if successfull, refresh the ui
-                                    self.refresh();
+                                    self.refresh_env_stats();
                                 }
                             }
                             _ => {
@@ -544,23 +559,6 @@ impl super::Screen for SelectScreen {
                 }
                 _ => {}
             },
-            // Edit mode: As this mode is mostly handeled out-of-program, just re-exit it in any case.
-            SelectMode::Edit => {
-                // Refresh the note that was edited.
-                if let Some(id) = self
-                    // get the selected item in the list for the id
-                    .local_stats
-                    .filtered_stats
-                    .get(self.selected)
-                    .map(|env_stats| &env_stats.id)
-                {
-                    // Refresh it within the index.
-                    self.index.borrow_mut().refresh_note(id);
-                    // Then refresh stats.
-                    self.refresh();
-                }
-                self.mode = SelectMode::Select;
-            }
         };
 
         Ok(ui::Message::None)
@@ -732,7 +730,7 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Move
                 | SelectMode::SubmenuFile
                 | SelectMode::SubmenuSorting => Some(self.selected),
-                SelectMode::Filter | SelectMode::Edit | SelectMode::Create => None,
+                SelectMode::Filter | SelectMode::Create => None,
             });
 
         // Generate row data
@@ -809,6 +807,7 @@ impl super::Screen for SelectScreen {
                     Span::styled("ords", styles.subtitle_style),
                 ]),
                 Line::from(vec![
+                    Span::styled("  ", styles.subtitle_style),
                     Span::styled("  C", table_heading_key_style),
                     Span::styled("hars", styles.subtitle_style),
                 ]),
@@ -919,7 +918,7 @@ impl super::Screen for SelectScreen {
                 Widget::render(Clear, br_area, buf);
                 Widget::render(popup_table, br_area, buf);
             }
-            SelectMode::Filter | SelectMode::Select | SelectMode::Edit => {}
+            SelectMode::Filter | SelectMode::Select => {}
             SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
                 let create_input = self.create_area.widget();
 

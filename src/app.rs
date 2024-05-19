@@ -1,5 +1,4 @@
 use super::{config, data, error, ui, ui::Screen};
-use crossterm::event::{self, KeyEventKind};
 use ratatui::prelude::*;
 use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
 
@@ -43,12 +42,8 @@ impl App {
     // Updates the app with the given key.
     pub fn update(
         &mut self,
-        key: event::KeyEvent,
+        key: crossterm::event::KeyEvent,
     ) -> Result<ui::TerminalMessage, error::RucolaError> {
-        // Check for key preses
-        if key.kind != KeyEventKind::Press {
-            return Ok(ui::TerminalMessage::None);
-        }
         // Update appropriate screen
         let msg = if let Some(display) = &mut self.display {
             display.update(key)
@@ -102,7 +97,7 @@ impl App {
                     &self.config.get_vault_path(),
                     &self.config,
                 ));
-                self.select.refresh();
+                self.select.refresh_env_stats();
             }
         }
 
