@@ -41,7 +41,7 @@ Currently, the only way to use this program is to clone this repository with
 ```
 and install it via
 ```
- cargo install
+ cargo install --path rucola
 ```
 
 For the future, a downloadable binary (for Windows) and releases to the AUR and Nix package registry are planned.

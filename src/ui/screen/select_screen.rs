@@ -208,7 +208,7 @@ impl SelectScreen {
             data::EnvironmentStats::new_with_filters(&self.index, self.filter_from_input());
 
         // Refresh sorting
-        self.sort();
+        // self.sort();
     }
 
     /// Sets a new sorting mode and direction.
@@ -265,7 +265,7 @@ impl SelectScreen {
         }
 
         // Always select the first element whenever a resort is triggered.
-        // self.selected = 0;
+        self.selected = 0;
     }
 
     fn extract_string_and_clear(area: &mut TextArea<'static>) -> Option<String> {
