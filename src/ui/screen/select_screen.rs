@@ -812,7 +812,7 @@ impl super::Screen for SelectScreen {
                 ]),
                 Line::from(vec![
                     Span::styled("  ", styles.subtitle_style),
-                    Span::styled("  C", table_heading_key_style),
+                    Span::styled("C", table_heading_key_style),
                     Span::styled("hars", styles.subtitle_style),
                 ]),
                 Line::from(vec![
