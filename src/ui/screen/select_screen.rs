@@ -238,6 +238,10 @@ impl SelectScreen {
 
         // If the sorting mode is not name, now sort by the actual sorting mode.
         if self.sorting != SortingMode::Name {
+            // If sorting in reverse is desired, pre-reverse this, so when reversing again later, the list will still be sub-sorted by name ascendingly.
+            if !self.sorting_asc {
+                self.local_stats.filtered_stats.reverse();
+            }
             // all others are usize and can be done in one thing
             self.local_stats
                 .filtered_stats
