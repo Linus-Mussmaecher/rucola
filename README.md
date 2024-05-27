@@ -24,7 +24,8 @@ Terminal-based browser and information aggregator for markdown file structures.
     - [Single-Note Screen](#single-note-screen)
     - [Configuration](#configuration)
  - [Planned Features](#planned-features)
- - [Technology & License](#technology-license)
+ - [Technology](#technology)
+ - [License](#license)
 
 ## Goals
  - *Target audience*: Users of a [zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) note system of interlinked markdown notes.
@@ -134,5 +135,16 @@ Planned features include:
  - Link updating on moving or renaming files
  - Support nested tags in search
 
-## Technology & License
-Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/) and released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
+## Technology
+Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/).
+
+## License
+Rucola is released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
+
+Copyright (C) 2024 Linus Mußmächer <linus.mussmaecher@gmail.com>
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.

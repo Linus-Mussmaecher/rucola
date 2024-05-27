@@ -1,19 +1,6 @@
 use std::path;
 
-use clap::Parser;
-
 use crate::{error, ui};
-
-/// CLI arguments
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Arguments {
-    /// The target folder
-    target_folder: Option<String>,
-    /// Number of times to greet
-    #[arg(short, long)]
-    style: Option<String>,
-}
 
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -62,15 +49,13 @@ pub struct Config {
 
 impl Config {
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
-    pub fn load() -> Result<Self, error::RucolaError> {
+    pub fn load(args: crate::Arguments) -> Result<Self, error::RucolaError> {
         // === Step 1: Load config file ===
         let mut config_file: ConfigFile = confy::load("rucola", "config")?;
 
-        // === Step 2: Read command line arguments
-        let arguments = Arguments::parse();
-
+        // === Step 2: Fix home path ===
         // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
-        config_file.vault_path = arguments
+        config_file.vault_path = args
             .target_folder
             // first attempt to extend the command line given path if one was passed
             .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
@@ -81,10 +66,9 @@ impl Config {
                 })
             });
 
-        // Check for a command line argument for the style
-        config_file.theme = arguments.style.unwrap_or(config_file.theme);
-
         // === Step 3: Load style file ===
+        config_file.theme = args.style.unwrap_or(config_file.theme);
+
         let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())?;
 
         Ok(Self {

@@ -1,3 +1,4 @@
+// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
 use crossterm::{
     event,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -12,9 +13,39 @@ mod config;
 mod data;
 mod error;
 mod ui;
+use clap::Parser;
+
+/// Help for the Rucola markdown note management program.
+/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
+/// This program comes with ABSOLUTELY NO WARRANTY.
+/// This is free software, and you are welcome to redistribute it under certain conditions.
+/// Type `rucola --license` for details.
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+pub struct Arguments {
+    /// Target vault folder, containing the notes to index and manage. Overrides the path set in the config file.
+    target_folder: Option<String>,
+    /// A path to a file (relative to the config directory) containing the styles to use for the UI
+    #[arg(short, long)]
+    style: Option<String>,
+    /// Output the license and warranty.
+    #[arg(short, long)]
+    license: bool,
+}
 
 /// Main function
 fn main() -> Result<(), error::RucolaError> {
+    // === Read command line arguments
+    let args = Arguments::parse();
+
+    // === Help Notices etc. ===
+    if args.license {
+        print_license();
+        return Ok(());
+    }
+
+    // === Actual programm ===
+
     // Initialize hooks & terminal
     init_hooks()?;
     let mut terminal = init_terminal()?;
@@ -26,7 +57,7 @@ fn main() -> Result<(), error::RucolaError> {
     let mut current_error: Option<error::RucolaError> = None;
 
     // Read config file. Loading includes listening to command line.
-    let config = match config::Config::load() {
+    let config = match config::Config::load(args) {
         Ok(conf) => conf,
         Err(e) => {
             current_error = Some(e);
@@ -148,4 +179,18 @@ fn restore_terminal() -> io::Result<()> {
     io::stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
+}
+
+/// Prints license information to the console.
+fn print_license() {
+    print!("Rucola is released under the GNU General Public License v3, available at <https://www.gnu.org/licenses/gpl-3.0>.
+
+Copyright (C) 2024 Linus Mußmächer <linus.mussmaecher@gmail.com>
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    ");
 }
