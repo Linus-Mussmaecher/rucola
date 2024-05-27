@@ -233,6 +233,7 @@ pub fn create_html(
 
     let mut tar_file = std::fs::File::create(tar_path.clone())?;
 
+    write!(tar_file, "<title>{}</title>\n", note.name)?;
     config.prepend_to_html(&mut tar_file)?;
 
     comrak::format_html(
