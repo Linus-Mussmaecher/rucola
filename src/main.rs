@@ -76,8 +76,16 @@ fn main() -> Result<(), error::RucolaError> {
             let buf = frame.buffer_mut();
 
             // Make sure area is large enough or show error
-            if (area.width < 90 || area.height < 25) && current_error.is_none() {
-                current_error = Some(error::RucolaError::SmallArea)
+            if area.width < 90 || area.height < 25 {
+                // area too small and no error -> show area error
+                if current_error.is_none() {
+                    current_error = Some(error::RucolaError::SmallArea);
+                }
+            } else {
+                // area big enough but area error still shown -> remove it
+                if let Some(error::RucolaError::SmallArea) = current_error {
+                    current_error = None;
+                }
             }
 
             let app_area = match &current_error {
