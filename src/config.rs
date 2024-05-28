@@ -62,7 +62,7 @@ impl Config {
             // if none was given, expand the path given from the config file
             .or_else(|| {
                 config_file.vault_path.and_then(|conf_path_buf| {
-                    expanduser::expanduser(conf_path_buf.to_string_lossy().to_string()).ok()
+                    expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
                 })
             });
 
@@ -163,7 +163,7 @@ impl Config {
         target: &mut impl std::io::Write,
     ) -> Result<(), error::RucolaError> {
         if let Some(prep) = &self.config_file.html_prepend {
-            target.write(prep.as_bytes())?;
+            target.write_all(prep.as_bytes())?;
         }
         Ok(())
     }

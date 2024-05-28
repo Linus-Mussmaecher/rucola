@@ -99,13 +99,12 @@ impl super::Screen for DisplayScreen {
             .tags
             .iter()
             .enumerate()
-            .map(|(index, s)| {
+            .flat_map(|(index, s)| {
                 [
                     Span::styled(if index == 0 { "" } else { ", " }, styles.text_style),
                     Span::styled(s.as_str(), styles.subtitle_style),
                 ]
             })
-            .flatten()
             .collect_vec();
 
         // Stats Area
@@ -175,21 +174,21 @@ impl super::Screen for DisplayScreen {
             KeyCode::Left | KeyCode::Char('H' | 'h') => ui::Message::DisplayStackPop,
             // Go up in the current list with k
             KeyCode::Up | KeyCode::Char('K' | 'k') => {
-                self.selected
-                    .get_mut(self.foc_table)
-                    .map(|selected| *selected = selected.saturating_sub(1));
+                if let Some(selected) = self.selected.get_mut(self.foc_table) {
+                    *selected = selected.saturating_sub(1);
+                }
                 ui::Message::None
             }
             // Go down in the current list with j
             KeyCode::Down | KeyCode::Char('J' | 'j') => {
-                self.selected.get_mut(self.foc_table).map(|selected| {
+                if let Some(selected) = self.selected.get_mut(self.foc_table) {
                     *selected = selected.saturating_add(1).min(
                         self.links
                             .get(self.foc_table)
                             .map(|list| list.len().saturating_sub(1))
                             .unwrap_or_default(),
-                    )
-                });
+                    );
+                }
                 ui::Message::None
             }
             // Change list with Tab
