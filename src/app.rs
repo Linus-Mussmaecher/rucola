@@ -25,7 +25,7 @@ impl App {
     pub fn new(config: config::Config) -> Self {
         // Index all files in path
         let index = Rc::new(RefCell::new(data::NoteIndex::new(
-            &std::path::Path::new(&config.get_vault_path()),
+            std::path::Path::new(&config.get_vault_path()),
             &config,
         )));
 

@@ -171,7 +171,7 @@ pub fn create_note_file(
     )?;
 
     // Add the file to the index if nothing threw and error and early returned.
-    index.borrow_mut().register(&path::Path::new(&path));
+    index.borrow_mut().register(path::Path::new(&path));
 
     Ok(())
 }
@@ -233,7 +233,7 @@ pub fn create_html(
 
     let mut tar_file = std::fs::File::create(tar_path.clone())?;
 
-    write!(tar_file, "<title>{}</title>\n", note.name)?;
+    writeln!(tar_file, "<title>{}</title>", note.name)?;
     config.prepend_to_html(&mut tar_file)?;
 
     comrak::format_html(

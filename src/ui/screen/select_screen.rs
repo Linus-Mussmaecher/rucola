@@ -258,7 +258,7 @@ impl SelectScreen {
                             SortingMode::GlobalInLinks => env_stats.inlinks_global,
                             SortingMode::LocalInLinks => env_stats.inlinks_local,
                             SortingMode::Score => env_stats.match_score as usize,
-                            SortingMode::Broken => env_stats.broken_links as usize,
+                            SortingMode::Broken => env_stats.broken_links,
                         }
                     } else {
                         0
