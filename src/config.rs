@@ -19,6 +19,8 @@ struct ConfigFile {
     default_extension: String,
     /// String to prepend to all generated html documents (e.g. for MathJax)
     html_prepend: Option<String>,
+    /// Path to .css file to style htmls with.
+    css: Option<String>,
     /// Viewer to open html files with
     viewer: Option<String>,
 }
@@ -33,6 +35,7 @@ impl Default for ConfigFile {
             file_extensions: vec![String::from("md")],
             default_extension: String::from("md"),
             html_prepend: None,
+            css: None,
             viewer: None,
         }
     }
@@ -45,6 +48,8 @@ pub struct Config {
     config_file: ConfigFile,
     /// The data describing the look of the ui
     uistyles: ui::UiStyles,
+    /// The resolved path to the css file
+    css_path: Option<path::PathBuf>,
 }
 
 impl Config {
@@ -71,9 +76,25 @@ impl Config {
 
         let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())?;
 
+        // === Step 4: Resolve css path ===
+        let mut css_path = None;
+
+        if let Some(css) = &config_file.css {
+            let mut css = confy::get_configuration_file_path(
+                "rucola",
+                // remove css at the end, so no matter if the user included it or not, we always have the same format. If we left the css, confy would append .toml and we would end up with .css.css
+                css.as_str().trim_end_matches(".css"),
+            )?;
+            // confy will append .toml (as this is the expected extension for config files)
+            // so replace that with .css in any case.
+            css.set_extension("css");
+            css_path = Some(css);
+        }
+
         Ok(Self {
             config_file,
             uistyles,
+            css_path,
         })
     }
 
@@ -158,12 +179,18 @@ impl Config {
     }
 
     /// Prepends relevant data to a generated html file
-    pub fn prepend_to_html(
-        &self,
-        target: &mut impl std::io::Write,
-    ) -> Result<(), error::RucolaError> {
+    pub fn add_preamble(&self, html: &mut impl std::io::Write) -> Result<(), error::RucolaError> {
+        // Prepend css location
+        if let Some(css) = &self.css_path {
+            writeln!(
+                html,
+                "<link rel=\"stylesheet\" href=\"{}\">",
+                css.to_string_lossy()
+            )?;
+        }
+        // Prepend all other manual configured prefixes
         if let Some(prep) = &self.config_file.html_prepend {
-            target.write_all(prep.as_bytes())?;
+            html.write_all(prep.as_bytes())?;
         }
         Ok(())
     }
