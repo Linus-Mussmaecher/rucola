@@ -23,12 +23,15 @@ struct ConfigFile {
     css: Option<String>,
     /// Viewer to open html files with
     viewer: Option<String>,
+    /// Wether or not to insert a MathJax preamble in notes containing math code.
+    mathjax: bool,
 }
 
 impl Default for ConfigFile {
     fn default() -> Self {
         Self {
             dynamic_filter: true,
+            mathjax: true,
             vault_path: None,
             theme: "default_light_theme".to_string(),
             editor: None,
@@ -179,13 +182,28 @@ impl Config {
     }
 
     /// Prepends relevant data to a generated html file
-    pub fn add_preamble(&self, html: &mut impl std::io::Write) -> Result<(), error::RucolaError> {
+    pub fn add_preamble(
+        &self,
+        html: &mut impl std::io::Write,
+        contains_math: bool,
+    ) -> Result<(), error::RucolaError> {
         // Prepend css location
         if let Some(css) = &self.css_path {
             writeln!(
                 html,
                 "<link rel=\"stylesheet\" href=\"{}\">",
                 css.to_string_lossy()
+            )?;
+        }
+        // Prepend mathjax code
+        if contains_math && self.config_file.mathjax {
+            writeln!(
+                html,
+                r#"<script type="text/x-mathjax-config">MathJax.Hub.Config({{tex2jax: {{inlineMath: [ ['$','$'] ],processEscapes: true}}}});</script>"#
+            )?;
+            writeln!(
+                html,
+                r#"<script type="text/javascript"src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>"#
             )?;
         }
         // Prepend all other manual configured prefixes
