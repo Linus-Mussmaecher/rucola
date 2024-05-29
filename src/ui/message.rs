@@ -1,15 +1,5 @@
-/// Opening mode for the OpenNote messages
-#[derive(Copy, PartialEq, Eq, Clone, Debug, Default)]
-pub enum OpeningMode {
-    #[default]
-    /// Open the note's html for passive viewing.
-    VIEW,
-    /// Open the note for active editing.
-    EDIT,
-}
-
 /// Messages sent from the user to the application
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Message {
     /// No message
     None,
@@ -23,19 +13,19 @@ pub enum Message {
     DisplayStackPop,
     ///
     DisplayStackPush(String),
-    /// Open a note
-    OpenNote(OpeningMode, std::path::PathBuf),
+    /// Restore the terminal, execute the given command and re-enter
+    OpenExternalCommand(std::process::Command),
 }
 
 /// Messages sent from the application to the terminal.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum TerminalMessage {
     /// No message
     None,
     /// Quit the application
     Quit,
-    /// Open a note
-    OpenNote(OpeningMode, std::path::PathBuf),
+    /// Restore the terminal, execute the given command and re-enter
+    OpenExternalCommand(std::process::Command),
 }
 
 impl From<Message> for TerminalMessage {
@@ -47,7 +37,7 @@ impl From<Message> for TerminalMessage {
             | Message::DisplayStackPop
             | Message::DisplayStackPush(_) => Self::None,
             Message::Quit => Self::Quit,
-            Message::OpenNote(mode, path) => Self::OpenNote(mode, path),
+            Message::OpenExternalCommand(cmd) => Self::OpenExternalCommand(cmd),
         }
     }
 }

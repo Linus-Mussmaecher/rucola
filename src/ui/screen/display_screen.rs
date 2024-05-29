@@ -216,12 +216,12 @@ impl super::Screen for DisplayScreen {
             }
             // Open selected item in editor
             KeyCode::Char('e' | 'E') => {
-                ui::Message::OpenNote(ui::message::OpeningMode::EDIT, self.note.path.clone())
+                ui::Message::OpenExternalCommand(self.config.create_edit_command(&self.note.path)?)
             }
             // Open selected item in viewer
-            KeyCode::Char('v' | 'V') => ui::Message::OpenNote(
-                ui::OpeningMode::VIEW,
-                data::notefile::create_html(&self.note, &self.config)?,
+            KeyCode::Char('v' | 'V') => ui::Message::OpenExternalCommand(
+                self.config
+                    .create_view_command(&data::notefile::create_html(&self.note, &self.config)?)?,
             ),
 
             _ => ui::Message::None,

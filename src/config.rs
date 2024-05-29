@@ -123,7 +123,7 @@ impl Config {
     ///  - The $EDITOR environment variable
     ///  - the systems default programms
     /// for an applicable program.
-    pub fn create_opening_command(
+    pub fn create_edit_command(
         &self,
         path: &path::PathBuf,
     ) -> Result<std::process::Command, error::RucolaError> {
@@ -241,7 +241,7 @@ mod tests {
 
         if let Ok(_editor) = editor {
             // if we can unwrap the env variable, then we should be able to create a command
-            config.create_opening_command(&path.to_path_buf()).unwrap();
+            config.create_edit_command(&path.to_path_buf()).unwrap();
         }
 
         let config = Config {
@@ -252,7 +252,7 @@ mod tests {
             ..Default::default()
         };
         // if we use  a config with set editor path, we should also be able to create a command
-        config.create_opening_command(&path.to_path_buf()).unwrap();
+        config.create_edit_command(&path.to_path_buf()).unwrap();
     }
 
     #[test]
