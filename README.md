@@ -127,6 +127,7 @@ Rucola can convert markdown notes to HTML documents, which are stored in the `.h
 This feature uses [comrak](https://github.com/kivikakk/comrak) for the markdown-HTML conversion and supports most of the usual markdown syntax.
 This is especially useful for notes that are difficult to read, for example because they contain lots of LaTeX code or tables - or simply because you prefer a more clean look. 
 HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a MathJax-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
+Also, you can perform small-scale string replacements in math mode, for example replacing `\field` with `\mathbb` to write fields more semantically clearly.
 
 You can view a single HTML file from the select screen or the single-note screen, in this case it is converted just-in-time.
 The file will be openend with the configured viewer (usually outside your terminal).
@@ -148,6 +149,9 @@ Here is a list of all possible configuration settings:
    This can be a terminal application or an external application.
  - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
  - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble.
+ - `math_replacments` is a vector of pairs of strings.
+   In math mode, every appearance of the first string will be replaced by the second one.
+   The default replaces `field` with `mathbb` and `lieagl` with `mathfrak` as an example for the TOML syntax and the general idea of using semantically valuable string replacements to make your LaTeX code clearer.
  - `css` is the name of your css style sheet (in your rucola config folder).
    The `.css` file ending can be omitted.
    If not set, no css file will be added to your HTML files.

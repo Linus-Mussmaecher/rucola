@@ -25,6 +25,8 @@ struct ConfigFile {
     viewer: Option<String>,
     /// Wether or not to insert a MathJax preamble in notes containing math code.
     mathjax: bool,
+    /// A list of strings to replace in math mode to mimic latex commands
+    math_replacements: Vec<(String, String)>,
 }
 
 impl Default for ConfigFile {
@@ -40,6 +42,10 @@ impl Default for ConfigFile {
             html_prepend: None,
             css: None,
             viewer: None,
+            math_replacements: vec![
+                ("\\field".to_string(), "\\mathbb".to_string()),
+                ("\\liealg".to_string(), "\\mathfrak".to_string()),
+            ],
         }
     }
 }
@@ -212,6 +218,16 @@ impl Config {
         }
         Ok(())
     }
+
+    // Performs all string replacements as specified in the config file in the given string.
+    pub fn perform_replacements(&self, initial_string: &String) -> String {
+        let mut res = initial_string.clone();
+        for (old, new) in self.config_file.math_replacements.iter() {
+            res = res.replace(old, new);
+        }
+        res
+    }
+
     /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
     pub fn get_dynamic_filter(&self) -> bool {
         self.config_file.dynamic_filter
@@ -253,6 +269,37 @@ mod tests {
         };
         // if we use  a config with set editor path, we should also be able to create a command
         config.create_edit_command(&path.to_path_buf()).unwrap();
+    }
+
+    #[test]
+    fn test_replacements() {
+        let mut config = Config::default();
+
+        let field = "\\field{R} \neq \\field{C}".to_string();
+        let topology = "\\topology{O} = \\topology{P}(X)".to_string();
+
+        assert_eq!(
+            config.perform_replacements(&field),
+            "\\mathbb{R} \neq \\mathbb{C}"
+        );
+        assert_eq!(
+            config.perform_replacements(&topology),
+            "\\topology{O} = \\topology{P}(X)"
+        );
+
+        config
+            .config_file
+            .math_replacements
+            .push(("\\topology".to_string(), "\\mathcal".to_string()));
+
+        assert_eq!(
+            config.perform_replacements(&field),
+            "\\mathbb{R} \neq \\mathbb{C}"
+        );
+        assert_eq!(
+            config.perform_replacements(&topology),
+            "\\mathcal{O} = \\mathcal{P}(X)"
+        );
     }
 
     #[test]
