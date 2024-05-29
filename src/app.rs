@@ -25,7 +25,7 @@ impl App {
     pub fn new(config: config::Config) -> Self {
         // Index all files in path
         let index = Rc::new(RefCell::new(data::NoteIndex::new(
-            std::path::Path::new(&config.get_vault_path()),
+            std::path::Path::new(&config.create_vault_path()),
             &config,
         )));
 
@@ -51,13 +51,12 @@ impl App {
             self.select.update(key)
         };
 
+        let msg = msg?;
+
         // Act on the potentially returned message.
-        match msg? {
-            ui::Message::None => {}
-            ui::Message::Quit => return Ok(ui::TerminalMessage::Quit),
-            ui::Message::OpenExternalCommand(command) => {
-                return Ok(ui::TerminalMessage::OpenExternalCommand(command))
-            }
+        match &msg {
+            // Message that do not modify the app trigger no immediate effect and are later passed up.
+            ui::Message::None | ui::Message::Quit | ui::Message::OpenNote(_, _) => {}
             ui::Message::DisplayStackClear => {
                 // Clear the display stack and remove the current display screen, if there is one.
                 self.display_stack.clear();
@@ -79,7 +78,7 @@ impl App {
             }
             ui::Message::DisplayStackPush(new_id) => {
                 // Push a new id on top of the display stack.
-                self.display_stack.push(new_id);
+                self.display_stack.push(new_id.clone());
 
                 // Attempt to read the top of the stack again.
                 // Replace the display screen with the one created from this result, which should always be a valid display screen created from the id we just pushed.
@@ -94,14 +93,14 @@ impl App {
             }
             ui::Message::Refresh => {
                 self.index.borrow_mut().replace(data::NoteIndex::new(
-                    &self.config.get_vault_path(),
+                    &self.config.create_vault_path(),
                     &self.config,
                 ));
                 self.select.refresh_env_stats();
             }
         }
 
-        Ok(ui::TerminalMessage::None)
+        Ok(msg.into())
     }
 
     pub fn draw(&self, area: Rect, buf: &mut Buffer) {

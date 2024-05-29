@@ -395,11 +395,11 @@ impl super::Screen for SelectScreen {
                                 // use the id to get the path
                                 self.index.borrow().get(&env_stats.id).map(|note| {
                                     // use the config to create a valid opening command
-                                    self.config.create_opening_command(&note.path)
+                                    note.path.clone()
                                 })
                             })
                         {
-                            return Ok(ui::Message::OpenExternalCommand(res?));
+                            return Ok(ui::Message::OpenNote(ui::OpeningMode::EDIT, res));
                         }
                     }
                     // N: Create note
@@ -439,10 +439,9 @@ impl super::Screen for SelectScreen {
                         {
                             if let Some(note) = self.index.borrow().get(&env_stats.id) {
                                 // Create an html file from the note, then use the config file to create an opening command and execute it.
-                                return Ok(ui::Message::OpenExternalCommand(
-                                    self.config.create_view_command(
-                                        &data::notefile::create_html(note, &self.config)?,
-                                    )?,
+                                return Ok(ui::Message::OpenNote(
+                                    ui::OpeningMode::VIEW,
+                                    data::notefile::create_html(note, &self.config)?,
                                 ));
                             }
                         }

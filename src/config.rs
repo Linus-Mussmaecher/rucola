@@ -200,7 +200,7 @@ impl Config {
     }
 
     /// Returns the default vault path.
-    pub fn get_vault_path(&self) -> std::path::PathBuf {
+    pub fn create_vault_path(&self) -> std::path::PathBuf {
         self.config_file
             .vault_path
             .clone()

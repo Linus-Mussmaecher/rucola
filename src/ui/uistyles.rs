@@ -1,6 +1,7 @@
 use ratatui::style::*;
 
 /// A struct that holds a collection of styles for a consistent looking UI.
+/// This is a pure data struct, having no methods and only public attributes.
 #[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct UiStyles {
     /// For titles of boxes.

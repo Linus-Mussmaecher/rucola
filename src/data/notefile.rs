@@ -76,7 +76,7 @@ pub fn move_note_file(
     );
 
     // Extend vault path with given path
-    let mut new_path = config.get_vault_path();
+    let mut new_path = config.create_vault_path();
     new_path.push(rel_path);
 
     // If pointing to a directory, re-use the old file name.
@@ -152,7 +152,7 @@ pub fn create_note_file(
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     // Piece together the file path
-    let mut path = config.get_vault_path();
+    let mut path = config.create_vault_path();
     path.push(input_path.unwrap_or_else(|| "Untitled".to_owned()));
 
     // If there was no manual extension set, take the default one
@@ -223,7 +223,7 @@ pub fn create_html(
     }
 
     // calculate target path
-    let mut tar_path = config.get_vault_path();
+    let mut tar_path = config.create_vault_path();
     tar_path.push(".html/");
 
     std::fs::create_dir_all(tar_path.clone())?;
