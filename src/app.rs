@@ -56,7 +56,7 @@ impl App {
         // Act on the potentially returned message.
         match &msg {
             // Message that do not modify the app trigger no immediate effect and are later passed up.
-            ui::Message::None | ui::Message::Quit | ui::Message::OpenNote(_, _) => {}
+            ui::Message::None | ui::Message::Quit | ui::Message::OpenExternalCommand(_) => {}
             ui::Message::DisplayStackClear => {
                 // Clear the display stack and remove the current display screen, if there is one.
                 self.display_stack.clear();

@@ -71,7 +71,7 @@ fn main() -> Result<(), error::RucolaError> {
     };
 
     // Create the app state
-    let mut app = app::App::new(config);
+    let mut app = app::App::new(config.clone());
 
     // Main loop
     'main: loop {
@@ -126,13 +126,13 @@ fn main() -> Result<(), error::RucolaError> {
                         break 'main;
                     }
                     Ok(ui::TerminalMessage::None) => {}
-                    Ok(ui::TerminalMessage::OpenNote(mode, path)) => {
-                        // // Restore the terminal
-                        // restore_terminal()?;
-                        // // Execute the given command
-                        // cmd.status()?;
-                        // // Re-enter the selflication
-                        // terminal = init_terminal()?;
+                    Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
+                        // Restore the terminal
+                        restore_terminal()?;
+                        // Execute the given command
+                        cmd.status()?;
+                        // Re-enter the tui state
+                        terminal = init_terminal()?;
                     }
                     Err(e) => current_error = Some(e),
                 }
