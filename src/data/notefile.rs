@@ -217,9 +217,7 @@ pub fn create_html(
                     x.insert(0, '$');
                     x.push('$');
                 }
-                *x = x.replace("\\field", "\\mathbb");
-                *x = x.replace("\\liealg", "\\mathfrak");
-                *x = x.replace("\\operator", "\\mathrm");
+                *x = config.perform_replacements(x);
             }
             _ => {}
         }
