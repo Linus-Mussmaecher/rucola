@@ -198,6 +198,8 @@ pub fn create_html(
         },
     );
 
+    let mut contains_math = false;
+
     for node in root.descendants() {
         // correct id urls for wiki links
         match node.data.borrow_mut().value {
@@ -205,6 +207,7 @@ pub fn create_html(
                 link.url = format!("{}.html", super::name_to_id(&link.url));
             }
             comrak::nodes::NodeValue::Math(ref mut math) => {
+                contains_math = true;
                 let x = &mut math.literal;
                 // re-insert the dollar at beginning and end to make mathjax pick it up
                 x.insert(0, '$');
@@ -234,7 +237,7 @@ pub fn create_html(
     let mut tar_file = std::fs::File::create(tar_path.clone())?;
 
     writeln!(tar_file, "<title>{}</title>", note.name)?;
-    config.add_preamble(&mut tar_file)?;
+    config.add_preamble(&mut tar_file, contains_math)?;
 
     comrak::format_html(
         root,

@@ -42,7 +42,7 @@ Currently, the only way to use this program is to clone this repository with
 ```
 and install it via
 ```
- cargo install --path rucola
+ cargo install --path .
 ```
 
 For the future, a downloadable binary (for Windows) and releases to the AUR and Nix package registry are planned.
@@ -122,8 +122,36 @@ This allows to you to get an overview about a note's connections in your network
 
 You can follow the links to given notes, and go back in your journey to previously visited notes.
 
+### HTML conversion
+Rucola can convert markdown notes to HTML documents, which are stored in the `.html` subfolder of your vault directory.
+This feature uses [comrak](https://github.com/kivikakk/comrak) for the markdown-HTML conversion and supports most of the usual markdown syntax.
+This is especially useful for notes that are difficult to read, for example because they contain lots of LaTeX code or tables - or simply because you prefer a more clean look. 
+HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a MathJax-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
+
+You can view a single HTML file from the select screen or the single-note screen, in this case it is converted just-in-time.
+The file will be openend with the configured viewer (usually outside your terminal).
+Alternatively, you can also convert all in the current local environment from the select view.
+This allows you to follow links while viewing documents and is recommended.
+
+
 ### Configuration
 Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
+
+Here is a list of all possible configuration settings:
+ - `dynamic_filter` is set to `true` by default, but can be set to `false` to cause your select view to only filter upon pressing enter and not while typing.
+ - `vault_path` is the path to your default vault that will be used by rucola unless overwritten by a command line positional argument.
+ - `theme` is the name of the `.toml`-theme file to configure rucola's visual appearance.
+ - `default_extension` is the extension appended to notes created by rucola, `.md` by default.
+ - `file_extensions` lists all extension of files to be indexed by rucola when opening a folder.
+   Including `""` in this list causes extension-less files to be indexed, while including `"*"` causes all files _with_ any extension (but not extension-less files) to be indexed.
+ - `editor` configures the command to edit your notes.
+   This can be a terminal application or an external application.
+ - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
+ - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble.
+ - `css` is the name of your css style sheet (in your rucola config folder).
+   The `.css` file ending can be omitted.
+   If not set, no css file will be added to your HTML files.
+ - `html_prepend` can contain any text you want to prepend to all your HTML files in addition to the mathjax, css and title tags/scripts.
 
 ## Planned Features
 Planned features include:
