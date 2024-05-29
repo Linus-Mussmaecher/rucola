@@ -131,6 +131,8 @@ impl super::Screen for DisplayScreen {
         ];
 
         let instructions_top = block::Title::from(Line::from(vec![
+            Span::styled("V", styles.hotkey_style),
+            Span::styled("iew Note──", styles.text_style),
             Span::styled("E", styles.hotkey_style),
             Span::styled("dit Note", styles.text_style),
         ]))
@@ -213,8 +215,13 @@ impl super::Screen for DisplayScreen {
                     .unwrap_or(ui::Message::None)
             }
             // Open selected item in editor
-            KeyCode::Char('e' | 'E') => ui::Message::OpenExternalCommand(
-                self.config.create_opening_command(&self.note.path)?,
+            KeyCode::Char('e' | 'E') => {
+                ui::Message::OpenNote(ui::message::OpeningMode::EDIT, self.note.path.clone())
+            }
+            // Open selected item in viewer
+            KeyCode::Char('v' | 'V') => ui::Message::OpenNote(
+                ui::OpeningMode::VIEW,
+                data::notefile::create_html(&self.note, &self.config)?,
             ),
 
             _ => ui::Message::None,

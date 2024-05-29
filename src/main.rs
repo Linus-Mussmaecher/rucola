@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
+/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
 use crossterm::{
     event,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -8,14 +8,19 @@ use ratatui::prelude::*;
 use std::io;
 use std::panic;
 
+/// The actual application, combining the ui and data management.
 mod app;
+/// Config file specification and parsing.
 mod config;
+/// Data manipulation: Reading, parsing and manipulating note files and calculating statistics.
 mod data;
+/// Error enum and handling.
 mod error;
+/// The ui of the app.
 mod ui;
 use clap::Parser;
 
-/// Help for the Rucola markdown note management program.
+/// Command line arguments for the Rucola markdown note management program.
 /// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
 /// This program comes with ABSOLUTELY NO WARRANTY.
 /// This is free software, and you are welcome to redistribute it under certain conditions.
@@ -46,7 +51,7 @@ fn main() -> Result<(), error::RucolaError> {
 
     // === Actual programm ===
 
-    // Initialize hooks & terminal
+    // Initialize hooks & terminal (ratatui boilerplate)
     init_hooks()?;
     let mut terminal = init_terminal()?;
 
@@ -121,13 +126,13 @@ fn main() -> Result<(), error::RucolaError> {
                         break 'main;
                     }
                     Ok(ui::TerminalMessage::None) => {}
-                    Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
-                        // Restore the terminal
-                        restore_terminal()?;
-                        // Execute the given command
-                        cmd.status()?;
-                        // Re-enter the selflication
-                        terminal = init_terminal()?;
+                    Ok(ui::TerminalMessage::OpenNote(mode, path)) => {
+                        // // Restore the terminal
+                        // restore_terminal()?;
+                        // // Execute the given command
+                        // cmd.status()?;
+                        // // Re-enter the selflication
+                        // terminal = init_terminal()?;
                     }
                     Err(e) => current_error = Some(e),
                 }
@@ -135,29 +140,11 @@ fn main() -> Result<(), error::RucolaError> {
         }
     }
 
-    //Restore previous terminal state (also returns Ok(()), so we can return that up if nothing fails)
+    //Restore previous terminal state
     restore_terminal()?;
 
+    // Return the right OK
     Ok(())
-}
-
-/// Draws nothing but a loading screen with an indexing message.
-/// Temporary screen while the programm is indexing.
-fn draw_loading_screen(
-    terminal: &mut Terminal<impl ratatui::backend::Backend>,
-) -> Result<CompletedFrame, io::Error> {
-    // Draw 'loading' screen
-    terminal.draw(|frame| {
-        frame.render_widget(
-            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
-            Layout::vertical([
-                Constraint::Fill(1),
-                Constraint::Length(3),
-                Constraint::Fill(1),
-            ])
-            .split(frame.size())[1],
-        );
-    })
 }
 
 /// Ratatui boilerplate to set up panic hooks
@@ -201,4 +188,23 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
     ");
+}
+
+/// Draws nothing but a loading screen with an indexing message.
+/// Temporary screen while the programm is indexing.
+fn draw_loading_screen(
+    terminal: &mut Terminal<impl ratatui::backend::Backend>,
+) -> Result<CompletedFrame, io::Error> {
+    // Draw 'loading' screen
+    terminal.draw(|frame| {
+        frame.render_widget(
+            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
+            Layout::vertical([
+                Constraint::Fill(1),
+                Constraint::Length(3),
+                Constraint::Fill(1),
+            ])
+            .split(frame.size())[1],
+        );
+    })
 }
