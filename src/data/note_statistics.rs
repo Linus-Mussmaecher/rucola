@@ -190,8 +190,12 @@ mod tests {
         // === Filter 1 ===
 
         let filter1 = data::Filter {
-            all: false,
-            tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
+            any: true,
+            tags: vec![
+                ("#topology".to_string(), true),
+                ("#diffgeo".to_string(), true),
+            ],
+            links: vec![],
             title: String::new(),
         };
 
@@ -207,8 +211,12 @@ mod tests {
         // === Filter 2 ===
 
         let filter2 = data::Filter {
-            all: true,
-            tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
+            any: false,
+            tags: vec![
+                ("#topology".to_string(), true),
+                ("#diffgeo".to_string(), true),
+            ],
+            links: vec![],
             title: String::new(),
         };
         let env2 = EnvironmentStats::new_with_filter(&index, filter2);
@@ -233,9 +241,10 @@ mod tests {
 
         // === Filter 3 ===
 
-        let filter3 = Filter {
-            all_tags: false,
+        let filter3 = data::Filter {
+            any: false,
             tags: vec![],
+            links: vec![],
             title: "operating".to_string(),
         };
         let env3 = EnvironmentStats::new_with_filter(&index, filter3);

@@ -1,4 +1,4 @@
-#os
+#os/linux
 
 Linux is great!
 

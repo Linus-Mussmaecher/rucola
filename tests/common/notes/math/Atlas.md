@@ -1,4 +1,4 @@
-#math/lietheo #math/diffgeo
+#lietheo #diffgeo
 
 ## Definition
 A set $\{(U_\alpha, x_\alpha)\}_{\alpha \in I}$ of [[Chart]]s on a [[Manifold]] $M$ is called *atlas* if

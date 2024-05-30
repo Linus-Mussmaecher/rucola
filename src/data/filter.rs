@@ -6,7 +6,7 @@ pub struct Filter {
     pub any: bool,
     /// The tags to include and exclude by, hash included.
     pub tags: Vec<(String, bool)>,
-    /// The links to look for or exclude.
+    /// The links to look for or exclude, already converted to ids.
     pub links: Vec<(String, bool)>,
     /// The words to search the note title for. Will be fuzzy matched with the note title.
     pub title: String,
@@ -29,11 +29,17 @@ impl Filter {
                 continue;
             }
             if word.starts_with("!>") {
-                links.push((word.trim_start_matches("!>").to_string(), false));
+                links.push((
+                    super::name_to_id(word.trim_start_matches("!>")).to_string(),
+                    false,
+                ));
                 continue;
             }
             if word.starts_with('>') {
-                links.push((word.trim_start_matches(">").to_string(), true));
+                links.push((
+                    super::name_to_id(word.trim_start_matches(">")).to_string(),
+                    true,
+                ));
                 continue;
             }
             // if nothing else fits
@@ -91,7 +97,7 @@ impl Filter {
         // go through all links
         for (link, included) in self.links.iter() {
             // if the links is contained and we want it to be contained or not contained and we want it to be not contained
-            if note.links.contains(&super::name_to_id(link)) == *included {
+            if note.links.contains(link) == *included {
                 // at least one condition (this one) is true
                 any = true;
             } else {
@@ -111,5 +117,65 @@ impl Filter {
         // If nothing has triggerd an exclusion criterion, return the fuzzy match score
         let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
         return matcher.fuzzy_match(&note.name, &self.title);
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filters() {
+        let index = crate::data::NoteIndex::new(
+            std::path::Path::new("./tests/common/notes/"),
+            &crate::config::Config::default(),
+        );
+
+        assert_eq!(index.inner.len(), 11);
+
+        // let index = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        let linux = index.inner.get("linux").unwrap();
+        let win = index.inner.get("windows").unwrap();
+        let osx = index.inner.get("osx").unwrap();
+
+        // === Filter 1 ===
+
+        let filter1 = Filter {
+            any: false,
+            tags: vec![("#os".to_string(), true), ("#os/win".to_string(), false)],
+            links: vec![],
+            title: String::new(),
+        };
+
+        let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false);
+
+        assert_eq!(
+            filter2.tags,
+            vec![
+                ("#lietheo".to_string(), false),
+                ("#diffgeo".to_string(), true)
+            ]
+        );
+        assert_eq!(
+            filter2.links,
+            vec![("manifold".to_string(), true), ("atlas".to_string(), false)]
+        );
+        assert_eq!(filter2.title, "");
+
+        assert!(filter1.apply(linux).is_some());
+        assert!(filter1.apply(osx).is_some());
+        assert!(filter1.apply(win).is_none());
+
+        let liegroup = index.inner.get("lie-group").unwrap();
+        let chart = index.inner.get("chart").unwrap();
+        let manifold = index.inner.get("manifold").unwrap();
+        let smoothmap = index.inner.get("smooth-map").unwrap();
+        let topology = index.inner.get("topology").unwrap();
+
+        assert!(filter2.apply(liegroup).is_none());
+        assert!(filter2.apply(chart).is_some());
+        assert!(filter2.apply(manifold).is_none());
+        assert!(filter2.apply(smoothmap).is_none());
+        assert!(filter2.apply(topology).is_none());
     }
 }

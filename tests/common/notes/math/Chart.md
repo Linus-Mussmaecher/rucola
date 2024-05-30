@@ -1,4 +1,4 @@
-#math/diffgeo #math/topology
+#diffgeo #topology
 
 ## Definition
 
