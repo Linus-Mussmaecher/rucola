@@ -89,11 +89,25 @@ Additionally, the following statistics are shown for every note in the filtered 
 These statistics let you judge how well-connected a note is, and wether it is mostly relevant within the filtered context or in general.
 
 #### Filtering
-The filter line works in two stages: First, all tags found in your input (i.e. words starting with a `#` until the next whitespace) are matched with the notes' tags.
-You can specify wether a note needs to have all entered tags to show up in the result, or if any of them is enough.
-After that, the remaining filter string is fuzzy-matched with every note title, those without a match are excluded and the remaining notes are sorted according to their match score.
+The filtering works by a default fuzzy matcher.
+In addition, you can include _condition words_ to search for notes fulfilling certain conditions.
+A condition always starts with an identifier and goes to the next whitespace.
+ - `#[tag]` declares a tag condition:
+   Only notes with the given tag `[tag]` will be shown.
+   Here you can use nested tags:
+   A note tagged as `#math/topology` can be found by both the conditions `#math` and `#math/topology`, but not by `#topology` itself.
+ - `!#[tag]` declares a tag exclusion condition:
+   Only notes without the given tag `[tag]` will be shown.
+ - `>[note]` declares a link condition:
+   Only notes that contain a link to the note `[note]` will be shown.
+   For notes whose name contains a whitespace, replace it with `-`.
+ - `!>[note]` declares a link exclusion condition:
+   Only notes that do not link to the note `[note]` will be shown.
 
-The list can also be sorted by any column, and the sorting can be switched between ascending and descending at will.
+Only words not starting with any of these identifiers will be used in the fuzzy match.
+The order of these conditions words and fuzzy-matching words can be freely chosen.
+
+For example, the filter string `#math !#math/topology >Topology map` shows all notes that are tagged as `#math` (or any nested subtag such as `#math/geometry`), not tagged with the nested tag `#math/topology` but still link to the `Topology` note and whose title contains some variation of `map`.
 
 #### File Management
 From the select view, you can access a couple of file management options for your notes:

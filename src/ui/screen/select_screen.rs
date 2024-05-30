@@ -344,7 +344,7 @@ impl super::Screen for SelectScreen {
                     // All other key events are passed on to the text area, then the filter is immediately applied
                     _ => {
                         // Else -> Pass on to the text area
-                        self.filter_area.input_without_shortcuts(key);
+                        self.filter_area.input(key);
                         if self.config.get_dynamic_filter() {
                             self.filter(self.filter_from_input());
                         }
@@ -504,7 +504,7 @@ impl super::Screen for SelectScreen {
                     // All other key events are passed on to the text area
                     _ => {
                         // Else -> Pass on to the text area
-                        self.create_area.input_without_shortcuts(key);
+                        self.create_area.input(key);
                     }
                 };
             }
