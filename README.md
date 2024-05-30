@@ -125,7 +125,7 @@ From the select view, you can access a couple of file management options for you
 
 
 ### Display Screen
-The single note screen shows a number of statistics about a single note:
+The display screen shows a number of statistics about a single note:
  - Word count
  - Character count
  - Tags
@@ -182,11 +182,10 @@ Here is a list of all possible configuration settings:
 Planned features include:
  - More powerful search options, such as
    - Full text search through your files
-   - Search for notes linked from or linking to a certain note
- - Integration of Obisidan URI for opening notes in obsidian
- - Performance improvements
  - Link updating on moving or renaming files
- - Support nested tags in search
+ - Hot reloading of notes and html conversions
+ - Github-Wiki
+ - Integration of Obisidan URI for opening notes in obsidian
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/).
