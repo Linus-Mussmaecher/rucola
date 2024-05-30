@@ -70,7 +70,7 @@ pub struct SelectScreen {
 
     // === Sortin options ===
     /// UI mode wether the user wants to filter for all tags or any tags.
-    all_tags: bool,
+    all_conditions: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
     /// Sort ascedingly
@@ -81,15 +81,15 @@ impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
     pub fn new(index: data::NoteIndexContainer, config: &config::Config) -> Self {
         let mut res = Self {
-            local_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
-            global_stats: data::EnvironmentStats::new_with_filters(&index, data::Filter::default()),
+            local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
+            global_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             index,
             to_update: None,
             filter_area: TextArea::default(),
             create_area: TextArea::default(),
             mode: SelectMode::Select,
             config: config.clone(),
-            all_tags: false,
+            all_conditions: false,
             sorting: SortingMode::Name,
             sorting_asc: true,
             selected: 0,
@@ -123,12 +123,12 @@ impl SelectScreen {
         .position(block::Position::Top);
 
         let instructions_bot = block::Title::from(Line::from(vec![
+            Span::styled("A", styles.hotkey_style),
             Span::styled(
-                if self.all_tags { "All " } else { "Any " },
+                if self.all_conditions { "ll" } else { "ny" },
                 styles.text_style,
             ),
-            Span::styled("T", styles.hotkey_style),
-            Span::styled("ags", styles.text_style),
+            Span::styled(" Conditions", styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
@@ -163,36 +163,18 @@ impl SelectScreen {
 
     /// Creates a filter from the current content of the filter area.
     fn filter_from_input(&self) -> data::Filter {
-        // We should only have one line, read that one
-        if let Some(line) = self.filter_area.lines().first() {
-            let mut filter = data::Filter::default();
-            // default filter is this line with all white space removed
-            filter.title = line.chars().filter(|c| !c.is_whitespace()).collect();
-
-            // Go through words
-            for word in line.split_whitespace() {
-                if word.starts_with('#') {
-                    // words with a hash count as a tag
-                    filter.tags.push(word.to_string());
-                    // and remove it from the title to match
-                    filter.title = filter.title.replace(word, "");
-                }
-            }
-
-            // check for any or all tags
-            filter.all_tags = self.all_tags;
-
-            filter
-        } else {
-            data::Filter::default()
-        }
+        self.filter_area
+            .lines()
+            .first()
+            .map(|l| data::Filter::new(l, self.all_conditions))
+            .unwrap_or_default()
     }
 
     /// Reloads the displayed statistics, showing stats for only those elements of the index matching the specified filter.
     /// Every filtering neccessarily triggers a non-stable resort.
     fn filter(&mut self, filter: data::Filter) {
         // actual filtering
-        self.local_stats = data::EnvironmentStats::new_with_filters(&self.index, filter);
+        self.local_stats = data::EnvironmentStats::new_with_filter(&self.index, filter);
         // reset sorting
         self.sorting_asc = false;
         self.sorting = SortingMode::Score;
@@ -206,10 +188,10 @@ impl SelectScreen {
     pub fn refresh_env_stats(&mut self) {
         // Refresh global stats
         self.global_stats =
-            data::EnvironmentStats::new_with_filters(&self.index, data::Filter::default());
+            data::EnvironmentStats::new_with_filter(&self.index, data::Filter::default());
         // Refresh local stats
         self.local_stats =
-            data::EnvironmentStats::new_with_filters(&self.index, self.filter_from_input());
+            data::EnvironmentStats::new_with_filter(&self.index, self.filter_from_input());
 
         // Refresh sorting
         self.sort();
@@ -320,8 +302,8 @@ impl super::Screen for SelectScreen {
                     self.filter(data::Filter::default());
                 }
                 // T: Change all/any words requirement
-                KeyCode::Char('t' | 'T') => {
-                    self.all_tags = !self.all_tags;
+                KeyCode::Char('a' | 'A') => {
+                    self.all_conditions = !self.all_conditions;
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }

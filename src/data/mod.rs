@@ -3,7 +3,9 @@ pub use note::Note;
 
 mod note_statistics;
 pub use note_statistics::EnvironmentStats;
-pub use note_statistics::Filter;
+
+mod filter;
+pub use filter::Filter;
 
 mod index;
 pub use index::NoteIndex;
