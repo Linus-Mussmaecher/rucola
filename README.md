@@ -17,11 +17,11 @@ Terminal-based browser and information aggregator for markdown file structures.
  - [Goals](#Goals)
  - [Installation](#installation)
  - [Features](#features)
-    - [Overview Screen](#overview-screen)
+    - [Select Screen](#select-screen)
        - [Statistics](#statistics)
        - [Filtering](#filtering)
        - [File Management](#file-management)
-    - [Single-Note Screen](#single-note-screen)
+    - [Display Screen](#display-screen)
     - [Configuration](#configuration)
  - [Planned Features](#planned-features)
  - [Technology](#technology)
@@ -55,10 +55,10 @@ This allows you to access your main vault of notes from anywhere in your file st
 If no default vault is know yet, rucola will open in the current directory.
 If you want to open a directory different from your default vault, you can pass the target as a positional argument, e.g. `rucola .` or `rucola ~/other/stuff`.
 
-### Overview Screen
+### Select Screen
 
-Rucola initially launches into the *overview screen*.
-Here you will find an (unordered) list of all notes currently indexed by rucola, some statistics and a search bar.
+Rucola initially launches into the *select screen*.
+Here you will find an (unordered) list overview of all notes currently indexed by rucola, some statistics and a search bar.
 The statistics refer to two environments:
  - The *global environment* consists of all notes currently indexed by rucola and can only be changed by restarting the program (or directly changing your files and reloading the screen).
  - The *local environment* consists of all notes currently matching your search query.
@@ -115,11 +115,16 @@ From the select view, you can access a couple of file management options for you
  - Delete the selected note
  - Rename the selected note (with automatic link-renaming being a WIP)
  - Move the selected to another location relative to your current vault path
- - View/Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
+ - Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
    The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
+ - Reload the vault from the disk, in case you have made external changes.
+   When opening a note as described in the previous point, rucola will automatically reload that (and only that note), so this feature should not be neccessary to often.
+ - View the currently selected notes HTML representation in an external viewer.
+   The selected note (and only the selected note) will be converted to HTML just in time for that purpose, so following HTML links may not always work.
+ - Convert all currently filtered notes to HTML, so link following in the viewing feature above works as expected. Currently, you still need to do this manually whenever you have external changes to your files.
 
 
-### Single-Note Screen
+### Display Screen
 The single note screen shows a number of statistics about a single note:
  - Word count
  - Character count
@@ -136,6 +141,8 @@ This allows to you to get an overview about a note's connections in your network
 
 You can follow the links to given notes, and go back in your journey to previously visited notes.
 
+Also, you can open the note in an external editor or view, converted to HTML in an external viewer.
+
 ### HTML conversion
 Rucola can convert markdown notes to HTML documents, which are stored in the `.html` subfolder of your vault directory.
 This feature uses [comrak](https://github.com/kivikakk/comrak) for the markdown-HTML conversion and supports most of the usual markdown syntax.
@@ -143,7 +150,7 @@ This is especially useful for notes that are difficult to read, for example beca
 HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a MathJax-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
 Also, you can perform small-scale string replacements in math mode, for example replacing `\field` with `\mathbb` to write fields more semantically clearly.
 
-You can view a single HTML file from the select screen or the single-note screen, in this case it is converted just-in-time.
+You can view a single HTML file from the select screen or the display screen, in this case it is converted just-in-time.
 The file will be openend with the configured viewer (usually outside your terminal).
 Alternatively, you can also convert all in the current local environment from the select view.
 This allows you to follow links while viewing documents and is recommended.
