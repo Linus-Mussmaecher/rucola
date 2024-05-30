@@ -69,8 +69,8 @@ pub struct SelectScreen {
     selected: usize,
 
     // === Sortin options ===
-    /// UI mode wether the user wants to filter for all tags or any tags.
-    all_conditions: bool,
+    /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
+    any_conditions: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
     /// Sort ascedingly
@@ -89,7 +89,7 @@ impl SelectScreen {
             create_area: TextArea::default(),
             mode: SelectMode::Select,
             config: config.clone(),
-            all_conditions: false,
+            any_conditions: false,
             sorting: SortingMode::Name,
             sorting_asc: true,
             selected: 0,
@@ -125,7 +125,7 @@ impl SelectScreen {
         let instructions_bot = block::Title::from(Line::from(vec![
             Span::styled("A", styles.hotkey_style),
             Span::styled(
-                if self.all_conditions { "ll" } else { "ny" },
+                if self.any_conditions { "ny" } else { "ll" },
                 styles.text_style,
             ),
             Span::styled(" Conditions", styles.text_style),
@@ -166,7 +166,7 @@ impl SelectScreen {
         self.filter_area
             .lines()
             .first()
-            .map(|l| data::Filter::new(l, self.all_conditions))
+            .map(|l| data::Filter::new(l, self.any_conditions))
             .unwrap_or_default()
     }
 
@@ -303,7 +303,7 @@ impl super::Screen for SelectScreen {
                 }
                 // T: Change all/any words requirement
                 KeyCode::Char('a' | 'A') => {
-                    self.all_conditions = !self.all_conditions;
+                    self.any_conditions = !self.any_conditions;
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }

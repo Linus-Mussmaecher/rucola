@@ -1,4 +1,4 @@
-#diffgeo 
+#math/diffgeo 
 
 ## Definition
 
