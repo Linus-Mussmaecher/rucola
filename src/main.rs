@@ -111,7 +111,7 @@ fn main() -> Result<(), error::RucolaError> {
         })?;
 
         // Inform the current screen of events
-        if event::poll(std::time::Duration::from_millis(16))? {
+        if event::poll(std::time::Duration::from_millis(500))? {
             // Check if the event was a keypress
             if let event::Event::Key(key) = event::read()? {
                 // Check for key presses

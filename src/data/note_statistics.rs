@@ -1,5 +1,4 @@
-use fuzzy_matcher::FuzzyMatcher;
-
+use crate::data;
 use std::collections::HashMap;
 
 /// A struct describing statistics to a note in relation to a containing environment.
@@ -64,10 +63,7 @@ pub struct EnvironmentStats {
 
 impl EnvironmentStats {
     /// Creates a new set of statistics from the subset of the passed index that matches the given filter.
-    pub fn new_with_filters(index: &super::NoteIndexContainer, filter: Filter) -> Self {
-        // Create fuzzy matcher
-        let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
-
+    pub fn new_with_filter(index: &super::NoteIndexContainer, filter: data::Filter) -> Self {
         let index = index.borrow();
 
         // Filter the index -> Create an iterator
@@ -75,24 +71,7 @@ impl EnvironmentStats {
             .inner
             .iter()
             .filter_map(|(id, note)| {
-                // Check if any or all the tags specified in the filter are in the note.
-                let mut any_tag = filter.tags.is_empty();
-                let mut all_tags = true;
-                for tag in filter.tags.iter() {
-                    if note.tags.contains(tag) {
-                        any_tag = true;
-                    } else {
-                        all_tags = false;
-                    }
-                }
-
-                if !(filter.all_tags && all_tags || !filter.all_tags && any_tag) {
-                    return None;
-                }
-
-                // Check if the rest of the filter fuzzy matches the note title.
-
-                matcher.fuzzy_match(&note.name, &filter.title).map(|score| {
+                filter.apply(note).map(|score| {
                     (
                         id.clone(),
                         (NoteEnvStatistics::new_empty(id.clone(), score), note),
@@ -192,20 +171,10 @@ impl EnvironmentStats {
     }
 }
 
-/// Describes a way to filter notes by their contained tags and/or title
-#[derive(Debug, Default, Clone)]
-pub struct Filter {
-    /// Wether or not all specified tags must be contained in the note in order to match the filter, or only any (=at least one) of them.
-    pub all_tags: bool,
-    /// The tags to filter by, hash included.
-    pub tags: Vec<String>,
-    /// The words to search the note title for. Will be fuzzy matched with the note title.
-    pub title: String,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data;
 
     #[test]
     fn test_env_stats_general() {
@@ -220,13 +189,13 @@ mod tests {
 
         // === Filter 1 ===
 
-        let filter1 = Filter {
-            all_tags: false,
+        let filter1 = data::Filter {
+            all: false,
             tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
             title: String::new(),
         };
 
-        let env1 = EnvironmentStats::new_with_filters(&index, filter1);
+        let env1 = EnvironmentStats::new_with_filter(&index, filter1);
 
         assert_eq!(env1.note_count_total, 5);
         assert_eq!(env1.tag_count_total, 3);
@@ -237,12 +206,12 @@ mod tests {
 
         // === Filter 2 ===
 
-        let filter2 = Filter {
-            all_tags: true,
+        let filter2 = data::Filter {
+            all: true,
             tags: vec!["#topology".to_string(), "#diffgeo".to_string()],
             title: String::new(),
         };
-        let env2 = EnvironmentStats::new_with_filters(&index, filter2);
+        let env2 = EnvironmentStats::new_with_filter(&index, filter2);
 
         assert_eq!(env2.note_count_total, 2);
         assert_eq!(env2.tag_count_total, 2);
@@ -269,7 +238,7 @@ mod tests {
             tags: vec![],
             title: "operating".to_string(),
         };
-        let env3 = EnvironmentStats::new_with_filters(&index, filter3);
+        let env3 = EnvironmentStats::new_with_filter(&index, filter3);
 
         assert_eq!(env3.note_count_total, 1);
         assert_eq!(env3.tag_count_total, 1);
