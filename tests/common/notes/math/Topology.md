@@ -1,4 +1,4 @@
-#math/topology
+#topology
 
 ## Definition
 A *topology* of/on a set $X$ is a collection $\topology{O} \subseteq \topology{P}(X)$ of subsets such that
