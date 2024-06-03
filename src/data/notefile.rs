@@ -242,7 +242,7 @@ pub fn create_html(
         &comrak::Options {
             extension: comrak::ExtensionOptionsBuilder::default()
                 .wikilinks_title_after_pipe(true)
-                // .math_dollars(true)
+                .math_dollars(true)
                 .build()
                 .unwrap(),
             ..Default::default()
@@ -253,51 +253,99 @@ pub fn create_html(
     Ok(tar_path)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::io::Read;
+#[cfg(test)]
+mod tests {
 
-//     use super::*;
+    use regex::Regex;
 
-//     #[test]
-//     fn test_reparsing() {
-//         let index = NoteIndex::new(
-//             std::path::Path::new("./tests/common/notes/"),
-//             &config::Config::default(),
-//         );
-//         assert_eq!(index.inner.len(), 11);
+    #[test]
+    fn test_renaming() {
+        // Read content of markdown(plaintext) file
+        let content = String::from(
+            "Link1 that links to [[Smooth Map|a super-smooth map]].\nLink2 that links to the [[Smooth Map]].\nLink3 that links to the [[smooth-map]].\nLink4 that links to a final [[smooth-map|map that is smooth]].",
+        );
+        let content_tar = String::from(
+            "Link1 that links to [[Atlas of Worlds|a super-smooth map]].\nLink2 that links to the [[Atlas of Worlds]].\nLink3 that links to the [[Atlas of Worlds]].\nLink4 that links to a final [[Atlas of Worlds|map that is smooth]].",
+        );
 
-//         // Open the file.
-//         let mut file = fs::File::open(std::path::Path::new(
-//             "./tests/common/notes/math/Lie Group.md",
-//         ))
-//         .unwrap();
+        let link = "Smooth Map";
 
-//         // Read content of markdown(plaintext) file
-//         let mut content = String::new();
-//         std::io::Read::read_to_string(&mut file, &mut content).unwrap();
+        let mut s = String::new();
+        s.push_str("(\\[\\[)(");
+        s.push_str(link);
+        s.push_str("|");
+        s.push_str(&crate::data::name_to_id(link));
+        s.push_str(")(\\|?[^\\|^\\]^\\]]*\\]\\])");
 
-//         // Parse markdown into AST
-//         let arena = comrak::Arena::new();
-//         let root = comrak::parse_document(
-//             &arena,
-//             &content,
-//             &comrak::Options {
-//                 extension: comrak::ExtensionOptionsBuilder::default()
-//                     .wikilinks_title_after_pipe(true)
-//                     .build()
-//                     .unwrap(),
-//                 ..Default::default()
-//             },
-//         );
-//         let mut file2 = fs::File::open(std::path::Path::new("./sink.md")).unwrap();
-//         let _ = comrak::format_commonmark(root, &comrak::Options::default(), &mut file2);
+        let reg = Regex::new(&s).unwrap();
 
-//         let mut output = Vec::new();
-//         let _ = comrak::format_commonmark(root, &comrak::Options::default(), &mut output);
-//         let transformed_content = String::from_utf8(output.clone()).unwrap();
-//         fs::write("./sink.md", output);
+        let res = reg.replace_all(&content, "${1}Atlas of Worlds${3}");
 
-//         assert_eq!(content, transformed_content);
-//     }
-// }
+        assert_eq!(res.to_string(), content_tar);
+    }
+
+    // #[test]
+    // fn test_reparsing() {
+    //     let index = NoteIndex::new(
+    //         std::path::Path::new("./tests/common/notes/"),
+    //         &config::Config::default(),
+    //     );
+    //     assert_eq!(index.inner.len(), 11);
+
+    //     // Open the file.
+    //     let mut file = fs::File::open(std::path::Path::new(
+    //         "./tests/common/notes/math/Lie Group.md",
+    //     ))
+    //     .unwrap();
+
+    //     // Read content of markdown(plaintext) file
+    //     let mut content = String::new();
+    //     std::io::Read::read_to_string(&mut file, &mut content).unwrap();
+
+    //     // Parse markdown into AST
+    //     let arena = comrak::Arena::new();
+    //     let root = comrak::parse_document(
+    //         &arena,
+    //         &content,
+    //         &comrak::Options {
+    //             extension: comrak::ExtensionOptionsBuilder::default()
+    //                 .wikilinks_title_after_pipe(true)
+    //                 .math_dollars(true)
+    //                 .build()
+    //                 .unwrap(),
+    //             ..Default::default()
+    //         },
+    //     );
+    //     let mut file2 = fs::File::open(std::path::Path::new("./test_sink.md")).unwrap();
+    //     let _ = comrak::format_commonmark(
+    //         root,
+    //         &comrak::Options {
+    //             extension: comrak::ExtensionOptionsBuilder::default()
+    //                 .wikilinks_title_after_pipe(true)
+    //                 .math_dollars(true)
+    //                 .build()
+    //                 .unwrap(),
+    //             ..Default::default()
+    //         },
+    //         &mut file2,
+    //     );
+
+    //     let mut output = Vec::new();
+    //     let _ = comrak::format_commonmark(
+    //         root,
+    //         &comrak::Options {
+    //             extension: comrak::ExtensionOptionsBuilder::default()
+    //                 .wikilinks_title_after_pipe(true)
+    //                 .math_dollars(true)
+    //                 .build()
+    //                 .unwrap(),
+    //             ..Default::default()
+    //         },
+    //         &mut output,
+    //     );
+    //     let transformed_content = String::from_utf8(output.clone()).unwrap();
+    //     fs::write("./test_sink.md", output).unwrap();
+
+    //     assert_eq!(content, transformed_content);
+    // }
+}
