@@ -500,6 +500,8 @@ impl super::Screen for SelectScreen {
                                 //This should NOT happen
                             }
                         }
+                        // refresh all files after this operation TODO
+                        return Ok(ui::Message::Refresh);
                     }
                     // All other key events are passed on to the text area
                     _ => {

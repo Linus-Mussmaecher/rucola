@@ -1,4 +1,8 @@
-use std::{fs, io::Write, path};
+use std::{
+    fs,
+    io::{Read, Write},
+    path,
+};
 
 use crate::{config, error};
 
@@ -142,7 +146,7 @@ fn move_note_file_inner(
     let mut replacement_builder = String::new();
     replacement_builder.push_str("${1}");
     replacement_builder.push_str(&new_name);
-    replacement_builder.push_str("${2}");
+    replacement_builder.push_str("${3}");
 
     let reg = regex::Regex::new(&regex_builder)?;
     for other_note in index
@@ -155,10 +159,12 @@ fn move_note_file_inner(
 
         let res = reg.replace_all(&old_content, &replacement_builder);
 
-        let file = std::fs::OpenOptions::new()
+        let mut file = std::fs::OpenOptions::new()
             .write(true)
+            .truncate(true)
             .read(true)
             .open(&other_note.path)?;
+        file.write_all(res.as_bytes())?;
     }
 
     // Fix the notes values, remembering the old name.
@@ -168,6 +174,10 @@ fn move_note_file_inner(
     // Re-insert the fixed note.
     index.inner.insert(new_id, note);
 
+    Ok(())
+}
+
+pub fn rename_all_files() -> Result<(), error::RucolaError> {
     Ok(())
 }
 
