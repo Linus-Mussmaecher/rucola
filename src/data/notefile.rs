@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    io::{Read, Write},
-    path,
-};
+use std::{fs, io::Write, path};
 
 use crate::{config, error};
 
@@ -155,15 +151,20 @@ fn move_note_file_inner(
         .iter()
         .filter_map(|(id, _)| index.inner.get(id))
     {
+        // open the file once to read its old content
         let old_content = std::fs::read_to_string(&other_note.path)?;
 
         let res = reg.replace_all(&old_content, &replacement_builder);
 
+        // open the file again
         let mut file = std::fs::OpenOptions::new()
-            .write(true)
+            // this truncate is neccesary to remove the old content
             .truncate(true)
+            // standard read-write permissions
+            .write(true)
             .read(true)
             .open(&other_note.path)?;
+        // write new new (mostly old) string into the file
         file.write_all(res.as_bytes())?;
     }
 
@@ -174,10 +175,6 @@ fn move_note_file_inner(
     // Re-insert the fixed note.
     index.inner.insert(new_id, note);
 
-    Ok(())
-}
-
-pub fn rename_all_files() -> Result<(), error::RucolaError> {
     Ok(())
 }
 
