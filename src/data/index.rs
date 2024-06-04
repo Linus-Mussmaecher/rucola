@@ -68,7 +68,7 @@ impl NoteIndex {
         }
     }
 
-    /// Returns an iterator over id pairs of notes linked from this note.
+    /// Returns an iterator over pairs of (id, name) of notes linked from this note.
     pub fn links_vec(&self, source_id: &str) -> Vec<(String, String)> {
         self.inner
             .get(source_id)
@@ -87,7 +87,7 @@ impl NoteIndex {
             .unwrap_or_default()
     }
 
-    /// Returns an iterator over id pairs of notes linking to this note.
+    /// Returns an iterator over pairs of (id, name) of notes linking to this note.
     pub fn blinks_vec(&self, target_id: &str) -> Vec<(String, String)> {
         let id_copy = target_id.to_string();
         self.inner

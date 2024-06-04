@@ -15,6 +15,8 @@ pub enum RucolaError {
     SmallArea,
     #[error("Invalid input: {0}")]
     Input(String),
+    #[error("File name prevents renaming with regex: {0}")]
+    RegexError(#[from] regex::Error),
 }
 
 impl RucolaError {

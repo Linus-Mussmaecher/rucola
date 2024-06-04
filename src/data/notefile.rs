@@ -10,15 +10,15 @@ use super::*;
 /// The new extension is the one from the new path if given, if none is given (and no extension is not valid in the config), then the old extension is reapplied.
 /// Then moves the old file to the new location and updates the index.
 pub fn rename_note_file(
-    index: &mut NoteIndexContainer,
+    index: &mut super::NoteIndexContainer,
     id: &str,
     new_name: Option<String>,
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
-    let table = &mut index.borrow_mut().inner;
-
+    let index_b = index.borrow_mut();
     // Retrieve the old version from the table
-    let note = table
+    let note = index_b
+        .inner
         .get(id)
         .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
 
@@ -52,8 +52,12 @@ pub fn rename_note_file(
         new_path.set_extension(old_path.extension().unwrap_or_default());
     }
 
+    drop(index_b);
+
     // Actual move
-    move_note_file_inner(id, table, old_path, new_path)
+    move_note_file_inner(id, index, old_path, new_path)?;
+
+    Ok(())
 }
 
 pub fn move_note_file(
@@ -62,9 +66,10 @@ pub fn move_note_file(
     new_path_buf: Option<String>,
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
-    let table = &mut index.borrow_mut().inner;
+    let index_b = index.borrow_mut();
     // Retrieve the old version from the table
-    let note = table
+    let note = index_b
+        .inner
         .get(id)
         .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
 
@@ -91,35 +96,77 @@ pub fn move_note_file(
     // If this has still not introduced an extension, ask the config file for a default one.
     config.validate_file_extension(&mut new_path);
 
+    let old_path = note.path.clone();
+
+    drop(index_b);
     // Acutally move the file and update the index
-    move_note_file_inner(id, table, note.path.clone(), new_path.to_path_buf())
+    move_note_file_inner(id, index, old_path, new_path.to_path_buf())
 }
 
 /// Moves the file from source to target, if successful removes the old note from the table and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
 fn move_note_file_inner(
-    id: &str,
-    table: &mut std::collections::HashMap<String, Note>,
+    old_id: &str,
+    index: &mut NoteIndexContainer,
     source: path::PathBuf,
     target: path::PathBuf,
 ) -> Result<(), error::RucolaError> {
+    // borrow index mutably
+    let mut index = index.borrow_mut();
+
     // create new name and id
     let new_name = target
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
+
     let new_id = super::name_to_id(&new_name);
 
-    // acutal fs copy (early returns if unsuccessfull)
+    // actual fs copy (early returns if unsuccessfull)
     fs::rename(source, target.clone())?;
 
-    // If successful, remove old note, update it and re-insert at new id
-    let mut note = table
-        .remove(id)
-        .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
+    // Extract old note from the index.
+    let mut note = index
+        .inner
+        .remove(old_id)
+        .ok_or_else(|| error::RucolaError::NoteNoteFound(old_id.to_owned()))?;
 
+    // === RENAMING ===
+    // Create a regex that find links to the old name or id
+    let mut regex_builder = String::new();
+    regex_builder.push_str("(\\[\\[)(");
+    regex_builder.push_str(&note.name); // at this point, this is still the old name
+    regex_builder.push_str("|");
+    regex_builder.push_str(old_id);
+    regex_builder.push_str(")(\\|?[^\\|^\\]^\\]]*\\]\\])");
+
+    let mut replacement_builder = String::new();
+    replacement_builder.push_str("${1}");
+    replacement_builder.push_str(&new_name);
+    replacement_builder.push_str("${2}");
+
+    let reg = regex::Regex::new(&regex_builder)?;
+    for other_note in index
+        // search for references to the old id.
+        .blinks_vec(old_id)
+        .iter()
+        .filter_map(|(id, _)| index.inner.get(id))
+    {
+        let old_content = std::fs::read_to_string(&other_note.path)?;
+
+        let res = reg.replace_all(&old_content, &replacement_builder);
+
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .read(true)
+            .open(&other_note.path)?;
+    }
+
+    // Fix the notes values, remembering the old name.
     note.name = new_name;
     note.path = target;
-    table.insert(new_id, note);
+
+    // Re-insert the fixed note.
+    index.inner.insert(new_id, note);
 
     Ok(())
 }
