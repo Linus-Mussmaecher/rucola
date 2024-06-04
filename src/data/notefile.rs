@@ -68,21 +68,19 @@ pub fn move_note_file(
         .get(id)
         .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
 
-    // Create a path from the given buffer (handling the parsing of the path).
-    let rel_path = path::Path::new(
-        new_path_buf
-            .as_ref()
-            .ok_or_else(|| error::RucolaError::Input("Empty input field.".to_owned()))?,
-    );
+    // Get input
+    let mut new_path_buf =
+        new_path_buf.ok_or_else(|| error::RucolaError::Input("Empty input field.".to_owned()))?;
 
-    // Extend vault path with given path
-    let mut new_path = config.create_vault_path();
-    new_path.push(rel_path);
-
-    // If pointing to a directory, re-use the old file name.
-    if new_path.is_dir() {
-        new_path.set_file_name(note.path.file_name().unwrap_or_default())
+    // If a directory is given, re-use the old name
+    if new_path_buf.ends_with("/") {
+        new_path_buf.push_str(&note.name);
     }
+
+    // Create a path from the given buffer (handling the parsing of the path).
+    // Then extend vault path with given path
+    let mut new_path = config.create_vault_path();
+    new_path.push(path::Path::new(&new_path_buf));
 
     // If this has not introduced an extension, and no-extension is not allowed per the config, re-set the previous one.
     if new_path.extension().is_none() && !config.is_valid_extension("") {

@@ -113,8 +113,12 @@ For example, the filter string `#math !#math/topology >Topology map` shows all n
 From the select view, you can access a couple of file management options for your notes:
  - Create a new note
  - Delete the selected note
- - Rename the selected note (with automatic link-renaming being a WIP)
- - Move the selected to another location relative to your current vault path
+ - Rename the selected note.
+   Your input cannot be a path, i.e. this cannot move the underlying file to a new location but only rename the existing file in its current location.
+ - Move the selected to another location relative to your current vault path.
+   If the input ends with a `/`, the path will be interpreted as a folder and the note, retaining its current name, will be moved into that folder.
+   Otherwise, the input will be interpreted as a file location and the note moved there (and appropriately renamed to the last component of the path).
+   In both cases, if there is no extension given and non-extension are not allowed per your config file, the original extension will be attached.
  - Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
    The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
  - Reload the vault from the disk, in case you have made external changes.
