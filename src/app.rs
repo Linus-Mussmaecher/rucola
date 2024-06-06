@@ -24,10 +24,7 @@ impl App {
     ///  - Creating an initial select screen and empty display stack
     pub fn new(config: config::Config) -> Self {
         // Index all files in path
-        let index = Rc::new(RefCell::new(data::NoteIndex::new(
-            std::path::Path::new(&config.create_vault_path()),
-            &config,
-        )));
+        let index = Rc::new(RefCell::new(data::NoteIndex::new(&config)));
 
         // Initialize app state
         Self {
@@ -92,10 +89,9 @@ impl App {
                 };
             }
             ui::Message::Refresh => {
-                self.index.borrow_mut().replace(data::NoteIndex::new(
-                    &self.config.create_vault_path(),
-                    &self.config,
-                ));
+                self.index
+                    .borrow_mut()
+                    .replace(data::NoteIndex::new(&self.config));
                 self.select.refresh_env_stats();
             }
         }

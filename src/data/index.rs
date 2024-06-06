@@ -20,14 +20,11 @@ impl NoteIndex {
     ///  - The value will be an instance of Note containing metadata of the file.
     ///
     /// All files that lead to IO errors when loading are ignored.
-    pub fn new(directory: &path::Path, config: &config::Config) -> Self {
+    pub fn new(config: &config::Config) -> Self {
         Self {
-            inner: ignore::WalkBuilder::new(directory)
-                .build()
-                // Check only OKs
+            inner: config
+                .get_walker() // Check only OKs
                 .flatten()
-                // Check only markdown files
-                .filter(|entry| valid_ending(entry, config))
                 // Convert tiles to notes and skip errors
                 .flat_map(|entry| Note::from_path(entry.path()))
                 // Extract name and convert to id
@@ -96,25 +93,13 @@ impl NoteIndex {
     }
 }
 
-/// Checks if the given dir entry is a valid file, i.e. a file whose name ends one of the endings configured in the config file.
-fn valid_ending(entry: &ignore::DirEntry, config: &config::Config) -> bool {
-    config.is_valid_extension("*")
-        || match entry.path().extension() {
-            Some(ending) => config.is_valid_extension(&ending.to_string_lossy()),
-            None => config.is_valid_extension(""),
-        }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_indexing() {
-        let index = NoteIndex::new(
-            std::path::Path::new("./tests/common/notes/"),
-            &config::Config::default(),
-        );
+        let index = NoteIndex::new(&config::Config::default());
 
         assert_eq!(index.inner.len(), 11);
 
@@ -135,10 +120,7 @@ mod tests {
 
     #[test]
     fn test_links_blinks() {
-        let index = NoteIndex::new(
-            std::path::Path::new("./tests/common/notes/"),
-            &config::Config::default(),
-        );
+        let index = NoteIndex::new(&config::Config::default());
 
         assert_eq!(index.inner.len(), 11);
 

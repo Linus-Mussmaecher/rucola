@@ -13,11 +13,10 @@ struct ConfigFile {
     theme: String,
     /// The editor to use for notes
     editor: Option<String>,
-    // /// File types to consider notes
-    // /// See the [default list](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html) of the ignore crate for possible options.
-    // /// The "all" option matches all files.
-    // file_types: Vec<String>,
-    file_extensions: Vec<String>,
+    /// File types to consider notes
+    /// See the [default list](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html) of the ignore crate for possible options.
+    /// The "all" option matches all files.
+    file_types: Vec<String>,
     /// Default file ending for newly created notes
     default_extension: String,
     /// String to prepend to all generated html documents (e.g. for MathJax)
@@ -37,10 +36,14 @@ impl Default for ConfigFile {
         Self {
             dynamic_filter: true,
             mathjax: true,
-            vault_path: None,
+            vault_path: if cfg!(test) {
+                Some(path::PathBuf::from("./tests/common/notes/"))
+            } else {
+                None
+            },
             theme: "default_light_theme".to_string(),
             editor: None,
-            file_extensions: vec![String::from("md")],
+            file_types: vec![String::from("markdown")],
             default_extension: String::from("md"),
             html_prepend: None,
             css: None,
@@ -54,17 +57,69 @@ impl Default for ConfigFile {
 }
 
 ///A wrapper grouping all config files into one struct.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// The data stored in the config file
     config_file: ConfigFile,
     /// The data describing the look of the ui
     uistyles: ui::UiStyles,
-    /// The resolved path to the css file
+    /// The resolved path to the css file, if there is one
     css_path: Option<path::PathBuf>,
+    /// Pre-calculated object containing allowed file types
+    types: ignore::types::Types,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            config_file: ConfigFile::default(),
+            uistyles: ui::UiStyles::default(),
+            css_path: None,
+            types: ignore::types::TypesBuilder::new()
+                .add_defaults()
+                .select("markdown")
+                .build()
+                .expect("Markdown is a valid file type configured in the DEFAULTs."),
+        }
+    }
 }
 
 impl Config {
+    /// Creates a finished config from valid ConfigFile and UiStyles structs.
+    fn from_parts(
+        config_file: ConfigFile,
+        uistyles: ui::UiStyles,
+    ) -> Result<Self, error::RucolaError> {
+        // === Resolve css path ===
+        let mut css_path = None;
+
+        if let Some(css) = &config_file.css {
+            let mut css = confy::get_configuration_file_path(
+                "rucola",
+                // remove css at the end, so no matter if the user included it or not, we always have the same format. If we left the css, confy would append .toml and we would end up with .css.css
+                css.as_str().trim_end_matches(".css"),
+            )?;
+            // confy will append .toml (as this is the expected extension for config files)
+            // so replace that with .css in any case.
+            css.set_extension("css");
+            css_path = Some(css);
+        }
+
+        // === Pre-calculate allowed file types ===
+        let mut types_builder = ignore::types::TypesBuilder::new();
+        types_builder.add_defaults();
+        for name in config_file.file_types.iter() {
+            types_builder.select(name);
+        }
+
+        Ok(Self {
+            config_file,
+            uistyles,
+            css_path,
+            types: types_builder.build()?,
+        })
+    }
+
     /// Loads a config file, looks for the specified theme and also loads it, and then groups both in a 'config' struct and returns that.
     pub fn load(args: crate::Arguments) -> Result<Self, error::RucolaError> {
         // === Step 1: Load config file ===
@@ -88,26 +143,8 @@ impl Config {
 
         let uistyles: ui::UiStyles = confy::load("rucola", config_file.theme.as_str())?;
 
-        // === Step 4: Resolve css path ===
-        let mut css_path = None;
-
-        if let Some(css) = &config_file.css {
-            let mut css = confy::get_configuration_file_path(
-                "rucola",
-                // remove css at the end, so no matter if the user included it or not, we always have the same format. If we left the css, confy would append .toml and we would end up with .css.css
-                css.as_str().trim_end_matches(".css"),
-            )?;
-            // confy will append .toml (as this is the expected extension for config files)
-            // so replace that with .css in any case.
-            css.set_extension("css");
-            css_path = Some(css);
-        }
-
-        Ok(Self {
-            config_file,
-            uistyles,
-            css_path,
-        })
+        // Hand over to from_parts constructor to pre-calculate cached fields from loaded data
+        Self::from_parts(config_file, uistyles)
     }
 
     /// Stores this config file in the default locations.
@@ -176,16 +213,31 @@ impl Config {
             .ok_or_else(|| error::RucolaError::ApplicationMissing)
     }
 
-    /// Wether or not the given string constitutes a valid extension to be crawled by rucola.
-    pub fn is_valid_extension(&self, ext: &str) -> bool {
-        self.config_file
-            .file_extensions
-            .contains(&String::from(ext))
+    /// Returns a file walker that iterates over all notes to index.
+    pub fn get_walker(&self) -> ignore::Walk {
+        ignore::WalkBuilder::new(
+            self.config_file
+                .vault_path
+                .clone()
+                .unwrap_or(path::PathBuf::from(".")),
+        )
+        .types(self.types.clone())
+        .build()
+    }
+
+    /// Wether the given path is supposed to be tracked by rucola or not.
+    /// Checks for file endings and (TODO) gitignore
+    pub fn is_tracked(&self, path: &path::PathBuf) -> bool {
+        if let ignore::Match::Whitelist(_) = self.types.matched(path, false) {
+            true
+        } else {
+            false
+        }
     }
 
     /// Takes in a PathBuf and, if the current file extension is not set, append the default one.
-    pub fn validate_file_extension(&self, path: &mut path::PathBuf) {
-        if path.extension().is_none() && !self.is_valid_extension("") {
+    pub fn ensure_file_extension(&self, path: &mut path::PathBuf) {
+        if path.extension().is_none() {
             path.set_extension(&self.config_file.default_extension);
         }
     }
@@ -310,51 +362,53 @@ mod tests {
         let no_ending_tar = std::path::PathBuf::from("./tests/common/test");
         let md_ending_tar = std::path::PathBuf::from("./tests/common/test.md");
         let txt_ending_tar = std::path::PathBuf::from("./tests/common/test.txt");
+        let tex_ending_tar = std::path::PathBuf::from("./tests/common/test.tex");
 
-        let mut config = Config::default();
+        let config = Config::default();
 
         let mut no_ending = std::path::PathBuf::from("./tests/common/test");
         let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
         let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
 
-        config.validate_file_extension(&mut no_ending);
-        config.validate_file_extension(&mut md_ending);
-        config.validate_file_extension(&mut txt_ending);
+        config.ensure_file_extension(&mut no_ending);
+        config.ensure_file_extension(&mut md_ending);
+        config.ensure_file_extension(&mut txt_ending);
 
         assert_eq!(no_ending, md_ending_tar);
         assert_eq!(md_ending, md_ending_tar);
         assert_eq!(txt_ending, txt_ending_tar);
 
-        assert!(!config.is_valid_extension("txt"));
-        assert!(!config.is_valid_extension(""));
-        assert!(config.is_valid_extension("md"));
+        assert!(!config.is_tracked(&no_ending_tar));
+        assert!(config.is_tracked(&md_ending_tar));
+        assert!(!config.is_tracked(&txt_ending_tar));
+        assert!(!config.is_tracked(&tex_ending_tar));
 
-        config.config_file.file_extensions = vec!["md".to_owned(), "".to_owned()];
+        let config = Config::from_parts(
+            crate::config::ConfigFile {
+                file_types: vec!["md".to_owned(), "txt".to_owned()],
+                ..Default::default()
+            },
+            super::ui::UiStyles::default(),
+        )
+        .unwrap();
 
-        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
-        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
-        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
+        assert!(!config.is_tracked(&no_ending_tar));
+        assert!(config.is_tracked(&md_ending_tar));
+        assert!(config.is_tracked(&txt_ending_tar));
+        assert!(!config.is_tracked(&tex_ending_tar));
 
-        config.validate_file_extension(&mut no_ending);
-        config.validate_file_extension(&mut md_ending);
-        config.validate_file_extension(&mut txt_ending);
+        let config = Config::from_parts(
+            crate::config::ConfigFile {
+                file_types: vec!["all".to_owned()],
+                ..Default::default()
+            },
+            super::ui::UiStyles::default(),
+        )
+        .unwrap();
 
-        assert_eq!(no_ending, no_ending_tar);
-        assert_eq!(md_ending, md_ending_tar);
-        assert_eq!(txt_ending, txt_ending_tar);
-
-        config.config_file.file_extensions = vec!["md".to_owned(), "*".to_owned()];
-
-        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
-        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
-        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
-
-        config.validate_file_extension(&mut no_ending);
-        config.validate_file_extension(&mut md_ending);
-        config.validate_file_extension(&mut txt_ending);
-
-        assert_eq!(no_ending, md_ending);
-        assert_eq!(md_ending, md_ending_tar);
-        assert_eq!(txt_ending, txt_ending_tar);
+        assert!(!config.is_tracked(&no_ending_tar));
+        assert!(config.is_tracked(&md_ending_tar));
+        assert!(config.is_tracked(&txt_ending_tar));
+        assert!(config.is_tracked(&tex_ending_tar));
     }
 }
