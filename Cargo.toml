@@ -17,18 +17,15 @@ expanduser = "^1.2"
 open = "^5"
 # Parsing
 comrak = {git = "https://github.com/kivikakk/comrak.git"}
-walkdir = "2.5.0"
+ignore = "^0.4"
 regex = "^1.10"
-# jwalk = "0.5"
 fuzzy-matcher = "^0.3"
 itertools = "^0.12"
-# rayon = "^1.10"
 # Error handling
 thiserror = "^1.0"
 # Config
 serde = { version = "1.0", features = ["derive"] }
 confy = "^0.6"
-
 [[bin]]
 name = "rucola"
 test = true

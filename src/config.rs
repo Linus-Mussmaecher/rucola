@@ -13,7 +13,10 @@ struct ConfigFile {
     theme: String,
     /// The editor to use for notes
     editor: Option<String>,
-    /// File endings to consider notes
+    // /// File types to consider notes
+    // /// See the [default list](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html) of the ignore crate for possible options.
+    // /// The "all" option matches all files.
+    // file_types: Vec<String>,
     file_extensions: Vec<String>,
     /// Default file ending for newly created notes
     default_extension: String,

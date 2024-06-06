@@ -22,10 +22,8 @@ impl NoteIndex {
     /// All files that lead to IO errors when loading are ignored.
     pub fn new(directory: &path::Path, config: &config::Config) -> Self {
         Self {
-            inner: walkdir::WalkDir::new(directory)
-                .into_iter()
-                // Ignore dot-folders and dotfiles
-                .filter_entry(is_not_hidden)
+            inner: ignore::WalkBuilder::new(directory)
+                .build()
                 // Check only OKs
                 .flatten()
                 // Check only markdown files
@@ -97,22 +95,14 @@ impl NoteIndex {
             .collect()
     }
 }
-/// Checks if the given dir entry is 'hidden', i.e. not the root of a search and prefixed by a dot.
-fn is_not_hidden(entry: &walkdir::DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| entry.depth() == 0 || !s.starts_with('.'))
-        .unwrap_or(false)
-}
+
 /// Checks if the given dir entry is a valid file, i.e. a file whose name ends one of the endings configured in the config file.
-fn valid_ending(entry: &walkdir::DirEntry, config: &config::Config) -> bool {
-    entry.file_type().is_file()
-        && ((config.is_valid_extension("*"))
-            || match entry.path().extension() {
-                Some(ending) => config.is_valid_extension(&ending.to_string_lossy()),
-                None => config.is_valid_extension(""),
-            })
+fn valid_ending(entry: &ignore::DirEntry, config: &config::Config) -> bool {
+    config.is_valid_extension("*")
+        || match entry.path().extension() {
+            Some(ending) => config.is_valid_extension(&ending.to_string_lossy()),
+            None => config.is_valid_extension(""),
+        }
 }
 
 #[cfg(test)]
