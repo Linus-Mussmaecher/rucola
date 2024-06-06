@@ -13,7 +13,6 @@ pub fn rename_note_file(
     index: &mut super::NoteIndexContainer,
     id: &str,
     new_name: Option<String>,
-    // TODO : remove this?
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     let index_b = index.borrow_mut();
