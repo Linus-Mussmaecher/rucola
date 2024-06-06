@@ -13,6 +13,7 @@ pub fn rename_note_file(
     index: &mut super::NoteIndexContainer,
     id: &str,
     new_name: Option<String>,
+    // TODO : remove this?
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     let index_b = index.borrow_mut();
@@ -48,14 +49,15 @@ pub fn rename_note_file(
     );
 
     // If this new name has not introduced an extension, re-set the previous one.
-    if new_path.extension().is_none() && !config.is_valid_extension("") {
+    if new_path.extension().is_none() {
         new_path.set_extension(old_path.extension().unwrap_or_default());
     }
 
+    // make sure the mutable borrow from the first line in the function is dropped
     drop(index_b);
 
     // Actual move
-    move_note_file_inner(id, index, old_path, new_path)?;
+    move_note_file_inner(id, index, old_path, new_path, config)?;
 
     Ok(())
 }
@@ -87,20 +89,21 @@ pub fn move_note_file(
     let mut new_path = config.create_vault_path();
     new_path.push(path::Path::new(&new_path_buf));
 
-    // If this has not introduced an extension, and no-extension is not allowed per the config, re-set the previous one.
-    if new_path.extension().is_none() && !config.is_valid_extension("") {
+    // If this has not introduced an extension, re-set the previous one.
+    if new_path.extension().is_none() {
         if let Some(old_ext) = note.path.extension() {
             new_path.set_extension(old_ext);
         }
     }
     // If this has still not introduced an extension, ask the config file for a default one.
-    config.validate_file_extension(&mut new_path);
+    config.ensure_file_extension(&mut new_path);
 
     let old_path = note.path.clone();
 
+    // make sure the mutable borrow from the first line in this function is dropped
     drop(index_b);
     // Acutally move the file and update the index
-    move_note_file_inner(id, index, old_path, new_path.to_path_buf())
+    move_note_file_inner(id, index, old_path, new_path.to_path_buf(), config)
 }
 
 /// Moves the file from source to target, if successful removes the old note from the table and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
@@ -109,6 +112,7 @@ fn move_note_file_inner(
     index: &mut NoteIndexContainer,
     source: path::PathBuf,
     target: path::PathBuf,
+    config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     // borrow index mutably
     let mut index = index.borrow_mut();
@@ -173,7 +177,9 @@ fn move_note_file_inner(
     note.path = target;
 
     // Re-insert the fixed note.
-    index.inner.insert(new_id, note);
+    if config.is_tracked(&note.path) {
+        index.inner.insert(new_id, note);
+    }
 
     Ok(())
 }
@@ -208,7 +214,7 @@ pub fn create_note_file(
     path.push(input_path.unwrap_or_else(|| "Untitled".to_owned()));
 
     // If there was no manual extension set, take the default one
-    config.validate_file_extension(&mut path);
+    config.ensure_file_extension(&mut path);
 
     // Create the file
     let mut file = fs::File::create(path.clone())?;
@@ -222,8 +228,11 @@ pub fn create_note_file(
             .unwrap_or_else(|| "Untitled".to_owned())
     )?;
 
-    // Add the file to the index if nothing threw and error and early returned.
-    index.borrow_mut().register(path::Path::new(&path));
+    // check if this file is supposed to be in the index
+    if config.is_tracked(&path) {
+        // Add the file to the index if nothing threw and error and early returned.
+        index.borrow_mut().register(path::Path::new(&path));
+    }
 
     Ok(())
 }

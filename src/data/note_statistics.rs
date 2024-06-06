@@ -178,10 +178,7 @@ mod tests {
 
     #[test]
     fn test_env_stats_general() {
-        let index = crate::data::NoteIndex::new(
-            std::path::Path::new("./tests/common/notes/"),
-            &crate::config::Config::default(),
-        );
+        let index = crate::data::NoteIndex::new(&crate::config::Config::default());
 
         assert_eq!(index.inner.len(), 11);
 

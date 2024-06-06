@@ -59,6 +59,7 @@ If you want to open a directory different from your default vault, you can pass 
 
 Rucola initially launches into the *select screen*.
 Here you will find an (unordered) list overview of all notes currently indexed by rucola, some statistics and a search bar.
+The indexing finds only files with a select set of file extensions and respects your `.gitignore` file if present.
 The statistics refer to two environments:
  - The *global environment* consists of all notes currently indexed by rucola and can only be changed by restarting the program (or directly changing your files and reloading the screen).
  - The *local environment* consists of all notes currently matching your search query.
@@ -111,15 +112,19 @@ For example, the filter string `#math !#math/topology >Topology map` shows all n
 
 #### File Management
 From the select view, you can access a couple of file management options for your notes:
- - Create a new note
- - Delete the selected note
+ - Create a new note.
+   If it has a valid note file extension (as defined in your config) and does not fall under the rules of your `.gitignore` file (if present), the note will then be added to the index.
+ - Delete the selected note.
  - Rename the selected note.
    Your input cannot be a path, i.e. this cannot move the underlying file to a new location but only rename the existing file in its current location.
+   You can however set a new extension, if no new extension is given the old extension will be reused.
    This will update links in other indexed files to point to the new location.
+   If the new name has a non-note file extension (as defined in your config) or causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
  - Move the selected to another location relative to your current vault path.
    If the input ends with a `/`, the path will be interpreted as a folder and the note, retaining its current name, will be moved into that folder.
    Otherwise, the input will be interpreted as a file location and the note moved there (and appropriately renamed to the last component of the path) while updating links in other indexed notes to point to the new location.
    In both cases, if there is no extension given and non-extension are not allowed per your config file, the original extension will be attached.
+   If the move causes the note to end up with a non-note file extension (as defined in your config) or causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
  - Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
    The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
  - Reload the vault from the disk, in case you have made external changes.
@@ -169,8 +174,10 @@ Here is a list of all possible configuration settings:
  - `vault_path` is the path to your default vault that will be used by rucola unless overwritten by a command line positional argument.
  - `theme` is the name of the `.toml`-theme file to configure rucola's visual appearance.
  - `default_extension` is the extension appended to notes created by rucola, `.md` by default.
- - `file_extensions` lists all extension of files to be indexed by rucola when opening a folder.
-   Including `""` in this list causes extension-less files to be indexed, while including `"*"` causes all files _with_ any extension (but not extension-less files) to be indexed.
+ - `file_types` lists all types of files to be indexed by rucola when opening a folder.
+   Per default, this is set to `["markdown"]`, tracking files with the extions `.md`, `.markdown`, ...
+   A full list of available file types can be found [here](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html).
+   It is currently not possible to define your own file types.
  - `editor` configures the command to edit your notes.
    This can be a terminal application or an external application.
  - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
@@ -179,7 +186,7 @@ Here is a list of all possible configuration settings:
    In math mode, every appearance of the first string will be replaced by the second one.
    The default replaces `field` with `mathbb` and `lieagl` with `mathfrak` as an example for the TOML syntax and the general idea of using semantically valuable string replacements to make your LaTeX code clearer.
  - `css` is the name of your css style sheet (in your rucola config folder).
-   The `.css` file ending can be omitted.
+   The `.css` file extension can be omitted.
    If not set, no css file will be added to your HTML files.
  - `html_prepend` can contain any text you want to prepend to all your HTML files in addition to the mathjax, css and title tags/scripts.
 
