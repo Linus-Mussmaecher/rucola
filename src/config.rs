@@ -67,6 +67,8 @@ pub struct Config {
     css_path: Option<path::PathBuf>,
     /// Pre-calculated object containing allowed file types
     types: ignore::types::Types,
+    /// Pre-fetched gitignore file in the vault path, if found.
+    gitignore: Option<ignore::gitignore::Gitignore>,
 }
 
 impl Default for Config {
@@ -80,6 +82,7 @@ impl Default for Config {
                 .select("markdown")
                 .build()
                 .expect("Markdown is a valid file type configured in the DEFAULTs."),
+            gitignore: None,
         }
     }
 }
@@ -90,7 +93,7 @@ impl Config {
         config_file: ConfigFile,
         uistyles: ui::UiStyles,
     ) -> Result<Self, error::RucolaError> {
-        // === Resolve css path ===
+        // Resolve css path
         let mut css_path = None;
 
         if let Some(css) = &config_file.css {
@@ -105,18 +108,27 @@ impl Config {
             css_path = Some(css);
         }
 
-        // === Pre-calculate allowed file types ===
+        // Pre-calculate allowed file types
         let mut types_builder = ignore::types::TypesBuilder::new();
         types_builder.add_defaults();
         for name in config_file.file_types.iter() {
             types_builder.select(name);
         }
 
+        // Search and fetch gitignore
+        let gitignore_builder = ignore::gitignore::GitignoreBuilder::new(
+            config_file
+                .vault_path
+                .as_ref()
+                .unwrap_or(&path::PathBuf::from(".")),
+        );
+
         Ok(Self {
             config_file,
             uistyles,
             css_path,
             types: types_builder.build()?,
+            gitignore: gitignore_builder.build().ok(),
         })
     }
 
@@ -218,8 +230,8 @@ impl Config {
         ignore::WalkBuilder::new(
             self.config_file
                 .vault_path
-                .clone()
-                .unwrap_or(path::PathBuf::from(".")),
+                .as_ref()
+                .unwrap_or(&path::PathBuf::from(".")),
         )
         .types(self.types.clone())
         .build()
@@ -228,11 +240,25 @@ impl Config {
     /// Wether the given path is supposed to be tracked by rucola or not.
     /// Checks for file endings and (TODO) gitignore
     pub fn is_tracked(&self, path: &path::PathBuf) -> bool {
-        if let ignore::Match::Whitelist(_) = self.types.matched(path, false) {
+        let file_ending = if let ignore::Match::Whitelist(_) = self.types.matched(path, false) {
             true
         } else {
             false
-        }
+        };
+
+        let gitignore = self
+            .gitignore
+            .as_ref()
+            .map(|gi| {
+                if let ignore::Match::Ignore(_) = gi.matched(path, false) {
+                    false
+                } else {
+                    true
+                }
+            })
+            .unwrap_or(true);
+
+        return file_ending && gitignore;
     }
 
     /// Takes in a PathBuf and, if the current file extension is not set, append the default one.
