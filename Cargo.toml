@@ -15,6 +15,7 @@ clap = {version = "^4.5", features = ["derive"]}
 expanduser = "^1.2"
 # Opening
 open = "^5"
+notify = "^6.1"
 # Parsing
 comrak = {git = "https://github.com/kivikakk/comrak.git"}
 ignore = "^0.4"
@@ -26,6 +27,7 @@ thiserror = "^1.0"
 # Config
 serde = { version = "1.0", features = ["derive"] }
 confy = "^0.6"
+
 [[bin]]
 name = "rucola"
 test = true

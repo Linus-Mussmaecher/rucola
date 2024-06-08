@@ -17,8 +17,10 @@ pub enum RucolaError {
     Input(String),
     #[error("File name prevents renaming with regex: {0}")]
     RegexError(#[from] regex::Error),
-    #[error("Problem in directory walking: {0}")]
+    #[error("Error when directory walking: {0}")]
     IgnoreError(#[from] ignore::Error),
+    #[error("Error when when watching files for changes: {0}")]
+    NotifyError(#[from] notify::Error),
 }
 
 impl RucolaError {
