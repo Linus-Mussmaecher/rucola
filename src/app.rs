@@ -1,6 +1,7 @@
 use super::{config, data, error, ui, ui::Screen};
+use notify::{self, Watcher};
 use ratatui::prelude::*;
-use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
+use std::{borrow::BorrowMut, cell::RefCell, rc::Rc, sync::mpsc};
 
 /// The main state of the application.
 /// Consists of a select screen that is always existent, a stack of notes the user has navigated through and that he can navigate through by popping, reversing its navigation. Lastly, there is a display screen of the currently displayed note, which should always correspond to the top of the stack.
@@ -15,6 +16,12 @@ pub struct App {
     config: config::Config,
     /// Index note data
     index: data::NoteIndexContainer,
+    /// Watcher that checks for file changes in the vault directory and needs to be kept alive with this index.
+    /// Can be unused because it is just here for RAII.
+    #[allow(unused)]
+    watcher: notify::INotifyWatcher,
+    /// Channel from which file change events in the vault directory are deposited by the watcher and can be requested.
+    file_change_channel: mpsc::Receiver<Result<notify::Event, notify::Error>>,
 }
 
 impl App {
@@ -26,12 +33,31 @@ impl App {
         // Index all files in path
         let index = Rc::new(RefCell::new(data::NoteIndex::new(&config)));
 
+        // Create asynchronous channel for file events.
+        let (sender, receiver) = mpsc::channel();
+
+        // Create watcher so we can store it in the file, delaying its drop (which stops its function) until the end of the lifetime of this index.
+        let mut watcher = notify::recommended_watcher(move |res| {
+            sender.send(res).unwrap();
+        })
+        .unwrap();
+
+        // Start watching the vault.
+        watcher
+            .watch(
+                &config.create_vault_path(),
+                notify::RecursiveMode::Recursive,
+            )
+            .expect("Fixed config does not fail.");
+
         // Initialize app state
         Self {
             select: ui::screen::SelectScreen::new(index.clone(), &config),
             display: None,
             display_stack: Vec::new(),
             index,
+            watcher,
+            file_change_channel: receiver,
             config,
         }
     }
@@ -39,8 +65,20 @@ impl App {
     // Updates the app with the given key.
     pub fn update(
         &mut self,
-        key: crossterm::event::KeyEvent,
+        key: Option<crossterm::event::KeyEvent>,
     ) -> Result<ui::TerminalMessage, error::RucolaError> {
+        // Check for file changes
+
+        for event in self.file_change_channel.try_iter().flatten() {
+            // TODO: Actually handle file changes
+            return Err(error::RucolaError::NoteNoteFound(format!("{:?}", event)));
+        }
+
+        if key.is_none() {
+            return Ok(ui::TerminalMessage::None);
+        }
+        let key = key.expect("This not to be none, because we checked it 3 lines earlier.");
+
         // Update appropriate screen
         let msg = if let Some(display) = &mut self.display {
             display.update(key)

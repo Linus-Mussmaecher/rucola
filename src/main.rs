@@ -83,26 +83,23 @@ fn main() -> Result<(), error::RucolaError> {
             // Make sure area is large enough or show error
             if area.width < 90 || area.height < 25 {
                 // area too small and no error -> show area error
-                if current_error.is_none() {
-                    current_error = Some(error::RucolaError::SmallArea);
-                }
-            } else {
-                // area big enough but area error still shown -> remove it
-                if let Some(error::RucolaError::SmallArea) = current_error {
-                    current_error = None;
-                }
+                current_error = Some(error::RucolaError::SmallArea);
             }
 
             let app_area = match &current_error {
-                // If there is an error to be displayed, reduce the size for the app and display it at the bottom.
+                // If there is an error to be displayed
                 Some(e) => {
+                    // Separate the usual app area into a small bottom line for the area and a big area for what can be displayed of the app.
                     let areas =
                         Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
 
+                    // Render the error to the bottom.
                     Widget::render(e.to_ratatui(), areas[1], buf);
 
+                    // Return the rest of the area for the app to render in.
                     areas[0]
                 }
+                // No error => App can render in the entire area.
                 None => area,
             };
 
@@ -111,32 +108,32 @@ fn main() -> Result<(), error::RucolaError> {
         })?;
 
         // Inform the current screen of events
-        if event::poll(std::time::Duration::from_millis(500))? {
+        let maybe_keypress = if event::poll(std::time::Duration::from_millis(500))? {
+            // Some event => reset current error
+            current_error = None;
             // Check if the event was a keypress
-            if let event::Event::Key(key) = event::read()? {
-                // Check for key presses
-                if key.kind != event::KeyEventKind::Press {
-                    continue 'main;
-                }
-                // when a key event, first reset the current error
-                current_error = None;
-                // Then update the app.
-                match app.update(key) {
-                    Ok(ui::TerminalMessage::Quit) => {
-                        break 'main;
-                    }
-                    Ok(ui::TerminalMessage::None) => {}
-                    Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
-                        // Restore the terminal
-                        restore_terminal()?;
-                        // Execute the given command
-                        cmd.status()?;
-                        // Re-enter the tui state
-                        terminal = init_terminal()?;
-                    }
-                    Err(e) => current_error = Some(e),
-                }
+            match event::read()? {
+                event::Event::Key(key) if key.kind == event::KeyEventKind::Press => Some(key),
+                _ => None,
             }
+        } else {
+            None
+        };
+
+        match app.update(maybe_keypress) {
+            Ok(ui::TerminalMessage::Quit) => {
+                break 'main;
+            }
+            Ok(ui::TerminalMessage::None) => {}
+            Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
+                // Restore the terminal
+                restore_terminal()?;
+                // Execute the given command
+                cmd.status()?;
+                // Re-enter the tui state
+                terminal = init_terminal()?;
+            }
+            Err(e) => current_error = Some(e),
         }
     }
 
