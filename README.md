@@ -138,8 +138,11 @@ From the select view, you can access a couple of file management options for you
  - Reload the vault from the disk, in case you have made external changes.
    When opening a note as described in the previous point, rucola will automatically reload that (and only that note), so this feature should not be neccessary to often.
  - View the currently selected notes HTML representation in an external viewer.
-   The selected note (and only the selected note) will be converted to HTML just in time for that purpose, so following HTML links may not always work.
- - Convert all currently filtered notes to HTML, so link following in the viewing feature above works as expected. Currently, you still need to do this manually whenever you have external changes to your files.
+
+Additionally, rucola permanently tracks all file changes made through the program itself and by all external means and tries to keep the index up to date.
+This includes edits to notes (updates links, word count, ...), moves & renames, creations and deletions.
+This feature is currently untested on Windows.
+Feel free to let me know if you are a Windows user on what works and what doesn't.
 
 
 ### Display Screen
@@ -168,18 +171,22 @@ This is especially useful for notes that are difficult to read, for example beca
 HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a MathJax-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
 Also, you can perform small-scale string replacements in math mode, for example replacing `\field` with `\mathbb` to write fields more semantically clearly.
 
-You can view a single HTML file from the select screen or the display screen, in this case it is converted just-in-time.
+You can view a single HTML file from the select screen or the display screen.
 The file will be openend with the configured viewer (usually outside your terminal).
-Alternatively, you can also convert all in the current local environment from the select view.
-This allows you to follow links while viewing documents and is recommended.
+
+
 
 
 ### Configuration
 Configuration files are - on Linux - stored in `XDG_CONFIGHOME/rucola`, which is usually `~/.config/rucola`.
 
 Here is a list of all possible configuration settings:
- - `dynamic_filter` is set to `true` by default, but can be set to `false` to cause your select view to only filter upon pressing enter and not while typing.
  - `vault_path` is the path to your default vault that will be used by rucola unless overwritten by a command line positional argument.
+ - `file_types` lists all types of files to be indexed by rucola when opening a folder.
+   Per default, this is set to `["markdown"]`, tracking files with the extions `.md`, `.markdown`, ...
+   A full list of available file types can be found [here](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html).
+   It is currently not possible to define your own file types.
+ - `default_extension` is the extension appended to notes created by rucola, `.md` by default.
  - `theme` is the name of the `.toml`-theme file to configure rucola's visual appearance.
  - `stats_show` is set to `Both` by default and configures which statistics blocks are shown at which time on the select screen.
    It can have one of three values:
@@ -189,15 +196,14 @@ Here is a list of all possible configuration settings:
    - `Relevant`: When you have no filter set, the global stats are shown.
      Otherwise, local stats are shown.
      This setting therefore avoids showing duplicating stats at all times.
- - `default_extension` is the extension appended to notes created by rucola, `.md` by default.
- - `file_types` lists all types of files to be indexed by rucola when opening a folder.
-   Per default, this is set to `["markdown"]`, tracking files with the extions `.md`, `.markdown`, ...
-   A full list of available file types can be found [here](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html).
-   It is currently not possible to define your own file types.
+ - `continous_filter` is set to `true` by default, but can be set to `false` to cause your select view to only filter upon pressing enter and not while typing.
  - `editor` configures the command to edit your notes.
    This can be a terminal application or an external application.
  - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
- - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble.
+The following configuration options manage the HTML files created by rucola:
+ - `continuous_html` is set to `true` by default, causing all your notes to be converted to HTML files on program start and for those HTMLs to be continuously kept up-to-date in case of file changes.
+   Set to `false` to create HTMLs only on demand, which may cause links in them to be un-followable.
+ - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble to HTML files. While set to `true`, the preamble is only appended if math blocks (delimited by `$...$` and `$$...$$` are detected).
  - `math_replacments` is a vector of pairs of strings.
    In math mode, every appearance of the first string will be replaced by the second one.
    The default replaces `field` with `mathbb` and `lieagl` with `mathfrak` as an example for the TOML syntax and the general idea of using semantically valuable string replacements to make your LaTeX code clearer.
