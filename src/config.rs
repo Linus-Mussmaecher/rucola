@@ -162,6 +162,14 @@ impl Config {
                 config_file.vault_path.and_then(|conf_path_buf| {
                     expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
                 })
+            })
+            // make sure path is absolute
+            .map(|path| {
+                if !path.is_absolute() {
+                    std::env::current_dir().unwrap().join(path)
+                } else {
+                    path
+                }
             });
 
         // === Step 3: Load style file ===

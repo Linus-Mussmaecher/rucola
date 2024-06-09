@@ -13,7 +13,7 @@ pub fn rename_note_file(
     index: &mut super::NoteIndexContainer,
     id: &str,
     new_name: Option<String>,
-    config: &config::Config,
+    _config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     let index_b = index.borrow_mut();
     // Retrieve the old version from the table
@@ -56,9 +56,7 @@ pub fn rename_note_file(
     drop(index_b);
 
     // Actual move
-    move_note_file_inner(id, index, old_path, new_path, config)?;
-
-    Ok(())
+    move_note_file_inner(id, index, old_path, new_path)
 }
 
 pub fn move_note_file(
@@ -102,7 +100,7 @@ pub fn move_note_file(
     // make sure the mutable borrow from the first line in this function is dropped
     drop(index_b);
     // Acutally move the file and update the index
-    move_note_file_inner(id, index, old_path, new_path.to_path_buf(), config)
+    move_note_file_inner(id, index, old_path, new_path.to_path_buf())
 }
 
 /// Moves the file from source to target, if successful removes the old note from the table and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
@@ -111,10 +109,9 @@ fn move_note_file_inner(
     index: &mut NoteIndexContainer,
     source: path::PathBuf,
     target: path::PathBuf,
-    config: &config::Config,
 ) -> Result<(), error::RucolaError> {
     // borrow index mutably
-    let mut index = index.borrow_mut();
+    let index = index.borrow();
 
     // create new name and id
     let new_name = target
@@ -122,15 +119,13 @@ fn move_note_file_inner(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
-    let new_id = super::name_to_id(&new_name);
-
     // actual fs copy (early returns if unsuccessfull)
     fs::rename(source, target.clone())?;
 
     // Extract old note from the index.
-    let mut note = index
+    let note = index
         .inner
-        .remove(old_id)
+        .get(old_id)
         .ok_or_else(|| error::RucolaError::NoteNoteFound(old_id.to_owned()))?;
 
     // === RENAMING ===
@@ -171,19 +166,11 @@ fn move_note_file_inner(
         file.write_all(res.as_bytes())?;
     }
 
-    // Fix the notes values, remembering the old name.
-    note.name = new_name;
-    note.path = target;
-
-    // Re-insert the fixed note.
-    if config.is_tracked(&note.path) {
-        index.inner.insert(new_id, note);
-    }
-
     Ok(())
 }
 
-/// Deletes the note of the given id from the index, then follows its path and deletes it in the file system.
+/// Follows a notes path and deletes it in the file system.
+/// Deletion from the index is handled centrally by the file watcher of the index itself.
 pub fn delete_note_file(
     index: &mut NoteIndexContainer,
     id: &str,
@@ -197,14 +184,12 @@ pub fn delete_note_file(
             .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?
             .path,
     ))?;
-    // If that both worked, remove it from the index.
-    table.remove(id);
     Ok(())
 }
 
-/// Creates a note of the given name in the file system (relative to the vault) and registers it in the given index.
+/// Creates a note of the given name in the file system (relative to the vault).
+/// Registration in the index is handled centrally by the file watcher of the index itself.
 pub fn create_note_file(
-    index: &mut NoteIndexContainer,
     input_path: Option<String>,
     config: &config::Config,
 ) -> Result<(), error::RucolaError> {
@@ -226,12 +211,6 @@ pub fn create_note_file(
             .map(|fs| fs.to_string_lossy().to_string())
             .unwrap_or_else(|| "Untitled".to_owned())
     )?;
-
-    // check if this file is supposed to be in the index
-    if config.is_tracked(&path) {
-        // Add the file to the index if nothing threw and error and early returned.
-        index.borrow_mut().register(path::Path::new(&path));
-    }
 
     Ok(())
 }

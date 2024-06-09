@@ -5,8 +5,6 @@ pub enum Message {
     None,
     /// Quit the application
     Quit,
-    /// Fully refresh the file index
-    Refresh,
     ///
     DisplayStackClear,
     ///
@@ -32,7 +30,6 @@ impl From<Message> for TerminalMessage {
     fn from(value: Message) -> Self {
         match value {
             Message::None
-            | Message::Refresh
             | Message::DisplayStackClear
             | Message::DisplayStackPop
             | Message::DisplayStackPush(_) => Self::None,

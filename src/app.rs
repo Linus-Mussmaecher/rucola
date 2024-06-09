@@ -1,7 +1,7 @@
 use super::{config, data, error, ui, ui::Screen};
 use notify::{self, Watcher};
 use ratatui::prelude::*;
-use std::{borrow::BorrowMut, cell::RefCell, rc::Rc, sync::mpsc};
+use std::{cell::RefCell, rc::Rc, sync::mpsc};
 
 /// The main state of the application.
 /// Consists of a select screen that is always existent, a stack of notes the user has navigated through and that he can navigate through by popping, reversing its navigation. Lastly, there is a display screen of the currently displayed note, which should always correspond to the top of the stack.
@@ -68,10 +68,16 @@ impl App {
         key: Option<crossterm::event::KeyEvent>,
     ) -> Result<ui::TerminalMessage, error::RucolaError> {
         // Check for file changes
-
+        let mut event_present = false;
+        let mut index = self.index.borrow_mut();
         for event in self.file_change_channel.try_iter().flatten() {
-            // TODO: Actually handle file changes
-            return Err(error::RucolaError::NoteNoteFound(format!("{:?}", event)));
+            event_present |= index.handle_file_event(event, &self.config)?;
+        }
+        drop(index);
+
+        // if anything happened in the file system, better refresh the environment
+        if event_present {
+            self.select.refresh_env_stats();
         }
 
         if key.is_none() {
@@ -125,12 +131,6 @@ impl App {
                     )?),
                     None => None,
                 };
-            }
-            ui::Message::Refresh => {
-                self.index
-                    .borrow_mut()
-                    .replace(data::NoteIndex::new(&self.config));
-                self.select.refresh_env_stats();
             }
         }
 
