@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-use std::path;
+use std::{borrow::BorrowMut, collections::HashMap};
 
-use crate::config;
+use crate::{config, error};
 
 use super::Note;
 
@@ -21,17 +20,23 @@ impl NoteIndex {
     ///
     /// All files that lead to IO errors when loading are ignored.
     pub fn new(config: &config::Config) -> Self {
-        Self {
-            inner: config
-                .get_walker() // Check only OKs
-                .flatten()
-                // Convert tiles to notes and skip errors
-                .flat_map(|entry| Note::from_path(entry.path()))
-                // Extract name and convert to id
-                .map(|note| (super::name_to_id(&note.name), note))
-                // Collect into hash map
-                .collect(),
+        // collect all the notes from the vault folder
+        let inner = config
+            .get_walker() // Check only OKs
+            .flatten()
+            // Convert tiles to notes and skip errors
+            .flat_map(|entry| Note::from_path(entry.path()))
+            // Extract name and convert to id
+            .map(|note| (super::name_to_id(&note.name), note))
+            // Collect into hash map
+            .collect::<HashMap<_, _>>();
+
+        // create all htmls
+        for (_id, note) in inner.iter() {
+            let _ = super::notefile::create_html(note, config);
         }
+
+        Self { inner }
     }
 
     /// Wrapper of the HashMap::get() Function
@@ -39,28 +44,99 @@ impl NoteIndex {
         self.inner.get(key)
     }
 
-    /// Registers a new note found in the given path in this index.
-    pub fn register(&mut self, note_path: &path::Path) {
-        if let Ok(note) = Note::from_path(note_path) {
-            self.inner.insert(super::name_to_id(&note.name), note);
-        }
-    }
-
-    /// Reloads this note from file, then checks if the id has changed. If yes, moves it to the new id.
-    pub fn refresh_note(&mut self, id: &str) {
-        // Check if given id is valid
-        if let Some(old_note) = self.inner.get(id) {
-            // Reload from path
-            if let Ok(new_note) = Note::from_path(&old_note.path) {
-                let new_id = super::name_to_id(&new_note.name);
-                // If id has changed -> Remove old one first
-                if new_id != id {
-                    self.inner.remove(id);
+    /// Handles a file event on notes.
+    ///  - Renames and moves are tracked
+    ///  - new file creations with in the vault folder are checked for notes and added if appropriate
+    ///  - removed files are removed from the index (if they were present)
+    ///  - Modifications of files are checked for being notes and if so, the respective index entries are updated with the new data.
+    /// Returns wether the index has changed.
+    pub fn handle_file_event(
+        &mut self,
+        event: notify::Event,
+        config: &config::Config,
+    ) -> Result<bool, error::RucolaError> {
+        let mut modifications = false;
+        match event.kind {
+            notify::EventKind::Create(kind) => {
+                // Creations:
+                // - Check if a file was created (we don't care about folders)
+                // - Check for each path if we are interested in it (gitignore + extensions from config)
+                // - Try to load the note and index it
+                if kind == notify::event::CreateKind::File {
+                    for path in event.paths {
+                        if config.is_tracked(&path) {
+                            if let Ok(note) = super::Note::from_path(&path) {
+                                // create html on creation
+                                super::notefile::create_html(&note, config)?;
+                                // insert the note
+                                self.inner.insert(super::name_to_id(&note.name), note);
+                                modifications = true;
+                            }
+                        }
+                    }
                 }
-                // Now insert new one, possibly replacing old one.
-                self.inner.insert(new_id, new_note);
             }
+            notify::EventKind::Modify(kind) => {
+                // Modifications
+                // - For renames, remove all notes at a path coinciding with a rename source, then insert all notes from a rename target.
+                // - For (meta)data modifications, reload the entire note
+                match kind {
+                    // Renames and moves
+                    notify::event::ModifyKind::Name(mode) => match mode {
+                        notify::event::RenameMode::From => {
+                            self.inner
+                                .retain(|_, note| !event.paths.contains(&note.path));
+                            modifications = true;
+                        }
+                        notify::event::RenameMode::To => {
+                            for path in event.paths {
+                                if config.is_tracked(&path) {
+                                    if let Ok(note) = super::Note::from_path(&path) {
+                                        // create html of new location
+                                        super::notefile::create_html(&note, config)?;
+                                        // insert the note from the new location
+                                        self.inner.insert(super::name_to_id(&note.name), note);
+                                        modifications = true;
+                                    }
+                                }
+                            }
+                        }
+                        notify::event::RenameMode::Both => {}
+                        notify::event::RenameMode::Any => {}
+                        notify::event::RenameMode::Other => {}
+                    },
+                    // General edits
+                    notify::event::ModifyKind::Data(_) | notify::event::ModifyKind::Metadata(_) => {
+                        for (_id, note) in self.inner.borrow_mut().iter_mut() {
+                            if event.paths.contains(&note.path) {
+                                if let Ok(new_note) = Note::from_path(&note.path) {
+                                    // re-create html on modifications
+                                    super::notefile::create_html(&new_note, config)?;
+                                    // replace the index entry
+                                    *note = new_note;
+                                    modifications = true;
+                                }
+                            }
+                        }
+                    }
+                    notify::event::ModifyKind::Any => {}
+                    notify::event::ModifyKind::Other => {}
+                }
+            }
+            // Remove events: Keep only those notes whose path was not removed
+            notify::EventKind::Remove(kind) => {
+                if kind == notify::event::RemoveKind::File {
+                    self.inner
+                        .retain(|_, note| !event.paths.contains(&note.path));
+                    modifications = true;
+                }
+            }
+            // Do nothing in the other cases
+            notify::EventKind::Access(_) => {}
+            notify::EventKind::Other => {}
+            notify::EventKind::Any => {}
         }
+        Ok(modifications)
     }
 
     /// Returns an iterator over pairs of (id, name) of notes linked from this note.

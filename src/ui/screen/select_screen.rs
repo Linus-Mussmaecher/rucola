@@ -48,8 +48,6 @@ pub struct SelectScreen {
     local_stats: data::EnvironmentStats,
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: data::EnvironmentStats,
-    /// A note id that was sent to edit and needs to be updated the next time this screen gets to an update loop.
-    to_update: Option<String>,
 
     // === CONFIG ===
     /// The config used.
@@ -84,7 +82,6 @@ impl SelectScreen {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             index,
-            to_update: None,
             filter_area: TextArea::default(),
             create_area: TextArea::default(),
             mode: SelectMode::Select,
@@ -271,13 +268,6 @@ impl super::Screen for SelectScreen {
         &mut self,
         key: crossterm::event::KeyEvent,
     ) -> Result<ui::Message, error::RucolaError> {
-        // Check if we need to reload/update a note
-        if let Some(note_to_update) = self.to_update.take() {
-            // Refresh it within the index.
-            self.index.borrow_mut().refresh_note(&note_to_update);
-            // Then refresh stats.
-            self.refresh_env_stats();
-        }
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
@@ -376,8 +366,6 @@ impl super::Screen for SelectScreen {
                             .get(self.selected)
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
-                                // remember to reload this note later
-                                self.to_update = Some(env_stats.id.clone());
                                 // use the id to get the path
                                 self.index.borrow().get(&env_stats.id).map(|note| {
                                     // use the config to create a valid opening command
@@ -402,31 +390,13 @@ impl super::Screen for SelectScreen {
                     KeyCode::Char('m' | 'M') => {
                         self.mode = SelectMode::Move;
                     }
-                    // F: Refresh
-                    KeyCode::Char('f' | 'F') => {
-                        self.mode = SelectMode::Select;
-                        return Ok(ui::Message::Refresh);
-                    }
-                    // H: Create HTMLs
-                    KeyCode::Char('h' | 'H') => {
-                        self.mode = SelectMode::Select;
-                        let index_b = self.index.borrow();
-                        for note in self
-                            .local_stats
-                            .filtered_stats
-                            .iter()
-                            .flat_map(|env_stats| index_b.get(&env_stats.id))
-                        {
-                            data::notefile::create_html(note, &self.config)?;
-                        }
-                    }
                     // Open view mode
                     KeyCode::Char('v' | 'V') => {
                         self.mode = SelectMode::Select;
                         if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
                         {
                             if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                                // Create an html file from the note, then use the config file to create an opening command and execute it.
+                                // Create an html file from the note (it should exist and be up to date, but this makes sure and also actually gets the path where it is at), then use the config file to create an opening command and execute it.
                                 return Ok(ui::Message::OpenExternalCommand(
                                     self.config.create_view_command(
                                         &data::notefile::create_html(note, &self.config)?,
@@ -459,7 +429,6 @@ impl super::Screen for SelectScreen {
                             SelectMode::Create => {
                                 // Create & register the note
                                 data::notefile::create_note_file(
-                                    &mut self.index,
                                     Self::extract_string_and_clear(&mut self.create_area),
                                     &self.config,
                                 )?;
@@ -500,8 +469,6 @@ impl super::Screen for SelectScreen {
                                 //This should NOT happen
                             }
                         }
-                        // refresh all files after this operation TODO
-                        return Ok(ui::Message::Refresh);
                     }
                     // All other key events are passed on to the text area
                     _ => {
@@ -855,8 +822,6 @@ impl super::Screen for SelectScreen {
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
-                        ("F", "Refresh external changes"),
-                        ("H", "Create HTML files from all notes"),
                         ("V", "Open HTML in external viewer"),
                     ]
                 } else {
