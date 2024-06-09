@@ -2,6 +2,17 @@ use std::path;
 
 use crate::{error, ui};
 
+/// Describes when to show a which stats area.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+enum FilterShow {
+    // Always shows both stats
+    Both,
+    // Shows local stats when filtering and nothing otherwise
+    Relevant,
+    // Always shows only local stats
+    Local,
+}
+
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct ConfigFile {
@@ -11,6 +22,8 @@ struct ConfigFile {
     vault_path: Option<path::PathBuf>,
     /// Selected theme
     theme: String,
+    /// When to show the global stats area
+    stats_show: FilterShow,
     /// The editor to use for notes
     editor: Option<String>,
     /// File types to consider notes
@@ -42,6 +55,7 @@ impl Default for ConfigFile {
                 None
             },
             theme: "default_light_theme".to_string(),
+            stats_show: FilterShow::Both,
             editor: None,
             file_types: vec![String::from("markdown")],
             default_extension: String::from("md"),
@@ -320,6 +334,22 @@ impl Config {
             .vault_path
             .clone()
             .unwrap_or(path::PathBuf::from("."))
+    }
+
+    /// Returns the heights of the global and local stats area with this filter string
+    pub fn stats_heights(&self, filter_string: Option<&String>) -> (u16, u16) {
+        let filtered = filter_string.map(|s| !s.is_empty()).unwrap_or(false);
+        match self.config_file.stats_show {
+            FilterShow::Both => (5, 6),
+            FilterShow::Relevant => {
+                if filtered {
+                    (0, 6)
+                } else {
+                    (6, 0)
+                }
+            }
+            FilterShow::Local => (0, 6),
+        }
     }
 }
 
