@@ -71,7 +71,7 @@ impl EnvironmentStats {
             .inner
             .iter()
             .filter_map(|(id, note)| {
-                filter.apply(note).map(|score| {
+                filter.apply(note, &index).map(|score| {
                     (
                         id.clone(),
                         (NoteEnvStatistics::new_empty(id.clone(), score), note),

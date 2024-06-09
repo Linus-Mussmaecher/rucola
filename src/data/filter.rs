@@ -8,6 +8,8 @@ pub struct Filter {
     pub tags: Vec<(String, bool)>,
     /// The links to look for or exclude, already converted to ids.
     pub links: Vec<(String, bool)>,
+    /// The backlinks to look for or exclude, already converted to ids.
+    pub blinks: Vec<(String, bool)>,
     /// The words to search the note title for. Will be fuzzy matched with the note title.
     pub title: String,
 }
@@ -16,6 +18,7 @@ impl Filter {
     pub fn new(filter_string: &str, any: bool) -> Self {
         let mut tags = Vec::new();
         let mut links = Vec::new();
+        let mut blinks = Vec::new();
         let mut title = String::new();
 
         // Go through words
@@ -42,6 +45,20 @@ impl Filter {
                 ));
                 continue;
             }
+            if word.starts_with("!<") {
+                blinks.push((
+                    super::name_to_id(word.trim_start_matches("!<")).to_string(),
+                    false,
+                ));
+                continue;
+            }
+            if word.starts_with('<') {
+                blinks.push((
+                    super::name_to_id(word.trim_start_matches("<")).to_string(),
+                    true,
+                ));
+                continue;
+            }
             // if nothing else fits
             title.push_str(word);
         }
@@ -51,11 +68,12 @@ impl Filter {
             any,
             tags,
             links,
+            blinks,
             title,
         }
     }
 
-    pub fn apply(&self, note: &super::Note) -> Option<i64> {
+    pub fn apply(&self, note: &super::Note, index: &super::NoteIndex) -> Option<i64> {
         // === === TAGS === ===
 
         let mut any = false;
@@ -106,8 +124,25 @@ impl Filter {
             }
         }
 
+        // go through all backlinks
+        for (blink, included) in self.blinks.iter() {
+            // check if the note with the blink-ID links to the main one passed to this function
+            let exists_and_contains = if let Some(other_note) = index.inner.get(blink) {
+                other_note.links.contains(&super::name_to_id(&note.name))
+            } else {
+                false
+            };
+
+            // if the backlink exists and we want that, set any/all as above
+            if exists_and_contains == *included {
+                any = true;
+            } else {
+                all = false;
+            }
+        }
+
         // if there are no tag or link conditions, always go to the next step
-        if !(self.tags.is_empty() && self.links.is_empty())  &&
+        if !(self.tags.is_empty() && self.links.is_empty() && self.blinks.is_empty())  &&
             // else, check if we wanted all conditions or any and compare to the relevant variable
             ((!self.any && !all) || (self.any && !any))
         {
@@ -141,6 +176,7 @@ mod tests {
             any: false,
             tags: vec![("#os".to_string(), true), ("#os/win".to_string(), false)],
             links: vec![],
+            blinks: vec![],
             title: String::new(),
         };
 
@@ -159,9 +195,9 @@ mod tests {
         );
         assert_eq!(filter2.title, "");
 
-        assert!(filter1.apply(linux).is_some());
-        assert!(filter1.apply(osx).is_some());
-        assert!(filter1.apply(win).is_none());
+        assert!(filter1.apply(linux, &index).is_some());
+        assert!(filter1.apply(osx, &index).is_some());
+        assert!(filter1.apply(win, &index).is_none());
 
         let liegroup = index.inner.get("lie-group").unwrap();
         let chart = index.inner.get("chart").unwrap();
@@ -169,10 +205,10 @@ mod tests {
         let smoothmap = index.inner.get("smooth-map").unwrap();
         let topology = index.inner.get("topology").unwrap();
 
-        assert!(filter2.apply(liegroup).is_none());
-        assert!(filter2.apply(chart).is_some());
-        assert!(filter2.apply(manifold).is_none());
-        assert!(filter2.apply(smoothmap).is_none());
-        assert!(filter2.apply(topology).is_none());
+        assert!(filter2.apply(liegroup, &index).is_none());
+        assert!(filter2.apply(chart, &index).is_some());
+        assert!(filter2.apply(manifold, &index).is_none());
+        assert!(filter2.apply(smoothmap, &index).is_none());
+        assert!(filter2.apply(topology, &index).is_none());
     }
 }

@@ -101,11 +101,17 @@ A condition always starts with an identifier and goes to the next whitespace.
    A note tagged as `#math/topology` can be found by both the conditions `#math` and `#math/topology`, but not by `#topology` itself.
  - `!#[tag]` declares a tag exclusion condition:
    Only notes without the given tag `[tag]` will be shown.
+   Nested tags apply as above.
  - `>[note]` declares a link condition:
    Only notes that contain a link to the note `[note]` will be shown.
    For notes whose name contains a whitespace, replace it with `-`.
  - `!>[note]` declares a link exclusion condition:
    Only notes that do not link to the note `[note]` will be shown.
+ - `<[note]` declares a backlink condition:
+   Only notes that are linked to from the note `[note]` will be shown.
+   For notes whose name contains a whitespace, replace it with `-`.
+ - `!<[note]` declares a backlink exclusion condition:
+   Only notes that are not linked to from the note `[note]` will be shown.
 
 Only words not starting with any of these identifiers will be used in the fuzzy match.
 The order of these conditions words and fuzzy-matching words can be freely chosen.
