@@ -60,7 +60,7 @@ If you want to open a directory different from your default vault, you can pass 
 Rucola initially launches into the *select screen*.
 Here you will find an (unordered) list overview of all notes currently indexed by rucola, some statistics and a search bar.
 The indexing finds only files with a select set of file extensions and respects your `.gitignore` file if present.
-The statistics refer to two environments:
+At the top, there are two blocks of statistics, referring to two environments:
  - The *global environment* consists of all notes currently indexed by rucola and can only be changed by restarting the program (or directly changing your files and reloading the screen).
  - The *local environment* consists of all notes currently matching your search query.
 
@@ -88,6 +88,8 @@ Additionally, the following statistics are shown for every note in the filtered 
  - The number of *local inlinks*, i.e. links from other notes within the local environment whose target is that one.
    
 These statistics let you judge how well-connected a note is, and wether it is mostly relevant within the filtered context or in general.
+
+You can configure which statistics block are shown at which time.
 
 #### Filtering
 The filtering works by a default fuzzy matcher.
@@ -173,6 +175,14 @@ Here is a list of all possible configuration settings:
  - `dynamic_filter` is set to `true` by default, but can be set to `false` to cause your select view to only filter upon pressing enter and not while typing.
  - `vault_path` is the path to your default vault that will be used by rucola unless overwritten by a command line positional argument.
  - `theme` is the name of the `.toml`-theme file to configure rucola's visual appearance.
+ - `stats_show` is set to `Both` by default and configures which statistics blocks are shown at which time on the select screen.
+   It can have one of three values:
+   - `Both`: Both global and local stats are always shown.
+   - `Local`: Only local stats are shown always, global stats are shown never.
+     Note that you can still see the same values as global stats when using an empty filter.
+   - `Relevant`: When you have no filter set, the global stats are shown.
+     Otherwise, local stats are shown.
+     This setting therefore avoids showing duplicating stats at all times.
  - `default_extension` is the extension appended to notes created by rucola, `.md` by default.
  - `file_types` lists all types of files to be indexed by rucola when opening a folder.
    Per default, this is set to `["markdown"]`, tracking files with the extions `.md`, `.markdown`, ...

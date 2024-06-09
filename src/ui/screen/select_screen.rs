@@ -562,10 +562,12 @@ impl super::Screen for SelectScreen {
         // Cache styles
         let styles = self.config.get_ui_styles();
 
+        // Get the filter string (neccssary to determine if a filter is active)
+        let (global_size, local_size) = self.config.stats_heights(self.filter_area.lines().last());
         // Vertical layout
         let vertical = Layout::vertical([
-            Constraint::Length(5),
-            Constraint::Length(6),
+            Constraint::Length(global_size),
+            Constraint::Length(local_size),
             Constraint::Length(3),
             Constraint::Min(6),
         ]);
