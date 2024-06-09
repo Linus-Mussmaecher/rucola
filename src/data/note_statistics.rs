@@ -193,6 +193,7 @@ mod tests {
                 ("#diffgeo".to_string(), true),
             ],
             links: vec![],
+            blinks: vec![],
             title: String::new(),
         };
 
@@ -214,6 +215,7 @@ mod tests {
                 ("#diffgeo".to_string(), true),
             ],
             links: vec![],
+            blinks: vec![],
             title: String::new(),
         };
         let env2 = EnvironmentStats::new_with_filter(&index, filter2);
@@ -242,6 +244,7 @@ mod tests {
             any: false,
             tags: vec![],
             links: vec![],
+            blinks: vec![],
             title: "operating".to_string(),
         };
         let env3 = EnvironmentStats::new_with_filter(&index, filter3);
@@ -252,5 +255,41 @@ mod tests {
         assert_eq!(env3.local_global_links, 6);
         assert_eq!(env3.global_local_links, 0);
         assert_eq!(env3.broken_links, 0);
+
+        // === Filter 4 ===
+
+        let filter4 = data::Filter {
+            any: true,
+            tags: vec![],
+            links: vec![],
+            blinks: vec![("atlas".to_string(), true)],
+            title: String::new(),
+        };
+        let env4 = EnvironmentStats::new_with_filter(&index, filter4);
+
+        assert_eq!(env4.note_count_total, 3);
+        assert_eq!(env4.tag_count_total, 2);
+        assert_eq!(env4.local_local_links, 2);
+        assert_eq!(env4.local_global_links, 5);
+        assert_eq!(env4.global_local_links, 8);
+        assert_eq!(env4.broken_links, 1);
+
+        // === Filter 5 ===
+
+        let filter5 = data::Filter {
+            any: true,
+            tags: vec![],
+            links: vec![("smooth-map".to_string(), true)],
+            blinks: vec![("atlas".to_string(), true)],
+            title: String::new(),
+        };
+        let env5 = EnvironmentStats::new_with_filter(&index, filter5);
+
+        assert_eq!(env5.note_count_total, 4);
+        assert_eq!(env5.tag_count_total, 3);
+        assert_eq!(env5.local_local_links, 5);
+        assert_eq!(env5.local_global_links, 8);
+        assert_eq!(env5.global_local_links, 9);
+        assert_eq!(env5.broken_links, 1);
     }
 }
