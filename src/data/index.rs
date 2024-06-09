@@ -31,9 +31,11 @@ impl NoteIndex {
             // Collect into hash map
             .collect::<HashMap<_, _>>();
 
-        // create all htmls
-        for (_id, note) in inner.iter() {
-            let _ = super::notefile::create_html(note, config);
+        if config.continuous_html_active() {
+            // create all htmls
+            for (_id, note) in inner.iter() {
+                let _ = super::notefile::create_html(note, config);
+            }
         }
 
         Self { inner }
@@ -67,7 +69,9 @@ impl NoteIndex {
                         if config.is_tracked(&path) {
                             if let Ok(note) = super::Note::from_path(&path) {
                                 // create html on creation
-                                super::notefile::create_html(&note, config)?;
+                                if config.continuous_html_active() {
+                                    super::notefile::create_html(&note, config)?;
+                                }
                                 // insert the note
                                 self.inner.insert(super::name_to_id(&note.name), note);
                                 modifications = true;
@@ -93,7 +97,9 @@ impl NoteIndex {
                                 if config.is_tracked(&path) {
                                     if let Ok(note) = super::Note::from_path(&path) {
                                         // create html of new location
-                                        super::notefile::create_html(&note, config)?;
+                                        if config.continuous_html_active() {
+                                            super::notefile::create_html(&note, config)?;
+                                        }
                                         // insert the note from the new location
                                         self.inner.insert(super::name_to_id(&note.name), note);
                                         modifications = true;
@@ -111,7 +117,9 @@ impl NoteIndex {
                             if event.paths.contains(&note.path) {
                                 if let Ok(new_note) = Note::from_path(&note.path) {
                                     // re-create html on modifications
-                                    super::notefile::create_html(&new_note, config)?;
+                                    if config.continuous_html_active() {
+                                        super::notefile::create_html(&new_note, config)?;
+                                    }
                                     // replace the index entry
                                     *note = new_note;
                                     modifications = true;

@@ -327,7 +327,7 @@ impl super::Screen for SelectScreen {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Enter => {
                         self.mode = SelectMode::Select;
-                        if key.code == KeyCode::Enter && !self.config.get_dynamic_filter() {
+                        if key.code == KeyCode::Enter && !self.config.continuous_filter_active() {
                             self.filter(self.filter_from_input());
                         }
                     }
@@ -335,7 +335,7 @@ impl super::Screen for SelectScreen {
                     _ => {
                         // Else -> Pass on to the text area
                         self.filter_area.input(key);
-                        if self.config.get_dynamic_filter() {
+                        if self.config.continuous_filter_active() {
                             self.filter(self.filter_from_input());
                         }
                     }

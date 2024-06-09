@@ -16,28 +16,30 @@ enum FilterShow {
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct ConfigFile {
-    /// Wether or not the select view filters while typing or only on enter.
-    dynamic_filter: bool,
     /// Path to the vault to index.
     vault_path: Option<path::PathBuf>,
-    /// Selected theme
-    theme: String,
-    /// When to show the global stats area
-    stats_show: FilterShow,
-    /// The editor to use for notes
-    editor: Option<String>,
     /// File types to consider notes
     /// See the [default list](https://docs.rs/ignore/latest/src/ignore/default_types.rs.html) of the ignore crate for possible options.
     /// The "all" option matches all files.
     file_types: Vec<String>,
     /// Default file ending for newly created notes
     default_extension: String,
-    /// String to prepend to all generated html documents (e.g. for MathJax)
-    html_prepend: Option<String>,
-    /// Path to .css file to style htmls with.
-    css: Option<String>,
+    /// Selected theme
+    theme: String,
+    /// When to show the global stats area
+    stats_show: FilterShow,
+    /// When set to true, the select screen filters while typing instead of only on enter.
+    continuous_filter: bool,
+    /// The editor to use for notes
+    editor: Option<String>,
     /// Viewer to open html files with
     viewer: Option<String>,
+    /// When set to true, HTML files are mass-created on start and continuously kept up to date with file changes instead of being created on-demand.
+    continuous_html: bool,
+    /// Path to .css file to style htmls with.
+    css: Option<String>,
+    /// String to prepend to all generated html documents (e.g. for MathJax)
+    html_prepend: Option<String>,
     /// Wether or not to insert a MathJax preamble in notes containing math code.
     mathjax: bool,
     /// A list of strings to replace in math mode to mimic latex commands
@@ -47,7 +49,8 @@ struct ConfigFile {
 impl Default for ConfigFile {
     fn default() -> Self {
         Self {
-            dynamic_filter: true,
+            continuous_filter: true,
+            continuous_html: true,
             mathjax: true,
             vault_path: if cfg!(test) {
                 Some(path::PathBuf::from("./tests/common/notes/"))
@@ -331,9 +334,13 @@ impl Config {
         res
     }
 
-    /// Returns the dynamic filtering option (wether to constantly refilter the selection list while the user types).
-    pub fn get_dynamic_filter(&self) -> bool {
-        self.config_file.dynamic_filter
+    /// Returns the current value of the continuous filter option.
+    pub fn continuous_filter_active(&self) -> bool {
+        self.config_file.continuous_filter
+    }
+    /// Returns the current value of the continuous filter option.
+    pub fn continuous_html_active(&self) -> bool {
+        self.config_file.continuous_html
     }
 
     /// Returns the default vault path.
