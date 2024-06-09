@@ -180,6 +180,8 @@ mod tests {
             title: String::new(),
         };
 
+        // === Filter 2 ===
+
         let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false);
 
         assert_eq!(
@@ -210,5 +212,36 @@ mod tests {
         assert!(filter2.apply(manifold, &index).is_none());
         assert!(filter2.apply(smoothmap, &index).is_none());
         assert!(filter2.apply(topology, &index).is_none());
+
+        // === Filter 3 ===
+        let filter3 = Filter::new(
+            "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux",
+            false,
+        );
+
+        assert_eq!(
+            filter3.tags,
+            vec![("#topology".to_string(), false), ("#os".to_string(), true)]
+        );
+        assert_eq!(
+            filter3.links,
+            vec![
+                ("topology".to_string(), true),
+                ("smooth-map".to_string(), false)
+            ]
+        );
+        assert_eq!(
+            filter3.blinks,
+            vec![("atlas".to_string(), true), ("linux".to_string(), false)]
+        );
+        assert_eq!(filter3.title, "");
+
+        // === Filter 4 ===
+        let filter4 = Filter::new("<aTlas >Smooth-mAp", true);
+
+        assert_eq!(filter4.tags, vec![]);
+        assert_eq!(filter4.links, vec![("smooth-map".to_string(), true),]);
+        assert_eq!(filter4.blinks, vec![("atlas".to_string(), true)]);
+        assert_eq!(filter4.title, "");
     }
 }
