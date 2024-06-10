@@ -7,7 +7,8 @@ edition = "2021"
 # General TUI
 crossterm = "0.27.0"
 ratatui = {version = "0.26.1", features = ["serde"]}
-tui-textarea = "0.4.0"
+tui-textarea = "^0.4"
+tui-big-text = "^0.4"
 # Command line parsing
 clap = {version = "^4.5", features = ["derive"]}
 expanduser = "^1.2"
