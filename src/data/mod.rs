@@ -11,15 +11,6 @@ mod index;
 pub use index::NoteIndex;
 pub use index::NoteIndexContainer;
 
-pub mod notefile;
-
-/// Converts a file path to the name of the file
-pub fn path_to_name(path: &std::path::Path) -> String {
-    path.file_stem()
-        .map(|os| os.to_string_lossy().to_string())
-        .unwrap_or_default()
-}
-
 /// Turns a file name or link into its id in the following steps:
 ///  - everything after the first # or ., including the # or ., is ignored
 ///  - All characters are turned to lowercase

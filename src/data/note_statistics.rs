@@ -174,11 +174,14 @@ impl EnvironmentStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data;
+    use crate::{data, files};
 
     #[test]
     fn test_env_stats_general() {
-        let index = crate::data::NoteIndex::new(&crate::config::Config::default());
+        let config = files::Config::default();
+        let tracker = files::FileTracker::new(&config);
+        let builder = files::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder);
 
         assert_eq!(index.inner.len(), 11);
 

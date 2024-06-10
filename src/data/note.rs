@@ -41,7 +41,10 @@ impl Note {
 
         Ok(Self {
             // Name: Remove file extension
-            name: super::path_to_name(&path),
+            name: path
+                .file_stem()
+                .map(|os| os.to_string_lossy().to_string())
+                .unwrap_or_default(),
             // Path: Already given - convert to owned version.
             path: path.to_path_buf(),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.

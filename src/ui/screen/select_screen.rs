@@ -1,4 +1,4 @@
-use crate::{config, data, error, ui};
+use crate::{data, error, files, ui};
 use crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
@@ -49,9 +49,13 @@ pub struct SelectScreen {
     /// The currently displayed statistics for all notes matching the current filter.
     global_stats: data::EnvironmentStats,
 
-    // === CONFIG ===
-    /// The config used.
-    config: config::Config,
+    // === Config ===
+    /// The file manager this screen uses to enact the user's file system requests on the file system.
+    manager: files::FileManager,
+    /// The HtmlBuider this screen uses to continuously build html files.
+    builder: files::HtmlBuilder,
+    /// The used styles.
+    styles: ui::UiStyles,
 
     // === UI ===
     /// The text area to type in filters.
@@ -66,30 +70,41 @@ pub struct SelectScreen {
     /// This allows us to convert only the neccessary notes to ListItems and save some time.
     selected: usize,
 
-    // === Sortin options ===
+    // === Sorting options ===
     /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
     any_conditions: bool,
     /// Ui mode for the chosen sorting variant
     sorting: SortingMode,
-    /// Sort ascedingly
+    /// Sort ascedingly.
     sorting_asc: bool,
+    /// How to display the two stats blocks.
+    stats_show: files::StatsShow,
 }
 
 impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
-    pub fn new(index: data::NoteIndexContainer, config: &config::Config) -> Self {
+    pub fn new(
+        index: data::NoteIndexContainer,
+        manager: files::FileManager,
+        builder: files::HtmlBuilder,
+        styles: ui::UiStyles,
+        stats_show: files::StatsShow,
+    ) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             index,
+            styles,
+            builder,
+            manager,
             filter_area: TextArea::default(),
             create_area: TextArea::default(),
             mode: SelectMode::Select,
-            config: config.clone(),
             any_conditions: false,
             sorting: SortingMode::Name,
             sorting_asc: true,
             selected: 0,
+            stats_show,
         };
 
         res.sort();
@@ -101,39 +116,38 @@ impl SelectScreen {
 
     /// Styling of TextArea extracted from constructor to keep it clean.
     fn style_text_area(&mut self) {
-        let styles = self.config.get_ui_styles();
-
         // === Filter ===
 
         // The actual title
         let title_top = block::Title::from(Line::from(vec![
-            Span::styled("F", styles.hotkey_style),
-            Span::styled("ilter", styles.title_style),
+            Span::styled("F", self.styles.hotkey_style),
+            Span::styled("ilter", self.styles.title_style),
         ]));
 
         // The hotkey instructions at the bottom.
         let instructions = block::Title::from(Line::from(vec![
-            Span::styled("C", styles.hotkey_style),
-            Span::styled("lear filter", styles.text_style),
+            Span::styled("C", self.styles.hotkey_style),
+            Span::styled("lear filter", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
 
         let instructions_bot = block::Title::from(Line::from(vec![
-            Span::styled("A", styles.hotkey_style),
+            Span::styled("A", self.styles.hotkey_style),
             Span::styled(
                 if self.any_conditions { "ny" } else { "ll" },
-                styles.text_style,
+                self.styles.text_style,
             ),
-            Span::styled(" Conditions", styles.text_style),
+            Span::styled(" Conditions", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
-        // Apply default styles to the filter area
+        // Apply default self.styles to the filter area
 
-        self.filter_area.set_style(styles.input_style);
-        self.filter_area.set_cursor_line_style(styles.input_style);
+        self.filter_area.set_style(self.styles.input_style);
+        self.filter_area
+            .set_cursor_line_style(self.styles.input_style);
 
         self.filter_area.set_block(
             Block::bordered()
@@ -146,16 +160,33 @@ impl SelectScreen {
         // The title
         let title_top = block::Title::from(Line::from(vec![Span::styled(
             "Enter note name...",
-            styles.title_style,
+            self.styles.title_style,
         )]));
 
-        // Apply default styles to the create area
+        // Apply default self.styles to the create area
 
-        self.create_area.set_style(styles.input_style);
-        self.create_area.set_cursor_line_style(styles.input_style);
+        self.create_area.set_style(self.styles.input_style);
+        self.create_area
+            .set_cursor_line_style(self.styles.input_style);
 
         self.create_area
             .set_block(Block::bordered().title(title_top));
+    }
+
+    /// Returns the heights of the global and local stats area with this filter string
+    pub fn stats_heights(&self, filter_string: Option<&String>) -> (u16, u16) {
+        let filtered = filter_string.map(|s| !s.is_empty()).unwrap_or(false);
+        match self.stats_show {
+            files::StatsShow::Both => (5, 6),
+            files::StatsShow::Relevant => {
+                if filtered {
+                    (0, 6)
+                } else {
+                    (6, 0)
+                }
+            }
+            files::StatsShow::Local => (0, 6),
+        }
     }
 
     /// Creates a filter from the current content of the filter area.
@@ -327,17 +358,13 @@ impl super::Screen for SelectScreen {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Enter => {
                         self.mode = SelectMode::Select;
-                        if key.code == KeyCode::Enter && !self.config.continuous_filter_active() {
-                            self.filter(self.filter_from_input());
-                        }
+                        self.filter(self.filter_from_input());
                     }
                     // All other key events are passed on to the text area, then the filter is immediately applied
                     _ => {
                         // Else -> Pass on to the text area
                         self.filter_area.input(key);
-                        if self.config.continuous_filter_active() {
-                            self.filter(self.filter_from_input());
-                        }
+                        self.filter(self.filter_from_input());
                     }
                 };
             }
@@ -350,7 +377,8 @@ impl super::Screen for SelectScreen {
                         if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
                         {
                             // delete it from index & filesystem
-                            data::notefile::delete_note_file(&mut self.index, &env_stats.id)?;
+                            self.manager
+                                .delete_note_file(&mut self.index, &env_stats.id)?;
                             // if successfull, refresh the ui
                             self.refresh_env_stats();
                         }
@@ -374,7 +402,7 @@ impl super::Screen for SelectScreen {
                             })
                         {
                             return Ok(ui::Message::OpenExternalCommand(
-                                self.config.create_edit_command(&res)?,
+                                self.manager.create_edit_command(&res)?,
                             ));
                         }
                     }
@@ -396,11 +424,9 @@ impl super::Screen for SelectScreen {
                         if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
                         {
                             if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                                // Create an html file from the note (it should exist and be up to date, but this makes sure and also actually gets the path where it is at), then use the config file to create an opening command and execute it.
+                                self.builder.create_html(note, true)?;
                                 return Ok(ui::Message::OpenExternalCommand(
-                                    self.config.create_view_command(
-                                        &data::notefile::create_html(note, &self.config)?,
-                                    )?,
+                                    self.builder.create_view_command(note)?,
                                 ));
                             }
                         }
@@ -428,10 +454,10 @@ impl super::Screen for SelectScreen {
                         match mode {
                             SelectMode::Create => {
                                 // Create & register the note
-                                data::notefile::create_note_file(
-                                    Self::extract_string_and_clear(&mut self.create_area),
-                                    &self.config,
-                                )?;
+                                self.manager
+                                    .create_note_file(Self::extract_string_and_clear(
+                                        &mut self.create_area,
+                                    ))?;
                                 // if successfull, refresh the ui
                                 self.refresh_env_stats();
                             }
@@ -440,11 +466,10 @@ impl super::Screen for SelectScreen {
                                 if let Some(env_stats) =
                                     self.local_stats.filtered_stats.get(self.selected)
                                 {
-                                    data::notefile::rename_note_file(
+                                    self.manager.rename_note_file(
                                         &mut self.index,
                                         &env_stats.id,
                                         Self::extract_string_and_clear(&mut self.create_area),
-                                        &self.config,
                                     )?;
                                     // if successfull, refresh the ui
                                     self.refresh_env_stats();
@@ -455,11 +480,10 @@ impl super::Screen for SelectScreen {
                                 if let Some(env_stats) =
                                     self.local_stats.filtered_stats.get(self.selected)
                                 {
-                                    data::notefile::move_note_file(
+                                    self.manager.move_note_file(
                                         &mut self.index,
                                         &env_stats.id,
                                         Self::extract_string_and_clear(&mut self.create_area),
-                                        &self.config,
                                     )?;
                                     // if successfull, refresh the ui
                                     self.refresh_env_stats();
@@ -526,11 +550,8 @@ impl super::Screen for SelectScreen {
     }
 
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer) {
-        // Cache styles
-        let styles = self.config.get_ui_styles();
-
         // Get the filter string (neccssary to determine if a filter is active)
-        let (global_size, local_size) = self.config.stats_heights(self.filter_area.lines().last());
+        let (global_size, local_size) = self.stats_heights(self.filter_area.lines().last());
         // Vertical layout
         let vertical = Layout::vertical([
             Constraint::Length(global_size),
@@ -577,7 +598,7 @@ impl super::Screen for SelectScreen {
         // Finalize global table from the row data and the widths
         let global_stats = Table::new(global_stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Global Statistics".set_style(styles.title_style)));
+            .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
 
         //  === Local stats ===
 
@@ -650,7 +671,7 @@ impl super::Screen for SelectScreen {
         // Finalize local table
         let local_stats = Table::new(local_stats_rows, stats_widths)
             .column_spacing(1)
-            .block(Block::bordered().title("Local Statistics".set_style(styles.title_style)));
+            .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
         // === Filter area ===
 
@@ -719,39 +740,39 @@ impl super::Screen for SelectScreen {
 
         // Instructions at the bottom of the page
         let instructions_bot_left = block::Title::from(Line::from(vec![
-            Span::styled("J", styles.hotkey_style),
-            Span::styled("/", styles.text_style),
-            Span::styled("", styles.hotkey_style),
-            Span::styled(": Down──", styles.text_style),
-            Span::styled("K", styles.hotkey_style),
-            Span::styled("/", styles.text_style),
-            Span::styled("", styles.hotkey_style),
-            Span::styled(": Up──", styles.text_style),
-            Span::styled("L", styles.hotkey_style),
-            Span::styled("/", styles.text_style),
-            Span::styled("", styles.hotkey_style),
-            Span::styled("/", styles.text_style),
-            Span::styled("󰌑", styles.hotkey_style),
-            Span::styled(": Open──", styles.text_style),
+            Span::styled("J", self.styles.hotkey_style),
+            Span::styled("/", self.styles.text_style),
+            Span::styled("", self.styles.hotkey_style),
+            Span::styled(": Down──", self.styles.text_style),
+            Span::styled("K", self.styles.hotkey_style),
+            Span::styled("/", self.styles.text_style),
+            Span::styled("", self.styles.hotkey_style),
+            Span::styled(": Up──", self.styles.text_style),
+            Span::styled("L", self.styles.hotkey_style),
+            Span::styled("/", self.styles.text_style),
+            Span::styled("", self.styles.hotkey_style),
+            Span::styled("/", self.styles.text_style),
+            Span::styled("󰌑", self.styles.hotkey_style),
+            Span::styled(": Open──", self.styles.text_style),
         ]))
         .alignment(Alignment::Left)
         .position(block::Position::Bottom);
 
         let instructions_bot_right = block::Title::from(Line::from(vec![
-            Span::styled("M", styles.hotkey_style),
-            Span::styled("anage Files──", styles.text_style),
-            Span::styled("S", styles.hotkey_style),
-            Span::styled("orting──", styles.text_style),
-            Span::styled("Q", styles.hotkey_style),
-            Span::styled("uit", styles.text_style),
+            Span::styled("M", self.styles.hotkey_style),
+            Span::styled("anage Files──", self.styles.text_style),
+            Span::styled("S", self.styles.hotkey_style),
+            Span::styled("orting──", self.styles.text_style),
+            Span::styled("Q", self.styles.hotkey_style),
+            Span::styled("uit", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
         let table_heading_key_style = if self.mode == SelectMode::SubmenuSorting {
-            styles.hotkey_style
+            self.styles.hotkey_style
         } else {
-            styles.subtitle_style
+            self.styles.subtitle_style
         };
 
         // Finally generate the table from the generated row and width data
@@ -760,45 +781,45 @@ impl super::Screen for SelectScreen {
             // Add Headers
             .header(Row::new(vec![
                 Line::from(vec![
-                    Span::styled("N", styles.subtitle_style),
+                    Span::styled("N", self.styles.subtitle_style),
                     Span::styled("a", table_heading_key_style),
-                    Span::styled("me", styles.subtitle_style),
+                    Span::styled("me", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("  ", styles.subtitle_style),
+                    Span::styled("  ", self.styles.subtitle_style),
                     Span::styled("W", table_heading_key_style),
-                    Span::styled("ords", styles.subtitle_style),
+                    Span::styled("ords", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("  ", styles.subtitle_style),
+                    Span::styled("  ", self.styles.subtitle_style),
                     Span::styled("C", table_heading_key_style),
-                    Span::styled("hars", styles.subtitle_style),
+                    Span::styled("hars", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("Global", styles.subtitle_style),
+                    Span::styled("Global", self.styles.subtitle_style),
                     Span::styled("O", table_heading_key_style),
-                    Span::styled("ut", styles.subtitle_style),
+                    Span::styled("ut", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("LocalO", styles.subtitle_style),
+                    Span::styled("LocalO", self.styles.subtitle_style),
                     Span::styled("u", table_heading_key_style),
-                    Span::styled("t", styles.subtitle_style),
+                    Span::styled("t", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("Global", styles.subtitle_style),
+                    Span::styled("Global", self.styles.subtitle_style),
                     Span::styled("I", table_heading_key_style),
-                    Span::styled("n", styles.subtitle_style),
+                    Span::styled("n", self.styles.subtitle_style),
                 ]),
                 Line::from(vec![
-                    Span::styled("LocalI", styles.subtitle_style),
+                    Span::styled("LocalI", self.styles.subtitle_style),
                     Span::styled("n", table_heading_key_style),
                 ]),
             ]))
-            .highlight_style(styles.selected_style)
+            .highlight_style(self.styles.selected_style)
             // Add Instructions and a title
             .block(
                 Block::bordered()
-                    .title("Notes".set_style(styles.title_style))
+                    .title("Notes".set_style(self.styles.title_style))
                     .title(instructions_bot_left)
                     .title(instructions_bot_right),
             );
@@ -863,8 +884,8 @@ impl super::Screen for SelectScreen {
                     .into_iter()
                     .map(|(key, description)| {
                         Row::new(vec![
-                            Span::styled(key, styles.hotkey_style),
-                            Span::styled(description, styles.text_style),
+                            Span::styled(key, self.styles.hotkey_style),
+                            Span::styled(description, self.styles.text_style),
                         ])
                     })
                     .collect::<Vec<_>>();

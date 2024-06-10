@@ -10,12 +10,12 @@ use std::panic;
 
 /// The actual application, combining the ui and data management.
 mod app;
-/// Config file specification and parsing.
-mod config;
 /// Data manipulation: Reading, parsing and manipulating note files and calculating statistics.
 mod data;
 /// Error enum and handling.
 mod error;
+/// Interaction with the file system & configuration.
+mod files;
 /// The ui of the app.
 mod ui;
 use clap::Parser;
@@ -61,17 +61,8 @@ fn main() -> Result<(), error::RucolaError> {
     // Displayed error
     let mut current_error: Option<error::RucolaError> = None;
 
-    // Read config file. Loading includes listening to command line.
-    let config = match config::Config::load(args) {
-        Ok(conf) => conf,
-        Err(e) => {
-            current_error = Some(e);
-            config::Config::default()
-        }
-    };
-
     // Create the app state
-    let mut app = app::App::new(config.clone());
+    let mut app = app::App::new(args);
 
     // Main loop
     'main: loop {
