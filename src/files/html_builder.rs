@@ -114,9 +114,18 @@ impl HtmlBuilder {
 
         let tar_path = self.id_to_path(&data::name_to_id(&note.name));
 
-        fs::create_dir_all(&tar_path)?;
-
-        let mut tar_file = std::fs::File::create(tar_path.clone())?;
+        let mut tar_file = match fs::File::create(&tar_path) {
+            // file could be created -> all good
+            Ok(file) => file,
+            Err(_) => {
+                // something went wrong -> try to create the file path
+                if let Some(parent) = tar_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                // try again, this time returning error if it doesn't work
+                fs::File::create(&tar_path)?
+            }
+        };
 
         writeln!(tar_file, "<title>{}</title>", note.name)?;
         self.add_preamble(&mut tar_file, contains_math)?;

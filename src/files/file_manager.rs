@@ -44,7 +44,6 @@ impl FileManager {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
-            .inner
             .get(id)
             .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
 
@@ -94,7 +93,6 @@ impl FileManager {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
-            .inner
             .get(id)
             .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
 
@@ -151,7 +149,6 @@ impl FileManager {
 
         // Extract old note from the index.
         let note = index
-            .inner
             .get(old_id)
             .ok_or_else(|| error::RucolaError::NoteNoteFound(old_id.to_owned()))?;
 
@@ -174,7 +171,7 @@ impl FileManager {
             // search for references to the old id.
             .blinks_vec(old_id)
             .iter()
-            .filter_map(|(id, _)| index.inner.get(id))
+            .filter_map(|(id, _)| index.get(id))
         {
             // open the file once to read its old content
             let old_content = std::fs::read_to_string(&other_note.path)?;
@@ -203,11 +200,11 @@ impl FileManager {
         index: &mut data::NoteIndexContainer,
         id: &str,
     ) -> Result<(), error::RucolaError> {
-        let table = &mut index.borrow_mut().inner;
         // Follow its path and delete it
         fs::remove_file(path::Path::new(
             // get the note
-            &table
+            &index
+                .borrow_mut()
                 .get(id)
                 .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?
                 .path,

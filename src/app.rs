@@ -27,33 +27,36 @@ impl App {
     ///  - Loading a config file
     ///  - Indexing notes from the given path
     ///  - Creating an initial select screen and empty display stack
-    pub fn new(args: crate::Arguments) -> Self {
+    /// Also returns all errors that happened during creation that did not prevent the creation.
+    pub fn new(args: crate::Arguments) -> (Self, Vec<error::RucolaError>) {
         // Create all configs
         let (styles, builder, manager, tracker, stats_show) =
             files::load_configurations(args).unwrap();
 
         // Index all files in path
-        let index = std::rc::Rc::new(std::cell::RefCell::new(data::NoteIndex::new(
-            tracker,
-            builder.clone(),
-        )));
+        let (index, errors) = data::NoteIndex::new(tracker, builder.clone());
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // Initialize app state
-        Self {
-            select: ui::screen::SelectScreen::new(
-                index.clone(),
-                manager.clone(),
-                builder.clone(),
-                styles.clone(),
-                stats_show,
-            ),
-            display: None,
-            display_stack: Vec::new(),
-            index,
-            styles,
-            manager,
-            builder,
-        }
+        (
+            Self {
+                select: ui::screen::SelectScreen::new(
+                    index.clone(),
+                    manager.clone(),
+                    builder.clone(),
+                    styles.clone(),
+                    stats_show,
+                ),
+                display: None,
+                display_stack: Vec::new(),
+                index,
+                styles,
+                manager,
+                builder,
+            },
+            errors,
+        )
     }
 
     /// Reads the top of the display stack, creates a new display screen from it and sets that as the currently active display screen.
