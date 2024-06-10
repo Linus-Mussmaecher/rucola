@@ -68,16 +68,27 @@ impl App {
         key: Option<crossterm::event::KeyEvent>,
     ) -> Result<ui::TerminalMessage, error::RucolaError> {
         // Check for file changes
-        let mut event_present = false;
+        let mut modifications = false;
         let mut index = self.index.borrow_mut();
         for event in self.file_change_channel.try_iter().flatten() {
-            event_present |= index.handle_file_event(event, &self.config)?;
+            modifications |= index.handle_file_event(event, &self.config)?;
         }
         drop(index);
 
         // if anything happened in the file system, better refresh the environment
-        if event_present {
+        if modifications {
             self.select.refresh_env_stats();
+            // if we are currently in a display screen, also refresh it (by creating it anew)
+            if self.display.is_some() {
+                self.display = match self.display_stack.last() {
+                    Some(id) => Some(ui::screen::DisplayScreen::new(
+                        id,
+                        self.index.clone(),
+                        &self.config,
+                    )?),
+                    None => None,
+                };
+            }
         }
 
         if key.is_none() {

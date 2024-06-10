@@ -107,7 +107,7 @@ fn main() -> Result<(), error::RucolaError> {
             app.draw(app_area, buf);
         })?;
 
-        // Inform the current screen of events
+        // Inform the app of events
         let maybe_keypress = if event::poll(std::time::Duration::from_millis(500))? {
             // Some event => reset current error
             current_error = None;
@@ -120,6 +120,7 @@ fn main() -> Result<(), error::RucolaError> {
             None
         };
 
+        // update the app and deal with messages
         match app.update(maybe_keypress) {
             Ok(ui::TerminalMessage::Quit) => {
                 break 'main;

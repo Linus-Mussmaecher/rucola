@@ -727,11 +727,11 @@ impl super::Screen for SelectScreen {
             Span::styled("/", styles.text_style),
             Span::styled("", styles.hotkey_style),
             Span::styled(": Up──", styles.text_style),
-            Span::styled("Enter", styles.hotkey_style),
-            Span::styled("/", styles.text_style),
             Span::styled("L", styles.hotkey_style),
             Span::styled("/", styles.text_style),
             Span::styled("", styles.hotkey_style),
+            Span::styled("/", styles.text_style),
+            Span::styled("󰌑", styles.hotkey_style),
             Span::styled(": Open──", styles.text_style),
         ]))
         .alignment(Alignment::Left)

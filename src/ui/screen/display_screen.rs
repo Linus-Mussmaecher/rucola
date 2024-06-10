@@ -78,7 +78,7 @@ impl super::Screen for DisplayScreen {
         let styles = self.config.get_ui_styles();
         // Generate vertical layout
         let vertical = Layout::vertical([
-            Constraint::Length(3),
+            Constraint::Length(1),
             Constraint::Length(4),
             Constraint::Fill(1),
             Constraint::Fill(1),
@@ -315,16 +315,18 @@ impl DisplayScreen {
                     Span::styled("/", styles.text_style),
                     Span::styled("", styles.hotkey_style),
                     Span::styled(": Up──", styles.text_style),
-                    Span::styled("Enter", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
                     Span::styled("L", styles.hotkey_style),
                     Span::styled("/", styles.text_style),
                     Span::styled("", styles.hotkey_style),
+                    Span::styled("/", styles.text_style),
+                    Span::styled("󰌑", styles.hotkey_style),
                     Span::styled(": Open──", styles.text_style),
                     Span::styled("H", styles.hotkey_style),
                     Span::styled("/", styles.text_style),
                     Span::styled("", styles.hotkey_style),
-                    Span::styled(": Back", styles.text_style),
+                    Span::styled(": Back──", styles.text_style),
+                    Span::styled("F", styles.hotkey_style),
+                    Span::styled(": Home", styles.text_style),
                 ]))
                 .alignment(Alignment::Left)
                 .position(block::Position::Bottom),
