@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, collections::HashMap};
 
-use crate::{config, error};
+use crate::{error, files};
 
 use super::Note;
 
@@ -9,7 +9,13 @@ pub type NoteIndexContainer = std::rc::Rc<std::cell::RefCell<NoteIndex>>;
 /// Contains an indexed and hashed list of notes
 pub struct NoteIndex {
     /// The wrapped HashMap, available only in the data module.
-    pub(super) inner: HashMap<String, Note>,
+    /// TODO: This should not be pub
+    pub inner: HashMap<String, Note>,
+
+    /// The file tracker that sends file events and watches the structure of the vault of this index.
+    tracker: files::FileTracker,
+    /// The HtmlBuilder this index uses to create its HTML files.
+    builder: files::HtmlBuilder,
 }
 
 impl NoteIndex {
@@ -19,9 +25,9 @@ impl NoteIndex {
     ///  - The value will be an instance of Note containing metadata of the file.
     ///
     /// All files that lead to IO errors when loading are ignored.
-    pub fn new(config: &config::Config) -> Self {
+    pub fn new(tracker: files::FileTracker, builder: files::HtmlBuilder) -> Self {
         // collect all the notes from the vault folder
-        let inner = config
+        let inner = tracker
             .get_walker() // Check only OKs
             .flatten()
             // Convert tiles to notes and skip errors
@@ -31,14 +37,15 @@ impl NoteIndex {
             // Collect into hash map
             .collect::<HashMap<_, _>>();
 
-        if config.continuous_html_active() {
-            // create all htmls
-            for (_id, note) in inner.iter() {
-                let _ = super::notefile::create_html(note, config);
-            }
+        // create all htmls
+        for (_id, note) in inner.iter() {
+            let _todo = builder.create_html(note, false);
         }
-
-        Self { inner }
+        Self {
+            inner,
+            tracker,
+            builder,
+        }
     }
 
     /// Wrapper of the HashMap::get() Function
@@ -46,103 +53,96 @@ impl NoteIndex {
         self.inner.get(key)
     }
 
-    /// Handles a file event on notes.
+    /// Handle all file events on notes, as found by the contained tracker.
     ///  - Renames and moves are tracked
     ///  - new file creations with in the vault folder are checked for notes and added if appropriate
     ///  - removed files are removed from the index (if they were present)
     ///  - Modifications of files are checked for being notes and if so, the respective index entries are updated with the new data.
     /// Returns wether the index has changed.
-    pub fn handle_file_event(
-        &mut self,
-        event: notify::Event,
-        config: &config::Config,
-    ) -> Result<bool, error::RucolaError> {
+    pub fn handle_file_events(&mut self) -> Result<bool, error::RucolaError> {
         let mut modifications = false;
-        match event.kind {
-            notify::EventKind::Create(kind) => {
-                // Creations:
-                // - Check if a file was created (we don't care about folders)
-                // - Check for each path if we are interested in it (gitignore + extensions from config)
-                // - Try to load the note and index it
-                if kind == notify::event::CreateKind::File {
-                    for path in event.paths {
-                        if config.is_tracked(&path) {
-                            if let Ok(note) = super::Note::from_path(&path) {
-                                // create html on creation
-                                if config.continuous_html_active() {
-                                    super::notefile::create_html(&note, config)?;
-                                }
-                                // insert the note
-                                self.inner.insert(super::name_to_id(&note.name), note);
-                                modifications = true;
-                            }
-                        }
-                    }
-                }
-            }
-            notify::EventKind::Modify(kind) => {
-                // Modifications
-                // - For renames, remove all notes at a path coinciding with a rename source, then insert all notes from a rename target.
-                // - For (meta)data modifications, reload the entire note
-                match kind {
-                    // Renames and moves
-                    notify::event::ModifyKind::Name(mode) => match mode {
-                        notify::event::RenameMode::From => {
-                            self.inner
-                                .retain(|_, note| !event.paths.contains(&note.path));
-                            modifications = true;
-                        }
-                        notify::event::RenameMode::To => {
-                            for path in event.paths {
-                                if config.is_tracked(&path) {
-                                    if let Ok(note) = super::Note::from_path(&path) {
-                                        // create html of new location
-                                        if config.continuous_html_active() {
-                                            super::notefile::create_html(&note, config)?;
-                                        }
-                                        // insert the note from the new location
-                                        self.inner.insert(super::name_to_id(&note.name), note);
-                                        modifications = true;
-                                    }
-                                }
-                            }
-                        }
-                        notify::event::RenameMode::Both => {}
-                        notify::event::RenameMode::Any => {}
-                        notify::event::RenameMode::Other => {}
-                    },
-                    // General edits
-                    notify::event::ModifyKind::Data(_) | notify::event::ModifyKind::Metadata(_) => {
-                        for (_id, note) in self.inner.borrow_mut().iter_mut() {
-                            if event.paths.contains(&note.path) {
-                                if let Ok(new_note) = Note::from_path(&note.path) {
-                                    // re-create html on modifications
-                                    if config.continuous_html_active() {
-                                        super::notefile::create_html(&new_note, config)?;
-                                    }
-                                    // replace the index entry
-                                    *note = new_note;
+        for event in self.tracker.try_events_iter().flatten() {
+            match event.kind {
+                notify::EventKind::Create(kind) => {
+                    // Creations:
+                    // - Check if a file was created (we don't care about folders)
+                    // - Check for each path if we are interested in it (gitignore + extensions from config)
+                    // - Try to load the note and index it
+                    if kind == notify::event::CreateKind::File {
+                        for path in event.paths {
+                            if self.tracker.is_tracked(&path) {
+                                if let Ok(note) = super::Note::from_path(&path) {
+                                    // create html on creation
+                                    self.builder.create_html(&note, false)?;
+                                    // insert the note
+                                    self.inner.insert(super::name_to_id(&note.name), note);
                                     modifications = true;
                                 }
                             }
                         }
                     }
-                    notify::event::ModifyKind::Any => {}
-                    notify::event::ModifyKind::Other => {}
                 }
-            }
-            // Remove events: Keep only those notes whose path was not removed
-            notify::EventKind::Remove(kind) => {
-                if kind == notify::event::RemoveKind::File {
-                    self.inner
-                        .retain(|_, note| !event.paths.contains(&note.path));
-                    modifications = true;
+                notify::EventKind::Modify(kind) => {
+                    // Modifications
+                    // - For renames, remove all notes at a path coinciding with a rename source, then insert all notes from a rename target.
+                    // - For (meta)data modifications, reload the entire note
+                    match kind {
+                        // Renames and moves
+                        notify::event::ModifyKind::Name(mode) => match mode {
+                            notify::event::RenameMode::From => {
+                                self.inner
+                                    .retain(|_, note| !event.paths.contains(&note.path));
+                                modifications = true;
+                            }
+                            notify::event::RenameMode::To => {
+                                for path in event.paths {
+                                    if self.tracker.is_tracked(&path) {
+                                        if let Ok(note) = super::Note::from_path(&path) {
+                                            // create html on creation
+                                            self.builder.create_html(&note, false)?;
+                                            // insert the note from the new location
+                                            self.inner.insert(super::name_to_id(&note.name), note);
+                                            modifications = true;
+                                        }
+                                    }
+                                }
+                            }
+                            notify::event::RenameMode::Both => {}
+                            notify::event::RenameMode::Any => {}
+                            notify::event::RenameMode::Other => {}
+                        },
+                        // General edits
+                        notify::event::ModifyKind::Data(_)
+                        | notify::event::ModifyKind::Metadata(_) => {
+                            for (_id, note) in self.inner.borrow_mut().iter_mut() {
+                                if event.paths.contains(&note.path) {
+                                    if let Ok(new_note) = Note::from_path(&note.path) {
+                                        // create html on creation
+                                        self.builder.create_html(&note, false)?;
+                                        // replace the index entry
+                                        *note = new_note;
+                                        modifications = true;
+                                    }
+                                }
+                            }
+                        }
+                        notify::event::ModifyKind::Any => {}
+                        notify::event::ModifyKind::Other => {}
+                    }
                 }
+                // Remove events: Keep only those notes whose path was not removed
+                notify::EventKind::Remove(kind) => {
+                    if kind == notify::event::RemoveKind::File {
+                        self.inner
+                            .retain(|_, note| !event.paths.contains(&note.path));
+                        modifications = true;
+                    }
+                }
+                // Do nothing in the other cases
+                notify::EventKind::Access(_) => {}
+                notify::EventKind::Other => {}
+                notify::EventKind::Any => {}
             }
-            // Do nothing in the other cases
-            notify::EventKind::Access(_) => {}
-            notify::EventKind::Other => {}
-            notify::EventKind::Any => {}
         }
         Ok(modifications)
     }
@@ -180,10 +180,14 @@ impl NoteIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::files;
 
     #[test]
     fn test_indexing() {
-        let index = NoteIndex::new(&config::Config::default());
+        let config = files::Config::default();
+        let tracker = files::FileTracker::new(&config);
+        let builder = files::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder);
 
         assert_eq!(index.inner.len(), 11);
 
@@ -204,7 +208,10 @@ mod tests {
 
     #[test]
     fn test_links_blinks() {
-        let index = NoteIndex::new(&config::Config::default());
+        let config = files::Config::default();
+        let tracker = files::FileTracker::new(&config);
+        let builder = files::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder);
 
         assert_eq!(index.inner.len(), 11);
 

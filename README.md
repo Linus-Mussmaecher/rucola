@@ -196,13 +196,13 @@ Here is a list of all possible configuration settings:
    - `Relevant`: When you have no filter set, the global stats are shown.
      Otherwise, local stats are shown.
      This setting therefore avoids showing duplicating stats at all times.
- - `continous_filter` is set to `true` by default, but can be set to `false` to cause your select view to only filter upon pressing enter and not while typing.
  - `editor` configures the command to edit your notes.
    This can be a terminal application or an external application.
  - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
 The following configuration options manage the HTML files created by rucola:
- - `continuous_html` is set to `true` by default, causing all your notes to be converted to HTML files on program start and for those HTMLs to be continuously kept up-to-date in case of file changes.
-   Set to `false` to create HTMLs only on demand, which may cause links in them to be un-followable.
+ - `enable_html` is set to `true` by default, causing all your notes to be converted to HTML files on program start and for those HTMLs to be continuously kept up-to-date in case of file changes.
+   Set to `false` to never create HTMLs in the background.
+   HTMLs can still be created by choosing the view option on a single file, in which case this file - and only this file, in particular none of the files linked from it - will be converted.
  - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble to HTML files. While set to `true`, the preamble is only appended if math blocks (delimited by `$...$` and `$$...$$` are detected).
  - `math_replacments` is a vector of pairs of strings.
    In math mode, every appearance of the first string will be replaced by the second one.

@@ -1,0 +1,245 @@
+use std::{fs, io::Write, path};
+
+use crate::{data, error};
+
+/// Struct that keeps configuration details for the creation of HTML files from markdown files.
+#[derive(Debug, Clone)]
+pub struct HtmlBuilder {
+    /// Path to the vault to index.
+    vault_path: path::PathBuf,
+    /// When set to true, HTML files are mass-created on start and continuously kept up to date with file changes instead of being created on-demand.
+    enable_html: bool,
+    /// The resolved path to the css file, if there is one
+    css_path: Option<path::PathBuf>,
+    /// String to prepend to all generated html documents (e.g. for MathJax)
+    html_prepend: Option<String>,
+    /// Wether or not to insert a MathJax preamble in notes containing math code.
+    mathjax: bool,
+    /// A list of strings to replace in math mode to mimic latex commands
+    math_replacements: Vec<(String, String)>,
+    /// Viewer to open html files with
+    viewer: Option<String>,
+}
+
+impl HtmlBuilder {
+    pub fn new(config: &super::config::Config) -> Self {
+        // Resolve css path
+        let mut css_path = None;
+
+        if let Some(css) = &config.css {
+            if let Ok(mut css) = confy::get_configuration_file_path(
+                "rucola",
+                // remove css at the end, so no matter if the user included it or not, we always have the same format. If we left the css, confy would append .toml and we would end up with .css.css
+                css.as_str().trim_end_matches(".css"),
+            ) {
+                // confy will append .toml (as this is the expected extension for config files)
+                // so replace that with .css in any case.
+                css.set_extension("css");
+                css_path = Some(css);
+            }
+        }
+
+        Self {
+            vault_path: config.vault_path.clone().unwrap_or_else(|| {
+                std::env::current_dir().expect("To get current working directory.")
+            }),
+            enable_html: config.enable_html,
+            css_path,
+            html_prepend: config.html_prepend.clone(),
+            mathjax: config.mathjax,
+            math_replacements: config.math_replacements.clone(),
+            viewer: config.viewer.clone(),
+        }
+    }
+
+    /// For a given note id, returns the path its HTML representation _would_ be stored at.
+    /// Makes no guarantees if that representation currently exists.
+    pub fn id_to_path(&self, id: &str) -> path::PathBuf {
+        // calculate target path
+        let mut tar_path = self.vault_path.clone();
+        tar_path.push(".html/");
+
+        tar_path.set_file_name(format!(".html/{}", id));
+        tar_path.set_extension("html");
+        tar_path
+    }
+
+    pub fn create_html(&self, note: &data::Note, force: bool) -> Result<(), error::RucolaError> {
+        if !self.enable_html && !force {
+            return Ok(());
+        }
+
+        // Read content of markdown(plaintext) file
+        let content = fs::read_to_string(&note.path)?;
+
+        // Parse markdown into AST
+        let arena = comrak::Arena::new();
+        let root = comrak::parse_document(
+            &arena,
+            &content,
+            &comrak::Options {
+                extension: comrak::ExtensionOptionsBuilder::default()
+                    .wikilinks_title_after_pipe(true)
+                    .math_dollars(true)
+                    .build()
+                    .unwrap(),
+                ..Default::default()
+            },
+        );
+
+        let mut contains_math = false;
+
+        for node in root.descendants() {
+            // correct id urls for wiki links
+            match node.data.borrow_mut().value {
+                comrak::nodes::NodeValue::WikiLink(ref mut link) => {
+                    link.url = format!("{}.html", data::name_to_id(&link.url));
+                }
+                comrak::nodes::NodeValue::Math(ref mut math) => {
+                    contains_math = true;
+                    let x = &mut math.literal;
+                    // re-insert the dollar at beginning and end to make mathjax pick it up
+                    x.insert(0, '$');
+                    x.push('$');
+                    // if display math, do it again.
+                    if math.display_math {
+                        x.insert(0, '$');
+                        x.push('$');
+                    }
+                    *x = self.perform_replacements(x);
+                }
+                _ => {}
+            }
+        }
+
+        let tar_path = self.id_to_path(&data::name_to_id(&note.name));
+
+        fs::create_dir_all(&tar_path)?;
+
+        let mut tar_file = std::fs::File::create(tar_path.clone())?;
+
+        writeln!(tar_file, "<title>{}</title>", note.name)?;
+        self.add_preamble(&mut tar_file, contains_math)?;
+
+        comrak::format_html(
+            root,
+            &comrak::Options {
+                extension: comrak::ExtensionOptionsBuilder::default()
+                    .wikilinks_title_after_pipe(true)
+                    .math_dollars(true)
+                    .build()
+                    .unwrap(),
+                ..Default::default()
+            },
+            &mut tar_file,
+        )?;
+
+        Ok(())
+    }
+    // Performs all string replacements as specified in the config file in the given string.
+    pub fn perform_replacements(&self, initial_string: &String) -> String {
+        let mut res = initial_string.clone();
+        for (old, new) in self.math_replacements.iter() {
+            res = res.replace(old, new);
+        }
+        res
+    }
+    /// Prepends relevant data to a generated html file
+    pub fn add_preamble(
+        &self,
+        html: &mut impl std::io::Write,
+        contains_math: bool,
+    ) -> Result<(), error::RucolaError> {
+        // Prepend css location
+        if let Some(css) = &self.css_path {
+            writeln!(
+                html,
+                "<link rel=\"stylesheet\" href=\"{}\">",
+                css.to_string_lossy()
+            )?;
+        }
+        // Prepend mathjax code
+        if contains_math && self.mathjax {
+            writeln!(
+                html,
+                r#"<script type="text/x-mathjax-config">MathJax.Hub.Config({{tex2jax: {{inlineMath: [ ['$','$'] ],processEscapes: true}}}});</script>"#
+            )?;
+            writeln!(
+                html,
+                r#"<script type="text/javascript"src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>"#
+            )?;
+        }
+        // Prepend all other manual configured prefixes
+        if let Some(prep) = &self.html_prepend {
+            html.write_all(prep.as_bytes())?;
+        }
+        Ok(())
+    }
+    /// Attempts to create a command to open the file at the given path to view it.
+    /// Target should be an html file.
+    /// Checks:
+    ///  - The config file
+    ///  - the systems default programms
+    /// for an applicable program.
+    pub fn create_view_command(
+        &self,
+        note: &data::Note,
+    ) -> Result<std::process::Command, error::RucolaError> {
+        let path = self.id_to_path(&data::name_to_id(&note.name));
+        // take the editor from the config file
+        self.viewer
+            .as_ref()
+            // create a command from it
+            .map(|viewer_string| open::with_command(&path, viewer_string))
+            // if it was not there, take the default command
+            .or_else(|| open::commands(&path).pop())
+            // if it was also not there, throw an error
+            .ok_or_else(|| error::RucolaError::ApplicationMissing)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::files;
+
+    #[test]
+    fn test_viewing() {
+        let config = files::Config::default();
+        let fm = super::HtmlBuilder::new(&config);
+        let note =
+            crate::data::Note::from_path(std::path::Path::new("./tests/common/notes/Books.md"))
+                .unwrap();
+
+        fm.create_view_command(&note).unwrap();
+    }
+
+    #[test]
+    fn test_replacements() {
+        let config = files::Config::default();
+        let mut hb = super::HtmlBuilder::new(&config);
+
+        let field = "\\field{R} \neq \\field{C}".to_string();
+        let topology = "\\topology{O} = \\topology{P}(X)".to_string();
+
+        assert_eq!(
+            hb.perform_replacements(&field),
+            "\\mathbb{R} \neq \\mathbb{C}"
+        );
+        assert_eq!(
+            hb.perform_replacements(&topology),
+            "\\topology{O} = \\topology{P}(X)"
+        );
+
+        hb.math_replacements
+            .push(("\\topology".to_string(), "\\mathcal".to_string()));
+
+        assert_eq!(
+            hb.perform_replacements(&field),
+            "\\mathbb{R} \neq \\mathbb{C}"
+        );
+        assert_eq!(
+            hb.perform_replacements(&topology),
+            "\\mathcal{O} = \\mathcal{P}(X)"
+        );
+    }
+}

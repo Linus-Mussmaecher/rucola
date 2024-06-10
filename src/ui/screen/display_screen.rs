@@ -1,4 +1,4 @@
-use crate::{config, data, error, ui};
+use crate::{data, error, files, ui};
 
 use crossterm::event::KeyCode;
 use itertools::Itertools;
@@ -7,8 +7,12 @@ use ratatui::{prelude::*, widgets::*};
 /// The display screen displays a single note to the user.
 pub struct DisplayScreen {
     // === CONFIG ===
-    /// The used config
-    config: config::Config,
+    /// The file manager this screen uses to enact the user's file system requests on the file system.
+    manager: files::FileManager,
+    /// The HtmlBuider this screen uses to continuously build html files.
+    builder: files::HtmlBuilder,
+    /// The used styles.
+    styles: ui::UiStyles,
 
     // === DATA ===
     /// The internal stats of the displayed note.
@@ -32,7 +36,9 @@ impl DisplayScreen {
     pub fn new(
         note_id: &str,
         index: data::NoteIndexContainer,
-        config: &config::Config,
+        manager: files::FileManager,
+        builder: files::HtmlBuilder,
+        styles: ui::UiStyles,
     ) -> Result<Self, error::RucolaError> {
         let index = index.borrow();
         // Cache the note
@@ -59,9 +65,11 @@ impl DisplayScreen {
             .collect();
 
         Ok(Self {
-            config: config.clone(),
             links: [l1blinks, l1links, l2blinks, l2links],
             note,
+            manager,
+            builder,
+            styles,
             selected: [0; 4],
             foc_table: 0,
         })
@@ -74,8 +82,6 @@ impl super::Screen for DisplayScreen {
         area: ratatui::prelude::layout::Rect,
         buf: &mut ratatui::prelude::buffer::Buffer,
     ) {
-        // Cache style
-        let styles = self.config.get_ui_styles();
         // Generate vertical layout
         let vertical = Layout::vertical([
             Constraint::Length(1),
@@ -89,7 +95,7 @@ impl super::Screen for DisplayScreen {
         // Title
         let title = Line::from(vec![Span::styled(
             self.note.name.as_str(),
-            styles.title_style,
+            self.styles.title_style,
         )])
         .alignment(Alignment::Center);
 
@@ -101,8 +107,8 @@ impl super::Screen for DisplayScreen {
             .enumerate()
             .flat_map(|(index, s)| {
                 [
-                    Span::styled(if index == 0 { "" } else { ", " }, styles.text_style),
-                    Span::styled(s.as_str(), styles.subtitle_style),
+                    Span::styled(if index == 0 { "" } else { ", " }, self.styles.text_style),
+                    Span::styled(s.as_str(), self.styles.subtitle_style),
                 ]
             })
             .collect_vec();
@@ -131,10 +137,10 @@ impl super::Screen for DisplayScreen {
         ];
 
         let instructions_top = block::Title::from(Line::from(vec![
-            Span::styled("V", styles.hotkey_style),
-            Span::styled("iew Note──", styles.text_style),
-            Span::styled("E", styles.hotkey_style),
-            Span::styled("dit Note", styles.text_style),
+            Span::styled("V", self.styles.hotkey_style),
+            Span::styled("iew Note──", self.styles.text_style),
+            Span::styled("E", self.styles.hotkey_style),
+            Span::styled("dit Note", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
@@ -143,7 +149,7 @@ impl super::Screen for DisplayScreen {
             .column_spacing(1)
             .block(
                 Block::bordered()
-                    .title("Statistics".set_style(styles.title_style))
+                    .title("Statistics".set_style(self.styles.title_style))
                     .title(instructions_top),
             );
 
@@ -216,13 +222,13 @@ impl super::Screen for DisplayScreen {
             }
             // Open selected item in editor
             KeyCode::Char('e' | 'E') => {
-                ui::Message::OpenExternalCommand(self.config.create_edit_command(&self.note.path)?)
+                ui::Message::OpenExternalCommand(self.manager.create_edit_command(&self.note.path)?)
             }
             // Open selected item in viewer
-            KeyCode::Char('v' | 'V') => ui::Message::OpenExternalCommand(
-                self.config
-                    .create_view_command(&data::notefile::create_html(&self.note, &self.config)?)?,
-            ),
+            KeyCode::Char('v' | 'V') => {
+                self.builder.create_html(&self.note, true)?;
+                ui::Message::OpenExternalCommand(self.builder.create_view_command(&self.note)?)
+            }
 
             _ => ui::Message::None,
         })
@@ -231,12 +237,13 @@ impl super::Screen for DisplayScreen {
 
 impl DisplayScreen {
     fn draw_link_table(&self, index: usize, title: &str, area: Rect, buf: &mut Buffer) {
-        // Cache style
-        let styles = self.config.get_ui_styles();
         // Title
-        let title = block::Title::from(Line::from(vec![Span::styled(title, styles.title_style)]))
-            .alignment(Alignment::Left)
-            .position(block::Position::Top);
+        let title = block::Title::from(Line::from(vec![Span::styled(
+            title,
+            self.styles.title_style,
+        )]))
+        .alignment(Alignment::Left)
+        .position(block::Position::Top);
 
         let count = self
             .links
@@ -247,7 +254,7 @@ impl DisplayScreen {
         // Count
         let count = block::Title::from(Line::from(vec![Span::styled(
             format!("{} Note{}", count, if count == 1 { "" } else { "s" }),
-            styles.text_style,
+            self.styles.text_style,
         )]))
         .alignment(Alignment::Right)
         .position(block::Position::Top);
@@ -307,36 +314,36 @@ impl DisplayScreen {
         let block = match index {
             2 => block.title(
                 block::Title::from(Line::from(vec![
-                    Span::styled("J", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
-                    Span::styled("", styles.hotkey_style),
-                    Span::styled(": Down──", styles.text_style),
-                    Span::styled("K", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
-                    Span::styled("", styles.hotkey_style),
-                    Span::styled(": Up──", styles.text_style),
-                    Span::styled("L", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
-                    Span::styled("", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
-                    Span::styled("󰌑", styles.hotkey_style),
-                    Span::styled(": Open──", styles.text_style),
-                    Span::styled("H", styles.hotkey_style),
-                    Span::styled("/", styles.text_style),
-                    Span::styled("", styles.hotkey_style),
-                    Span::styled(": Back──", styles.text_style),
-                    Span::styled("F", styles.hotkey_style),
-                    Span::styled(": Home", styles.text_style),
+                    Span::styled("J", self.styles.hotkey_style),
+                    Span::styled("/", self.styles.text_style),
+                    Span::styled("", self.styles.hotkey_style),
+                    Span::styled(": Down──", self.styles.text_style),
+                    Span::styled("K", self.styles.hotkey_style),
+                    Span::styled("/", self.styles.text_style),
+                    Span::styled("", self.styles.hotkey_style),
+                    Span::styled(": Up──", self.styles.text_style),
+                    Span::styled("L", self.styles.hotkey_style),
+                    Span::styled("/", self.styles.text_style),
+                    Span::styled("", self.styles.hotkey_style),
+                    Span::styled("/", self.styles.text_style),
+                    Span::styled("󰌑", self.styles.hotkey_style),
+                    Span::styled(": Open──", self.styles.text_style),
+                    Span::styled("H", self.styles.hotkey_style),
+                    Span::styled("/", self.styles.text_style),
+                    Span::styled("", self.styles.hotkey_style),
+                    Span::styled(": Back──", self.styles.text_style),
+                    Span::styled("F", self.styles.hotkey_style),
+                    Span::styled(": Home", self.styles.text_style),
                 ]))
                 .alignment(Alignment::Left)
                 .position(block::Position::Bottom),
             ),
             3 => block.title(
                 block::Title::from(Line::from(vec![
-                    Span::styled("Tab", styles.hotkey_style),
-                    Span::styled(": Next Table──", styles.text_style),
-                    Span::styled("Shift+Tab", styles.hotkey_style),
-                    Span::styled(": Previous Table", styles.text_style),
+                    Span::styled("Tab", self.styles.hotkey_style),
+                    Span::styled(": Next Table──", self.styles.text_style),
+                    Span::styled("Shift+Tab", self.styles.hotkey_style),
+                    Span::styled(": Previous Table", self.styles.text_style),
                 ]))
                 .alignment(Alignment::Right)
                 .position(block::Position::Bottom),
@@ -347,9 +354,9 @@ impl DisplayScreen {
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
             .highlight_style(if index == self.foc_table {
-                styles.selected_style
+                self.styles.selected_style
             } else {
-                styles.text_style
+                self.styles.text_style
             })
             .block(block);
 

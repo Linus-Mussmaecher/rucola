@@ -157,14 +157,16 @@ impl Filter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{data, files};
 
     #[test]
     fn test_filters() {
-        let index = crate::data::NoteIndex::new(&crate::config::Config::default());
+        let config = files::Config::default();
+        let tracker = files::FileTracker::new(&config);
+        let builder = files::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder);
 
         assert_eq!(index.inner.len(), 11);
-
-        // let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         let linux = index.inner.get("linux").unwrap();
         let win = index.inner.get("windows").unwrap();
