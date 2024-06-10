@@ -58,11 +58,11 @@ fn main() -> Result<(), error::RucolaError> {
     // draw loading screen
     draw_loading_screen(&mut terminal)?;
 
-    // Displayed error
-    let mut current_error: Option<error::RucolaError> = None;
-
     // Create the app state
-    let mut app = app::App::new(args);
+    let (mut app, errors) = app::App::new(args);
+
+    // Displayed error
+    let mut current_error: Option<error::RucolaError> = errors.into_iter().last();
 
     // Main loop
     'main: loop {

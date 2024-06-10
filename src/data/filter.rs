@@ -164,7 +164,7 @@ mod tests {
         let config = files::Config::default();
         let tracker = files::FileTracker::new(&config);
         let builder = files::HtmlBuilder::new(&config);
-        let index = data::NoteIndex::new(tracker, builder);
+        let index = data::NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
 

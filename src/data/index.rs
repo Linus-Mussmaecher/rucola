@@ -9,9 +9,9 @@ pub type NoteIndexContainer = std::rc::Rc<std::cell::RefCell<NoteIndex>>;
 /// Contains an indexed and hashed list of notes
 pub struct NoteIndex {
     /// The wrapped HashMap, available only in the data module.
-    /// TODO: This should not be pub
-    pub inner: HashMap<String, Note>,
+    pub(super) inner: HashMap<String, Note>,
 
+    /// === Config ===
     /// The file tracker that sends file events and watches the structure of the vault of this index.
     tracker: files::FileTracker,
     /// The HtmlBuilder this index uses to create its HTML files.
@@ -24,28 +24,50 @@ impl NoteIndex {
     ///  - The key will be the file name, without the file extension, in lowercase and with spaces replaced by dashes
     ///  - The value will be an instance of Note containing metadata of the file.
     ///
-    /// All files that lead to IO errors when loading are ignored.
-    pub fn new(tracker: files::FileTracker, builder: files::HtmlBuilder) -> Self {
+    /// All IO errors that happeded during the creation or the (potential) HTML conversion are returned alongside.
+    pub fn new(
+        tracker: files::FileTracker,
+        builder: files::HtmlBuilder,
+    ) -> (Self, Vec<error::RucolaError>) {
+        // create an error struct
+        let mut errors = vec![];
         // collect all the notes from the vault folder
         let inner = tracker
             .get_walker() // Check only OKs
             .flatten()
             // Convert tiles to notes and skip errors
-            .flat_map(|entry| Note::from_path(entry.path()))
+            .filter(|entry| entry.metadata().is_ok_and(|md| md.is_file()))
+            .flat_map(|entry| match Note::from_path(entry.path()) {
+                Ok(note) => Some(note),
+                Err(e) => {
+                    errors.push(e.into());
+                    None
+                }
+            })
             // Extract name and convert to id
             .map(|note| (super::name_to_id(&note.name), note))
             // Collect into hash map
             .collect::<HashMap<_, _>>();
 
-        // create all htmls
-        for (_id, note) in inner.iter() {
-            let _todo = builder.create_html(note, false);
-        }
-        Self {
-            inner,
-            tracker,
-            builder,
-        }
+        // create htmls and save errors
+        errors.extend(
+            inner
+                .iter()
+                .map(|(_id, note)| builder.create_html(&note, false))
+                .flat_map(|res| match res {
+                    Ok(_) => None,
+                    Err(e) => Some(e),
+                }),
+        );
+
+        (
+            Self {
+                inner,
+                tracker,
+                builder,
+            },
+            errors,
+        )
     }
 
     /// Wrapper of the HashMap::get() Function
@@ -187,7 +209,7 @@ mod tests {
         let config = files::Config::default();
         let tracker = files::FileTracker::new(&config);
         let builder = files::HtmlBuilder::new(&config);
-        let index = NoteIndex::new(tracker, builder);
+        let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
 
@@ -211,7 +233,7 @@ mod tests {
         let config = files::Config::default();
         let tracker = files::FileTracker::new(&config);
         let builder = files::HtmlBuilder::new(&config);
-        let index = NoteIndex::new(tracker, builder);
+        let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
 
