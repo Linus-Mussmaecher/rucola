@@ -179,7 +179,8 @@ mod tests {
     #[test]
     fn test_env_stats_general() {
         let config = files::Config::default();
-        let tracker = files::FileTracker::new(&config, std::path::PathBuf::from("./tests"));
+        let tracker =
+            files::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 

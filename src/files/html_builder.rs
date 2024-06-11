@@ -21,6 +21,15 @@ pub struct HtmlBuilder {
     viewer: Option<String>,
 }
 
+impl Default for HtmlBuilder {
+    fn default() -> Self {
+        Self::new(
+            &super::Config::default(),
+            std::env::current_dir().expect("Current directory to exist and be accessible."),
+        )
+    }
+}
+
 impl HtmlBuilder {
     pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
         // Resolve css path
@@ -80,7 +89,7 @@ impl HtmlBuilder {
                     .wikilinks_title_after_pipe(true)
                     .math_dollars(true)
                     .build()
-                    .unwrap(),
+                    .map_err(|_e| error::RucolaError::ComrakError)?,
                 ..Default::default()
             },
         );
@@ -132,7 +141,7 @@ impl HtmlBuilder {
                     .wikilinks_title_after_pipe(true)
                     .math_dollars(true)
                     .build()
-                    .unwrap(),
+                    .map_err(|_e| error::RucolaError::ComrakError)?,
                 ..Default::default()
             },
             &mut tar_file,

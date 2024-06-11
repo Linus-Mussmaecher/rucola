@@ -11,6 +11,14 @@ pub struct FileManager {
     /// The editor to use for notes
     editor: Option<String>,
 }
+impl Default for FileManager {
+    fn default() -> Self {
+        Self::new(
+            &super::Config::default(),
+            std::env::current_dir().expect("Current directory to exist and be accessible."),
+        )
+    }
+}
 
 impl FileManager {
     pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {

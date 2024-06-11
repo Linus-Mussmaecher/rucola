@@ -1,17 +1,6 @@
 use std::path;
 
-use crate::{files, ui};
-
-/// Describes when to show a which stats area.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum StatsShow {
-    // Always shows both stats
-    Both,
-    // Shows local stats when filtering and nothing otherwise
-    Relevant,
-    // Always shows only local stats
-    Local,
-}
+use crate::{error, ui};
 
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -27,7 +16,7 @@ pub struct Config {
     /// Selected theme
     pub(crate) theme: String,
     /// When to show the global stats area
-    pub(crate) stats_show: StatsShow,
+    pub(crate) stats_show: ui::screen::StatsShow,
     /// The editor to use for notes
     pub(crate) editor: Option<String>,
     /// Viewer to open html files with
@@ -51,7 +40,7 @@ impl Default for Config {
             mathjax: true,
             vault_path: None,
             theme: "default_light_theme".to_string(),
-            stats_show: StatsShow::Both,
+            stats_show: ui::screen::StatsShow::Both,
             editor: None,
             file_types: vec![String::from("markdown")],
             default_extension: String::from("md"),
@@ -66,53 +55,34 @@ impl Default for Config {
     }
 }
 
-pub fn load_configurations(
-    args: crate::Arguments,
-) -> Result<
-    (
-        ui::UiStyles,
-        files::HtmlBuilder,
-        files::FileManager,
-        files::FileTracker,
-        StatsShow,
-    ),
-    crate::error::RucolaError,
-> {
-    // === Step 1: Load config file ===
-    let mut config: Config = confy::load("rucola", "config")?;
+impl Config {
+    /// Creates a config file and vault path by combining the passed cli arguments with the loaded file from comfy.
+    pub fn load(args: crate::Arguments) -> error::Result<(Self, path::PathBuf)> {
+        // === Step 1: Load config file ===
+        let mut config: Config = confy::load("rucola", "config")?;
 
-    // === Step 2: Fix home path ===
-    // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
-    let full_vault_path = args
-        .target_folder
-        // first attempt to extend the command line given path if one was passed
-        .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
-        // if none was given, expand the path given from the config file
-        .or_else(|| {
-            config.vault_path.take().and_then(|conf_path_buf| {
-                expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
+        // === Step 2: Fix vault path ===
+        // get current dir
+        let pwd = std::env::current_dir()?;
+
+        // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
+        let mut full_vault_path = args
+            .target_folder
+            // first attempt to extend the command line given path if one was passed
+            .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
+            // if none was given, expand the path given from the config file
+            .or_else(|| {
+                config.vault_path.take().and_then(|conf_path_buf| {
+                    expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
+                })
             })
-        })
+            .unwrap_or_else(|| pwd.clone());
+
         // make sure path is absolute
-        .map(|path| {
-            if !path.is_absolute() {
-                std::env::current_dir().unwrap().join(path)
-            } else {
-                path
-            }
-        })
-        .unwrap_or_else(|| std::env::current_dir().expect("To get current working directory."));
+        if !full_vault_path.is_absolute() {
+            full_vault_path = pwd.join(full_vault_path);
+        }
 
-    // === Step 3: Load style file ===
-    config.theme = args.style.unwrap_or(config.theme);
-
-    let uistyles: ui::UiStyles = confy::load("rucola", config.theme.as_str())?;
-
-    Ok((
-        uistyles,
-        files::HtmlBuilder::new(&config, full_vault_path.clone()),
-        files::FileManager::new(&config, full_vault_path.clone()),
-        files::FileTracker::new(&config, full_vault_path),
-        config.stats_show,
-    ))
+        Ok((config, full_vault_path))
+    }
 }

@@ -4,6 +4,8 @@ use std::sync::mpsc::{self, TryIter};
 use itertools::Itertools;
 use notify::Watcher;
 
+use crate::error;
+
 /// Stores configuration to track the file system the notes are stored in.
 #[derive(Debug)]
 pub struct FileTracker {
@@ -18,9 +20,18 @@ pub struct FileTracker {
     /// Channel from which file change events in the vault directory are deposited by the watcher and can be requested.
     file_change_channel: mpsc::Receiver<Result<notify::Event, notify::Error>>,
 }
+impl Default for FileTracker {
+    fn default() -> Self {
+        Self::new(
+            &super::Config::default(),
+            std::env::current_dir().expect("Current directory to exist and be accessible."),
+        )
+        .expect("Watcher to be created and pre-defined file types to work.")
+    }
+}
 
 impl FileTracker {
-    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
+    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> error::Result<Self> {
         // Pre-calculate allowed file types
         let mut types_builder = ignore::types::TypesBuilder::new();
         types_builder.add_defaults();
@@ -33,18 +44,16 @@ impl FileTracker {
 
         // Create watcher so we can store it in the file, delaying its drop (which stops its function) until the end of the lifetime of this index.
         let watcher = notify::recommended_watcher(move |res| {
-            sender.send(res).unwrap();
-        })
-        .expect("Watcher to not error on creation.");
+            // ignore errors
+            let _ = sender.send(res);
+        })?;
 
-        Self {
+        Ok(Self {
             vault_path,
-            file_types: types_builder
-                .build()
-                .expect("To build predefined types correctly."),
+            file_types: types_builder.build()?,
             watcher,
             file_change_channel: receiver,
-        }
+        })
     }
 
     /// Start watching the vault path.
@@ -91,7 +100,8 @@ mod tests {
 
         let config = files::Config::default();
 
-        let tracker = super::FileTracker::new(&config, std::path::PathBuf::from("./tests/"));
+        let tracker =
+            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
@@ -107,7 +117,8 @@ mod tests {
                 ..Default::default()
             },
             std::path::PathBuf::from("./tests"),
-        );
+        )
+        .unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
@@ -120,7 +131,8 @@ mod tests {
                 ..Default::default()
             },
             std::path::PathBuf::from("./tests"),
-        );
+        )
+        .unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));

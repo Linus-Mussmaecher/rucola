@@ -29,12 +29,40 @@ impl App {
     ///  - Creating an initial select screen and empty display stack
     /// Also returns all errors that happened during creation that did not prevent the creation.
     pub fn new(args: crate::Arguments) -> (Self, Vec<error::RucolaError>) {
-        // Create all configs
-        let (styles, builder, manager, tracker, stats_show) =
-            files::load_configurations(args).unwrap();
+        // Gather errors
+        let mut errors = vec![];
+
+        let (config, vault_path) = match files::Config::load(args) {
+            Ok(config_data) => config_data,
+            Err(e) => {
+                errors.push(e);
+                Default::default()
+            }
+        };
+
+        let styles = match ui::UiStyles::load(&config) {
+            Ok(config) => config,
+            Err(e) => {
+                errors.push(e);
+                Default::default()
+            }
+        };
+
+        let builder = files::HtmlBuilder::new(&config, vault_path.clone());
+
+        let manager = files::FileManager::new(&config, vault_path.clone());
+
+        let tracker = match files::FileTracker::new(&config, vault_path) {
+            Ok(config) => config,
+            Err(e) => {
+                errors.push(e);
+                Default::default()
+            }
+        };
 
         // Index all files in path
-        let (index, errors) = data::NoteIndex::new(tracker, builder.clone());
+        let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone());
+        errors.extend(index_errors);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -46,7 +74,7 @@ impl App {
                     manager.clone(),
                     builder.clone(),
                     styles.clone(),
-                    stats_show,
+                    config.stats_show,
                 ),
                 display: None,
                 display_stack: Vec::new(),
