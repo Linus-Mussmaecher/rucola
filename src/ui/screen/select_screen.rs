@@ -295,10 +295,7 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(
-        &mut self,
-        key: crossterm::event::KeyEvent,
-    ) -> Result<ui::Message, error::RucolaError> {
+    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message> {
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command

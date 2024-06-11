@@ -39,7 +39,7 @@ pub struct Arguments {
 }
 
 /// Main function
-fn main() -> Result<(), error::RucolaError> {
+fn main() -> error::Result<()> {
     // === Read command line arguments
     let args = Arguments::parse();
 
@@ -137,7 +137,7 @@ fn main() -> Result<(), error::RucolaError> {
 }
 
 /// Ratatui boilerplate to set up panic hooks
-fn init_hooks() -> Result<(), error::RucolaError> {
+fn init_hooks() -> error::Result<()> {
     // Get a default panic hook
     let original_hook = panic::take_hook();
     panic::set_hook(Box::new(move |panic_info| {

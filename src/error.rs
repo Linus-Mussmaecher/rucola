@@ -1,6 +1,8 @@
 use ratatui::{style, widgets::*};
 use thiserror::Error;
 
+pub type Result<T> = std::result::Result<T, RucolaError>;
+
 #[derive(Error, Debug)]
 pub enum RucolaError {
     #[error("An IO operation failed: {0}")]
