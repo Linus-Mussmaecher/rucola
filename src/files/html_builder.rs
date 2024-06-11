@@ -62,7 +62,7 @@ impl HtmlBuilder {
         tar_path
     }
 
-    pub fn create_html(&self, note: &data::Note, force: bool) -> Result<(), error::RucolaError> {
+    pub fn create_html(&self, note: &data::Note, force: bool) -> error::Result<()> {
         if !self.enable_html && !force {
             return Ok(());
         }
@@ -153,7 +153,7 @@ impl HtmlBuilder {
         &self,
         html: &mut impl std::io::Write,
         contains_math: bool,
-    ) -> Result<(), error::RucolaError> {
+    ) -> error::Result<()> {
         // Prepend css location
         if let Some(css) = &self.css_path {
             writeln!(
@@ -185,10 +185,7 @@ impl HtmlBuilder {
     ///  - The config file
     ///  - the systems default programms
     /// for an applicable program.
-    pub fn create_view_command(
-        &self,
-        note: &data::Note,
-    ) -> Result<std::process::Command, error::RucolaError> {
+    pub fn create_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
         let path = self.id_to_path(&data::name_to_id(&note.name));
         // take the editor from the config file
         self.viewer

@@ -38,7 +38,7 @@ impl FileManager {
         index: &mut data::NoteIndexContainer,
         id: &str,
         new_name: Option<String>,
-    ) -> Result<(), error::RucolaError> {
+    ) -> error::Result<()> {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
@@ -87,7 +87,7 @@ impl FileManager {
         index: &mut data::NoteIndexContainer,
         id: &str,
         new_path_buf: Option<String>,
-    ) -> Result<(), error::RucolaError> {
+    ) -> error::Result<()> {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
@@ -132,7 +132,7 @@ impl FileManager {
         index: &mut data::NoteIndexContainer,
         source: path::PathBuf,
         target: path::PathBuf,
-    ) -> Result<(), error::RucolaError> {
+    ) -> error::Result<()> {
         // borrow index mutably
         let index = index.borrow();
 
@@ -197,7 +197,7 @@ impl FileManager {
         &self,
         index: &mut data::NoteIndexContainer,
         id: &str,
-    ) -> Result<(), error::RucolaError> {
+    ) -> error::Result<()> {
         // Follow its path and delete it
         fs::remove_file(path::Path::new(
             // get the note
@@ -212,7 +212,7 @@ impl FileManager {
 
     /// Creates a note of the given name in the file system (relative to the vault).
     /// Registration in the index is handled centrally by the file watcher of the index itself.
-    pub fn create_note_file(&self, input_path: Option<String>) -> Result<(), error::RucolaError> {
+    pub fn create_note_file(&self, input_path: Option<String>) -> error::Result<()> {
         // Piece together the file path
         let mut path = self.vault_path.clone();
         path.push(input_path.unwrap_or_else(|| "Untitled".to_owned()));
@@ -245,7 +245,7 @@ impl FileManager {
     pub fn create_edit_command(
         &self,
         path: &path::PathBuf,
-    ) -> Result<std::process::Command, error::RucolaError> {
+    ) -> error::Result<std::process::Command> {
         // take the editor from the config file
         self.editor
             .as_ref()

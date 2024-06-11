@@ -14,8 +14,5 @@ pub trait Screen {
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer);
 
     /// Informs the screen of user messages and possibly modifies the content.
-    fn update(
-        &mut self,
-        key: crossterm::event::KeyEvent,
-    ) -> Result<ui::Message, error::RucolaError>;
+    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message>;
 }

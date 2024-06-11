@@ -61,7 +61,7 @@ impl App {
 
     /// Reads the top of the display stack, creates a new display screen from it and sets that as the currently active display screen.
     /// If the display stack is empty, clears the display screen.
-    fn set_display_to_top(&mut self) -> Result<(), error::RucolaError> {
+    fn set_display_to_top(&mut self) -> error::Result<()> {
         self.display = match self.display_stack.last() {
             Some(id) => Some(ui::screen::DisplayScreen::new(
                 id,
@@ -79,7 +79,7 @@ impl App {
     pub fn update(
         &mut self,
         key: Option<crossterm::event::KeyEvent>,
-    ) -> Result<ui::TerminalMessage, error::RucolaError> {
+    ) -> error::Result<ui::TerminalMessage> {
         // Check for file changes
         let mut index = self.index.borrow_mut();
         let modifications = index.handle_file_events()?;

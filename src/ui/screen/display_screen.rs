@@ -39,7 +39,7 @@ impl DisplayScreen {
         manager: files::FileManager,
         builder: files::HtmlBuilder,
         styles: ui::UiStyles,
-    ) -> Result<Self, error::RucolaError> {
+    ) -> error::Result<Self> {
         let index = index.borrow();
         // Cache the note
         let note = index
@@ -169,10 +169,7 @@ impl super::Screen for DisplayScreen {
         self.draw_link_table(3, "Level 2 Links", links2, buf);
     }
 
-    fn update(
-        &mut self,
-        key: crossterm::event::KeyEvent,
-    ) -> Result<ui::Message, error::RucolaError> {
+    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message> {
         Ok(match key.code {
             // Quit with Q
             KeyCode::Char('Q' | 'q') => ui::Message::Quit,

@@ -87,7 +87,7 @@ impl NoteIndex {
     ///  - removed files are removed from the index (if they were present)
     ///  - Modifications of files are checked for being notes and if so, the respective index entries are updated with the new data.
     /// Returns wether the index has changed.
-    pub fn handle_file_events(&mut self) -> Result<bool, error::RucolaError> {
+    pub fn handle_file_events(&mut self) -> error::Result<bool> {
         let mut modifications = false;
         for event in self.tracker.try_events_iter().flatten() {
             match event.kind {
