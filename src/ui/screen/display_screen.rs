@@ -1,4 +1,4 @@
-use crate::{data, error, files, ui};
+use crate::{data, error, io, ui};
 
 use crossterm::event::KeyCode;
 use itertools::Itertools;
@@ -8,9 +8,9 @@ use ratatui::{prelude::*, widgets::*};
 pub struct DisplayScreen {
     // === CONFIG ===
     /// The file manager this screen uses to enact the user's file system requests on the file system.
-    manager: files::FileManager,
+    manager: io::FileManager,
     /// The HtmlBuider this screen uses to continuously build html files.
-    builder: files::HtmlBuilder,
+    builder: io::HtmlBuilder,
     /// The used styles.
     styles: ui::UiStyles,
 
@@ -36,8 +36,8 @@ impl DisplayScreen {
     pub fn new(
         note_id: &str,
         index: data::NoteIndexContainer,
-        manager: files::FileManager,
-        builder: files::HtmlBuilder,
+        manager: io::FileManager,
+        builder: io::HtmlBuilder,
         styles: ui::UiStyles,
     ) -> error::Result<Self> {
         let index = index.borrow();

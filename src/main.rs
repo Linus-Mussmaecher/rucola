@@ -5,7 +5,6 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::prelude::*;
-use std::io;
 use std::panic;
 
 /// The actual application, combining the ui and data management.
@@ -15,10 +14,12 @@ mod data;
 /// Error enum and handling.
 mod error;
 /// Interaction with the file system & configuration.
-mod files;
+mod io;
 /// The ui of the app.
 mod ui;
 use clap::Parser;
+mod config;
+pub use config::Config;
 
 /// Command line arguments for the Rucola markdown note management program.
 /// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
@@ -150,17 +151,17 @@ fn init_hooks() -> error::Result<()> {
 }
 
 /// Ratatui boilerplate to put the terminal into a TUI state
-fn init_terminal() -> io::Result<Terminal<impl ratatui::backend::Backend>> {
-    io::stdout().execute(EnterAlternateScreen)?;
+fn init_terminal() -> std::io::Result<Terminal<impl ratatui::backend::Backend>> {
+    std::io::stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
     Ok(terminal)
 }
 
 /// Ratatui boilerplate to restore the terminal to a usable state after program exits (regularly or by panic)
-fn restore_terminal() -> io::Result<()> {
-    io::stdout().execute(LeaveAlternateScreen)?;
+fn restore_terminal() -> std::io::Result<()> {
+    std::io::stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
 }
@@ -183,7 +184,7 @@ You should have received a copy of the GNU General Public License along with thi
 /// Temporary screen while the programm is indexing.
 fn draw_loading_screen(
     terminal: &mut Terminal<impl ratatui::backend::Backend>,
-) -> Result<CompletedFrame, io::Error> {
+) -> Result<CompletedFrame, std::io::Error> {
     // Draw 'loading' screen
     terminal.draw(|frame| {
         frame.render_widget(

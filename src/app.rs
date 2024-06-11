@@ -1,4 +1,4 @@
-use super::{data, error, files, ui, ui::Screen};
+use super::{data, error, io, ui, ui::Screen};
 use ratatui::prelude::*;
 
 /// The main state of the application.
@@ -15,9 +15,9 @@ pub struct App {
 
     // === Config ===
     /// The file manager this app's screens use to enact the user's file system requests on the file system.
-    manager: files::FileManager,
+    manager: io::FileManager,
     /// The HtmlBuider this app's screens use to continuously build html files.
-    builder: files::HtmlBuilder,
+    builder: io::HtmlBuilder,
     /// The styles used by this app's screens.
     styles: ui::UiStyles,
 }
@@ -32,7 +32,7 @@ impl App {
         // Gather errors
         let mut errors = vec![];
 
-        let (config, vault_path) = match files::Config::load(args) {
+        let (config, vault_path) = match crate::Config::load(args) {
             Ok(config_data) => config_data,
             Err(e) => {
                 errors.push(e);
@@ -48,11 +48,11 @@ impl App {
             }
         };
 
-        let builder = files::HtmlBuilder::new(&config, vault_path.clone());
+        let builder = io::HtmlBuilder::new(&config, vault_path.clone());
 
-        let manager = files::FileManager::new(&config, vault_path.clone());
+        let manager = io::FileManager::new(&config, vault_path.clone());
 
-        let tracker = match files::FileTracker::new(&config, vault_path) {
+        let tracker = match io::FileTracker::new(&config, vault_path) {
             Ok(config) => config,
             Err(e) => {
                 errors.push(e);

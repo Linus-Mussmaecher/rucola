@@ -23,7 +23,7 @@ pub struct FileTracker {
 impl Default for FileTracker {
     fn default() -> Self {
         Self::new(
-            &super::Config::default(),
+            &crate::Config::default(),
             std::env::current_dir().expect("Current directory to exist and be accessible."),
         )
         .expect("Watcher to be created and pre-defined file types to work.")
@@ -31,7 +31,7 @@ impl Default for FileTracker {
 }
 
 impl FileTracker {
-    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> error::Result<Self> {
+    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> error::Result<Self> {
         // Pre-calculate allowed file types
         let mut types_builder = ignore::types::TypesBuilder::new();
         types_builder.add_defaults();
@@ -86,7 +86,6 @@ impl FileTracker {
 }
 #[cfg(test)]
 mod tests {
-    use crate::files;
 
     #[test]
     fn test_file_endings() {
@@ -98,7 +97,7 @@ mod tests {
         let html_ignored = std::path::PathBuf::from("./tests/.html/books.html");
         let md_foreign = std::path::PathBuf::from("./README.md");
 
-        let config = files::Config::default();
+        let config = crate::Config::default();
 
         let tracker =
             super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
@@ -112,7 +111,7 @@ mod tests {
         assert!(!tracker.is_tracked(&md_foreign));
 
         let tracker = super::FileTracker::new(
-            &files::config::Config {
+            &crate::Config {
                 file_types: vec!["md".to_owned(), "txt".to_owned()],
                 ..Default::default()
             },
@@ -126,7 +125,7 @@ mod tests {
         assert!(!tracker.is_tracked(&tex));
 
         let tracker = super::FileTracker::new(
-            &files::config::Config {
+            &crate::Config {
                 file_types: vec!["all".to_owned()],
                 ..Default::default()
             },

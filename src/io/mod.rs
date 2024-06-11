@@ -1,6 +1,3 @@
-mod config;
-pub use config::Config;
-
 mod file_manager;
 pub use file_manager::FileManager;
 

@@ -1,4 +1,4 @@
-use crate::{data, error, files, ui};
+use crate::{data, error, io, ui};
 use crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
@@ -62,9 +62,9 @@ pub struct SelectScreen {
 
     // === Config ===
     /// The file manager this screen uses to enact the user's file system requests on the file system.
-    manager: files::FileManager,
+    manager: io::FileManager,
     /// The HtmlBuider this screen uses to continuously build html files.
-    builder: files::HtmlBuilder,
+    builder: io::HtmlBuilder,
     /// The used styles.
     styles: ui::UiStyles,
 
@@ -96,8 +96,8 @@ impl SelectScreen {
     /// Creates a new stats screen, with no filter applied by default
     pub fn new(
         index: data::NoteIndexContainer,
-        manager: files::FileManager,
-        builder: files::HtmlBuilder,
+        manager: io::FileManager,
+        builder: io::HtmlBuilder,
         styles: ui::UiStyles,
         stats_show: StatsShow,
     ) -> Self {

@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, collections::HashMap};
 
-use crate::{error, files};
+use crate::{error, io};
 
 use super::Note;
 
@@ -13,9 +13,9 @@ pub struct NoteIndex {
 
     /// === Config ===
     /// The file tracker that sends file events and watches the structure of the vault of this index.
-    tracker: files::FileTracker,
+    tracker: io::FileTracker,
     /// The HtmlBuilder this index uses to create its HTML files.
-    builder: files::HtmlBuilder,
+    builder: io::HtmlBuilder,
 }
 
 impl NoteIndex {
@@ -26,8 +26,8 @@ impl NoteIndex {
     ///
     /// All IO errors that happeded during the creation or the (potential) HTML conversion are returned alongside.
     pub fn new(
-        mut tracker: files::FileTracker,
-        builder: files::HtmlBuilder,
+        mut tracker: io::FileTracker,
+        builder: io::HtmlBuilder,
     ) -> (Self, Vec<error::RucolaError>) {
         // create an error struct
         let mut errors = vec![];
@@ -208,14 +208,13 @@ impl NoteIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::files;
+    use crate::io;
 
     #[test]
     fn test_indexing() {
-        let config = files::Config::default();
-        let tracker =
-            files::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
@@ -237,10 +236,9 @@ mod tests {
 
     #[test]
     fn test_links_blinks() {
-        let config = files::Config::default();
-        let tracker =
-            files::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);

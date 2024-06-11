@@ -1,6 +1,6 @@
 use ratatui::style::*;
 
-use crate::{error, files};
+use crate::error;
 
 /// A struct that holds a collection of styles for a consistent looking UI.
 /// This is a pure data struct, having no methods and only public attributes.
@@ -41,7 +41,7 @@ impl Default for UiStyles {
 
 impl UiStyles {
     /// Loads the style file defined in the given config file
-    pub fn load(config: &files::Config) -> error::Result<Self> {
+    pub fn load(config: &crate::Config) -> error::Result<Self> {
         let uistyles: Self = confy::load("rucola", config.theme.as_str())?;
         Ok(uistyles)
     }

@@ -14,14 +14,14 @@ pub struct FileManager {
 impl Default for FileManager {
     fn default() -> Self {
         Self::new(
-            &super::Config::default(),
+            &crate::Config::default(),
             std::env::current_dir().expect("Current directory to exist and be accessible."),
         )
     }
 }
 
 impl FileManager {
-    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
+    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> Self {
         Self {
             vault_path,
             default_extension: config.default_extension.clone(),
@@ -273,13 +273,12 @@ impl FileManager {
 }
 #[cfg(test)]
 mod tests {
-    use crate::files;
 
     #[test]
     fn test_opening() {
         let editor = std::env::var("EDITOR");
 
-        let config = files::Config::default();
+        let config = crate::Config::default();
         let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
         let path = std::path::Path::new("./tests/common/notes/Books.md");
 
@@ -294,7 +293,7 @@ mod tests {
         let md_ending_tar = std::path::PathBuf::from("./tests/common/test.md");
         let txt_ending_tar = std::path::PathBuf::from("./tests/common/test.txt");
 
-        let config = files::Config::default();
+        let config = crate::Config::default();
         let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
 
         let mut no_ending = std::path::PathBuf::from("./tests/common/test");
