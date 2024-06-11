@@ -1,5 +1,7 @@
 use ratatui::style::*;
 
+use crate::{error, files};
+
 /// A struct that holds a collection of styles for a consistent looking UI.
 /// This is a pure data struct, having no methods and only public attributes.
 #[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -34,5 +36,13 @@ impl Default for UiStyles {
                 .add_modifier(Modifier::BOLD),
             input_style: Style::new().add_modifier(Modifier::ITALIC),
         }
+    }
+}
+
+impl UiStyles {
+    /// Loads the style file defined in the given config file
+    pub fn load(config: &files::Config) -> error::Result<Self> {
+        let uistyles: Self = confy::load("rucola", config.theme.as_str())?;
+        Ok(uistyles)
     }
 }

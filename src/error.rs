@@ -23,6 +23,8 @@ pub enum RucolaError {
     IgnoreError(#[from] ignore::Error),
     #[error("Error when when watching files for changes: {0}")]
     NotifyError(#[from] notify::Error),
+    #[error("Failed to create parse options.")]
+    ComrakError,
 }
 
 impl RucolaError {

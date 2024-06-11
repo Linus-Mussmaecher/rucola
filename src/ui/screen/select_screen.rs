@@ -38,6 +38,17 @@ enum SortingMode {
     Score,
     Broken,
 }
+/// Describes when to show a which stats area.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
+pub enum StatsShow {
+    // Always shows both stats
+    #[default]
+    Both,
+    // Shows local stats when filtering and nothing otherwise
+    Relevant,
+    // Always shows only local stats
+    Local,
+}
 
 /// The select screen shows the user statistical information about their notes and allows them to select one for display.
 pub struct SelectScreen {
@@ -78,7 +89,7 @@ pub struct SelectScreen {
     /// Sort ascedingly.
     sorting_asc: bool,
     /// How to display the two stats blocks.
-    stats_show: files::StatsShow,
+    stats_show: StatsShow,
 }
 
 impl SelectScreen {
@@ -88,7 +99,7 @@ impl SelectScreen {
         manager: files::FileManager,
         builder: files::HtmlBuilder,
         styles: ui::UiStyles,
-        stats_show: files::StatsShow,
+        stats_show: StatsShow,
     ) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
@@ -177,15 +188,15 @@ impl SelectScreen {
     pub fn stats_heights(&self, filter_string: Option<&String>) -> (u16, u16) {
         let filtered = filter_string.map(|s| !s.is_empty()).unwrap_or(false);
         match self.stats_show {
-            files::StatsShow::Both => (5, 6),
-            files::StatsShow::Relevant => {
+            StatsShow::Both => (5, 6),
+            StatsShow::Relevant => {
                 if filtered {
                     (0, 6)
                 } else {
                     (6, 0)
                 }
             }
-            files::StatsShow::Local => (0, 6),
+            StatsShow::Local => (0, 6),
         }
     }
 

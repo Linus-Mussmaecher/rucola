@@ -2,6 +2,7 @@ use ratatui::{buffer, layout};
 
 mod select_screen;
 pub use select_screen::SelectScreen;
+pub use select_screen::StatsShow;
 
 mod display_screen;
 pub use display_screen::DisplayScreen;

@@ -1,6 +1,8 @@
-use std::{fs, io, path};
+use std::{fmt::Debug, fs, path};
 
 use itertools::Itertools;
+
+use crate::error;
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
 #[derive(Clone, Debug, Default)]
@@ -21,7 +23,7 @@ pub struct Note {
 
 impl Note {
     /// Opens the file from the given path (if possible) and extracts metadata.
-    pub fn from_path(path: &path::Path) -> io::Result<Self> {
+    pub fn from_path(path: &path::Path) -> error::Result<Self> {
         // Open the file.
         let content = fs::read_to_string(path)?;
 
@@ -34,7 +36,8 @@ impl Note {
                 extension: comrak::ExtensionOptionsBuilder::default()
                     .wikilinks_title_after_pipe(true)
                     .build()
-                    .unwrap(),
+                    // ExtensionOptionsBuilderError is sadly not public...
+                    .map_err(|_e| error::RucolaError::ComrakError)?,
                 ..Default::default()
             },
         );
