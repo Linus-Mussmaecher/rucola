@@ -76,7 +76,7 @@ impl App {
                     index.clone(),
                     manager.clone(),
                     builder.clone(),
-                    styles.clone(),
+                    styles,
                     config.stats_show,
                 ),
                 display: None,
@@ -99,7 +99,7 @@ impl App {
                 self.index.clone(),
                 self.manager.clone(),
                 self.builder.clone(),
-                self.styles.clone(),
+                self.styles,
             )?),
             None => None,
         };

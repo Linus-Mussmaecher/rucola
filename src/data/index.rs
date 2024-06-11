@@ -40,7 +40,7 @@ impl NoteIndex {
             .flat_map(|entry| match Note::from_path(entry.path()) {
                 Ok(note) => Some(note),
                 Err(e) => {
-                    errors.push(e.into());
+                    errors.push(e);
                     None
                 }
             })
@@ -52,8 +52,8 @@ impl NoteIndex {
         // create htmls and save errors
         errors.extend(
             inner
-                .iter()
-                .map(|(_id, note)| builder.create_html(&note, false))
+                .values()
+                .map(|note| builder.create_html(note, false))
                 .flat_map(|res| match res {
                     Ok(_) => None,
                     Err(e) => Some(e),
@@ -146,7 +146,7 @@ impl NoteIndex {
                                 if event.paths.contains(&note.path) {
                                     if let Ok(new_note) = Note::from_path(&note.path) {
                                         // create html on creation
-                                        self.builder.create_html(&note, false)?;
+                                        self.builder.create_html(&new_note, false)?;
                                         // replace the index entry
                                         *note = new_note;
                                         modifications = true;

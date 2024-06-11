@@ -99,7 +99,7 @@ impl FileManager {
             .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
 
         // If a directory is given, re-use the old name
-        if new_path_buf.ends_with("/") {
+        if new_path_buf.ends_with('/') {
             new_path_buf.push_str(&note.name);
         }
 
@@ -155,7 +155,7 @@ impl FileManager {
         let mut regex_builder = String::new();
         regex_builder.push_str("(\\[\\[)(");
         regex_builder.push_str(&note.name); // at this point, this is still the old name
-        regex_builder.push_str("|");
+        regex_builder.push('|');
         regex_builder.push_str(old_id);
         regex_builder.push_str(")(\\|?[^\\|^\\]^\\]]*\\]\\])");
 

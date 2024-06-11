@@ -113,7 +113,7 @@ impl HtmlBuilder {
                         x.insert(0, '$');
                         x.push('$');
                     }
-                    *x = self.perform_replacements(x);
+                    *x = self.perform_replacements(x.clone());
                 }
                 _ => {}
             }
@@ -150,12 +150,11 @@ impl HtmlBuilder {
         Ok(())
     }
     // Performs all string replacements as specified in the config file in the given string.
-    pub fn perform_replacements(&self, initial_string: &String) -> String {
-        let mut res = initial_string.clone();
+    pub fn perform_replacements(&self, mut initial_string: String) -> String {
         for (old, new) in self.math_replacements.iter() {
-            res = res.replace(old, new);
+            initial_string = initial_string.replace(old, new);
         }
-        res
+        initial_string
     }
     /// Prepends relevant data to a generated html file
     pub fn add_preamble(
@@ -231,11 +230,11 @@ mod tests {
         let topology = "\\topology{O} = \\topology{P}(X)".to_string();
 
         assert_eq!(
-            hb.perform_replacements(&field),
+            hb.perform_replacements(field.clone()),
             "\\mathbb{R} \neq \\mathbb{C}"
         );
         assert_eq!(
-            hb.perform_replacements(&topology),
+            hb.perform_replacements(topology.clone()),
             "\\topology{O} = \\topology{P}(X)"
         );
 
@@ -243,11 +242,11 @@ mod tests {
             .push(("\\topology".to_string(), "\\mathcal".to_string()));
 
         assert_eq!(
-            hb.perform_replacements(&field),
+            hb.perform_replacements(field.clone()),
             "\\mathbb{R} \neq \\mathbb{C}"
         );
         assert_eq!(
-            hb.perform_replacements(&topology),
+            hb.perform_replacements(topology.clone()),
             "\\mathcal{O} = \\mathcal{P}(X)"
         );
     }
