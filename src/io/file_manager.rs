@@ -45,23 +45,19 @@ impl FileManager {
         &self,
         index: &mut data::NoteIndexContainer,
         id: &str,
-        new_name: Option<String>,
+        new_name: String,
     ) -> error::Result<()> {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
             .get(id)
-            .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
+            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
 
         // Remember old path
         let old_path = note.path.clone();
 
         // Create a path from the input.
-        let input_path = path::Path::new(
-            new_name
-                .as_ref()
-                .ok_or_else(|| error::RucolaError::Input("Empty input field.".to_owned()))?,
-        );
+        let input_path = path::Path::new(&new_name);
 
         // Check that the user hasn't given a full path
         if input_path.components().count() > 1 {
@@ -94,17 +90,13 @@ impl FileManager {
         &self,
         index: &mut data::NoteIndexContainer,
         id: &str,
-        new_path_buf: Option<String>,
+        mut new_path_buf: String,
     ) -> error::Result<()> {
         let index_b = index.borrow_mut();
         // Retrieve the old version from the table
         let note = index_b
             .get(id)
-            .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?;
-
-        // Get input
-        let mut new_path_buf = new_path_buf
-            .ok_or_else(|| error::RucolaError::Input("Empty input field.".to_owned()))?;
+            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
 
         // If a directory is given, re-use the old name
         if new_path_buf.ends_with("/") {
@@ -156,7 +148,7 @@ impl FileManager {
         // Extract old note from the index.
         let note = index
             .get(old_id)
-            .ok_or_else(|| error::RucolaError::NoteNoteFound(old_id.to_owned()))?;
+            .ok_or_else(|| error::RucolaError::NoteNotFound(old_id.to_owned()))?;
 
         // === RENAMING ===
         // Create a regex that find links to the old name or id
@@ -212,7 +204,7 @@ impl FileManager {
             &index
                 .borrow_mut()
                 .get(id)
-                .ok_or_else(|| error::RucolaError::NoteNoteFound(id.to_owned()))?
+                .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?
                 .path,
         ))?;
         Ok(())

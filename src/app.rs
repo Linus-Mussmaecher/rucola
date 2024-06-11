@@ -4,16 +4,19 @@ use ratatui::prelude::*;
 /// The main state of the application.
 /// Consists of a select screen that is always existent, a stack of notes the user has navigated through and that he can navigate through by popping, reversing its navigation. Lastly, there is a display screen of the currently displayed note, which should always correspond to the top of the stack.
 pub struct App {
+    // === UI ===
     /// The currently displayed UI screen.
     select: ui::screen::SelectScreen,
     /// The top of the display stack, if present.
     display: Option<ui::screen::DisplayScreen>,
     /// The ids of note on the display stack
     display_stack: Vec<String>,
+
+    // === DATA ===
     /// Index note data
     index: data::NoteIndexContainer,
 
-    // === Config ===
+    // === CONFIG ===
     /// The file manager this app's screens use to enact the user's file system requests on the file system.
     manager: io::FileManager,
     /// The HtmlBuider this app's screens use to continuously build html files.
@@ -113,13 +116,11 @@ impl App {
         let modifications = index.handle_file_events()?;
         drop(index);
 
-        // if anything happened in the file system, better refresh the environment
         if modifications {
+            // if anything happened in the file system, better refresh the filters
             self.select.refresh_env_stats();
-            // if we are currently in a display screen, also refresh it (by creating it anew)
-            if self.display.is_some() {
-                self.set_display_to_top()?;
-            }
+            // also refresh the display by setting it to none
+            self.set_display_to_top()?;
         }
 
         if key.is_none() {
@@ -149,6 +150,12 @@ impl App {
                 // Pop the top of the stack - which should correspond to the currently displayed note.
                 self.display_stack.pop();
                 self.set_display_to_top()?;
+            }
+            ui::Message::DisplayStackReplaceDelay(new_id) => {
+                self.display_stack.pop();
+                self.display_stack.push(new_id.clone());
+                // here, no set_display_to_top, as the this is used by rename/move and the new not may not be updated in the index yet.
+                // refresh will be triggered next frame by the caused file modification
             }
             ui::Message::DisplayStackPush(new_id) => {
                 // Push a new id on top of the display stack.

@@ -1,4 +1,5 @@
-/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
+// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
+use clap::Parser;
 use crossterm::{
     event,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -9,6 +10,8 @@ use std::panic;
 
 /// The actual application, combining the ui and data management.
 mod app;
+/// Config file.
+mod config;
 /// Data manipulation: Reading, parsing and manipulating note files and calculating statistics.
 mod data;
 /// Error enum and handling.
@@ -17,15 +20,14 @@ mod error;
 mod io;
 /// The ui of the app.
 mod ui;
-use clap::Parser;
-mod config;
+/// Initial config file loaded from file and used to create other configuration structs.
 pub use config::Config;
 
 /// Command line arguments for the Rucola markdown note management program.
-/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
 /// This program comes with ABSOLUTELY NO WARRANTY.
 /// This is free software, and you are welcome to redistribute it under certain conditions.
 /// Type `rucola --license` for details.
+/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Arguments {
