@@ -14,7 +14,7 @@ From paracompact it follows: An open subset of a manifold has at most countably 
 
 Locally euclidean is equivalent to the existence of a smooth [[Atlas]].
 
-[[lie-group]]s are manifolds.
+[[Lie Group]]s are manifolds.
 
 
 ## Examples

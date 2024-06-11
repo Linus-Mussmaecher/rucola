@@ -8,7 +8,7 @@ pub enum RucolaError {
     #[error("An IO operation failed: {0}")]
     IO(#[from] std::io::Error),
     #[error("Failed to find this note at the expected location: {0}.")]
-    NoteNoteFound(String),
+    NoteNotFound(String),
     #[error("Failed to load config file, defaulting: {0}")]
     ConfigLoad(#[from] confy::ConfyError),
     #[error("Could not find a default application for this file type.")]

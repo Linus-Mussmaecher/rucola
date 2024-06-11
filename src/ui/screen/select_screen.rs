@@ -72,7 +72,7 @@ pub struct SelectScreen {
     /// The text area to type in filters.
     filter_area: TextArea<'static>,
     /// The text area used to create new notes.
-    create_area: TextArea<'static>,
+    name_area: TextArea<'static>,
     /// Current input mode
     mode: SelectMode,
     /// Current state of the list
@@ -109,7 +109,7 @@ impl SelectScreen {
             builder,
             manager,
             filter_area: TextArea::default(),
-            create_area: TextArea::default(),
+            name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
             sorting: SortingMode::Name,
@@ -176,12 +176,11 @@ impl SelectScreen {
 
         // Apply default self.styles to the create area
 
-        self.create_area.set_style(self.styles.input_style);
-        self.create_area
+        self.name_area.set_style(self.styles.input_style);
+        self.name_area
             .set_cursor_line_style(self.styles.input_style);
 
-        self.create_area
-            .set_block(Block::bordered().title(title_top));
+        self.name_area.set_block(Block::bordered().title(title_top));
     }
 
     /// Returns the heights of the global and local stats area with this filter string
@@ -296,13 +295,6 @@ impl SelectScreen {
             self.local_stats.filtered_stats.reverse();
         }
     }
-
-    fn extract_string_and_clear(area: &mut TextArea<'static>) -> Option<String> {
-        let res = area.lines().first().cloned();
-        area.select_all();
-        area.cut();
-        res
-    }
 }
 
 impl super::Screen for SelectScreen {
@@ -327,7 +319,7 @@ impl super::Screen for SelectScreen {
                 }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
-                    let _ = Self::extract_string_and_clear(&mut self.filter_area);
+                    let _ = super::extract_string_and_clear(&mut self.filter_area);
                     self.filter(data::Filter::default());
                 }
                 // T: Change all/any words requirement
@@ -451,7 +443,7 @@ impl super::Screen for SelectScreen {
                 match key.code {
                     // Escape: Back to main mode, clear the buffer
                     KeyCode::Esc => {
-                        let _ = Self::extract_string_and_clear(&mut self.create_area);
+                        let _ = super::extract_string_and_clear(&mut self.name_area);
                         self.mode = SelectMode::Select;
                     }
                     // Enter: Create note, back to main mode, clear the buffer
@@ -463,8 +455,8 @@ impl super::Screen for SelectScreen {
                             SelectMode::Create => {
                                 // Create & register the note
                                 self.manager
-                                    .create_note_file(Self::extract_string_and_clear(
-                                        &mut self.create_area,
+                                    .create_note_file(super::extract_string_and_clear(
+                                        &mut self.name_area,
                                     ))?;
                                 // if successfull, refresh the ui
                                 self.refresh_env_stats();
@@ -477,7 +469,12 @@ impl super::Screen for SelectScreen {
                                     self.manager.rename_note_file(
                                         &mut self.index,
                                         &env_stats.id,
-                                        Self::extract_string_and_clear(&mut self.create_area),
+                                        super::extract_string_and_clear(&mut self.name_area)
+                                            .ok_or_else(|| {
+                                                error::RucolaError::Input(
+                                                    "New name is empty.".to_string(),
+                                                )
+                                            })?,
                                     )?;
                                     // if successfull, refresh the ui
                                     self.refresh_env_stats();
@@ -491,7 +488,12 @@ impl super::Screen for SelectScreen {
                                     self.manager.move_note_file(
                                         &mut self.index,
                                         &env_stats.id,
-                                        Self::extract_string_and_clear(&mut self.create_area),
+                                        super::extract_string_and_clear(&mut self.name_area)
+                                            .ok_or_else(|| {
+                                                error::RucolaError::Input(
+                                                    "Move target is empty.".to_string(),
+                                                )
+                                            })?,
                                     )?;
                                     // if successfull, refresh the ui
                                     self.refresh_env_stats();
@@ -505,7 +507,7 @@ impl super::Screen for SelectScreen {
                     // All other key events are passed on to the text area
                     _ => {
                         // Else -> Pass on to the text area
-                        self.create_area.input(key);
+                        self.name_area.input(key);
                     }
                 };
             }
@@ -910,7 +912,7 @@ impl super::Screen for SelectScreen {
             }
             SelectMode::Filter | SelectMode::Select => {}
             SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
-                let create_input = self.create_area.widget();
+                let create_input = self.name_area.widget();
 
                 let popup_areas = Layout::vertical([
                     Constraint::Fill(1),

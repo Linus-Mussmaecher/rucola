@@ -23,7 +23,6 @@ Terminal-based browser and information aggregator for markdown file structures.
        - [File Management](#file-management)
     - [Display Screen](#display-screen)
     - [Configuration](#configuration)
- - [Planned Features](#planned-features)
  - [Technology](#technology)
  - [License](#license)
 
@@ -211,15 +210,6 @@ The following configuration options manage the HTML files created by rucola:
    The `.css` file extension can be omitted.
    If not set, no css file will be added to your HTML files.
  - `html_prepend` can contain any text you want to prepend to all your HTML files in addition to the mathjax, css and title tags/scripts.
-
-## Planned Features
-Planned features include:
- - More powerful search options, such as
-   - Full text search through your files
- - Link updating on moving or renaming files
- - Hot reloading of notes and html conversions
- - Github-Wiki
- - Integration of Obisidan URI for opening notes in obsidian
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/).

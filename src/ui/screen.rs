@@ -17,3 +17,11 @@ pub trait Screen {
     /// Informs the screen of user messages and possibly modifies the content.
     fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message>;
 }
+
+// Clears a text area and returns the contained string, if any.
+fn extract_string_and_clear(area: &mut tui_textarea::TextArea<'static>) -> Option<String> {
+    let res = area.lines().first().cloned();
+    area.select_all();
+    area.cut();
+    res
+}
