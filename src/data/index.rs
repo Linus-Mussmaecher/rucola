@@ -207,8 +207,8 @@ mod tests {
     #[test]
     fn test_indexing() {
         let config = files::Config::default();
-        let tracker = files::FileTracker::new(&config);
-        let builder = files::HtmlBuilder::new(&config);
+        let tracker = files::FileTracker::new(&config, std::path::PathBuf::from("./tests"));
+        let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
@@ -231,8 +231,8 @@ mod tests {
     #[test]
     fn test_links_blinks() {
         let config = files::Config::default();
-        let tracker = files::FileTracker::new(&config);
-        let builder = files::HtmlBuilder::new(&config);
+        let tracker = files::FileTracker::new(&config, std::path::PathBuf::from("./tests"));
+        let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
