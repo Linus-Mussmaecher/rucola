@@ -24,7 +24,7 @@ impl Filter {
         // Go through words
         for word in filter_string.split_whitespace() {
             if word.starts_with("!#") {
-                tags.push((word.trim_start_matches("!").to_string(), false));
+                tags.push((word.trim_start_matches('!').to_string(), false));
                 continue;
             }
             if word.starts_with('#') {
@@ -40,7 +40,7 @@ impl Filter {
             }
             if word.starts_with('>') {
                 links.push((
-                    super::name_to_id(word.trim_start_matches(">")).to_string(),
+                    super::name_to_id(word.trim_start_matches('>')).to_string(),
                     true,
                 ));
                 continue;
@@ -54,7 +54,7 @@ impl Filter {
             }
             if word.starts_with('<') {
                 blinks.push((
-                    super::name_to_id(word.trim_start_matches("<")).to_string(),
+                    super::name_to_id(word.trim_start_matches('<')).to_string(),
                     true,
                 ));
                 continue;
@@ -84,15 +84,14 @@ impl Filter {
                 .tags
                 .iter()
                 // split each tag into..
-                .map(|tag| {
+                .flat_map(|tag| {
                     // an iterator of substring starting at 0 and going to every appearance to /
-                    tag.match_indices("/")
+                    tag.match_indices('/')
                         .map(|(index, _match)| &tag[0..index])
                         // and appended just a substring that is the whole tag
                         .chain(std::iter::once(tag.as_str()))
+                    // flatten this so we have just an iterator over (sub)strs
                 })
-                // flatten this so we have just an iterator over (sub)strs
-                .flatten()
                 // check if any of these substring is the searched tag
                 .any(|subtag| subtag == tag)
             // now compare this to our expectation
@@ -141,17 +140,17 @@ impl Filter {
             }
         }
 
-        // if there are no tag or link conditions, always go to the next step
-        if !(self.tags.is_empty() && self.links.is_empty() && self.blinks.is_empty())  &&
-            // else, check if we wanted all conditions or any and compare to the relevant variable
-            ((!self.any && !all) || (self.any && !any))
+        // if all conditions are empty, return match score (only title search)
+        if self.tags.is_empty() && self.links.is_empty() && self.blinks.is_empty()  ||
+            // also return match score if the required amount of conditions are fulfilled
+            (!self.any && all || self.any && any)
         {
-            return None;
+            let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
+            matcher.fuzzy_match(&note.name, &self.title)
+        } else {
+            // else, an exclusion criterion was triggered
+            None
         }
-
-        // If nothing has triggerd an exclusion criterion, return the fuzzy match score
-        let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
-        return matcher.fuzzy_match(&note.name, &self.title);
     }
 }
 #[cfg(test)]
