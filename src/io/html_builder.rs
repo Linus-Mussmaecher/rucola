@@ -24,14 +24,14 @@ pub struct HtmlBuilder {
 impl Default for HtmlBuilder {
     fn default() -> Self {
         Self::new(
-            &super::Config::default(),
+            &crate::Config::default(),
             std::env::current_dir().expect("Current directory to exist and be accessible."),
         )
     }
 }
 
 impl HtmlBuilder {
-    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
+    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> Self {
         // Resolve css path
         let mut css_path = None;
 
@@ -210,11 +210,10 @@ impl HtmlBuilder {
 
 #[cfg(test)]
 mod tests {
-    use crate::files;
 
     #[test]
     fn test_viewing() {
-        let config = files::Config::default();
+        let config = crate::Config::default();
         let fm = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let note =
             crate::data::Note::from_path(std::path::Path::new("./tests/common/notes/Books.md"))
@@ -225,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_replacements() {
-        let config = files::Config::default();
+        let config = crate::Config::default();
         let mut hb = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
 
         let field = "\\field{R} \neq \\field{C}".to_string();
