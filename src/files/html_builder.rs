@@ -22,7 +22,7 @@ pub struct HtmlBuilder {
 }
 
 impl HtmlBuilder {
-    pub fn new(config: &super::config::Config) -> Self {
+    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
         // Resolve css path
         let mut css_path = None;
 
@@ -40,9 +40,7 @@ impl HtmlBuilder {
         }
 
         Self {
-            vault_path: config.vault_path.clone().unwrap_or_else(|| {
-                std::env::current_dir().expect("To get current working directory.")
-            }),
+            vault_path,
             enable_html: config.enable_html,
             css_path,
             html_prepend: config.html_prepend.clone(),
@@ -114,18 +112,15 @@ impl HtmlBuilder {
 
         let tar_path = self.id_to_path(&data::name_to_id(&note.name));
 
-        let mut tar_file = match fs::File::create(&tar_path) {
-            // file could be created -> all good
-            Ok(file) => file,
-            Err(_) => {
-                // something went wrong -> try to create the file path
-                if let Some(parent) = tar_path.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-                // try again, this time returning error if it doesn't work
-                fs::File::create(&tar_path)?
+        // ensure parent exists
+        if let Some(parent) = tar_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
             }
-        };
+        }
+
+        // get file (creates it if it doesn't exist)
+        let mut tar_file = fs::File::create(&tar_path)?;
 
         writeln!(tar_file, "<title>{}</title>", note.name)?;
         self.add_preamble(&mut tar_file, contains_math)?;
@@ -214,7 +209,7 @@ mod tests {
     #[test]
     fn test_viewing() {
         let config = files::Config::default();
-        let fm = super::HtmlBuilder::new(&config);
+        let fm = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let note =
             crate::data::Note::from_path(std::path::Path::new("./tests/common/notes/Books.md"))
                 .unwrap();
@@ -225,7 +220,7 @@ mod tests {
     #[test]
     fn test_replacements() {
         let config = files::Config::default();
-        let mut hb = super::HtmlBuilder::new(&config);
+        let mut hb = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
 
         let field = "\\field{R} \neq \\field{C}".to_string();
         let topology = "\\topology{O} = \\topology{P}(X)".to_string();

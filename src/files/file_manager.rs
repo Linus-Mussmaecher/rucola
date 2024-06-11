@@ -13,11 +13,9 @@ pub struct FileManager {
 }
 
 impl FileManager {
-    pub fn new(config: &super::config::Config) -> Self {
+    pub fn new(config: &super::config::Config, vault_path: path::PathBuf) -> Self {
         Self {
-            vault_path: config.vault_path.clone().unwrap_or_else(|| {
-                std::env::current_dir().expect("To get current working directory.")
-            }),
+            vault_path,
             default_extension: config.default_extension.clone(),
             editor: config.editor.clone(),
         }
@@ -274,7 +272,7 @@ mod tests {
         let editor = std::env::var("EDITOR");
 
         let config = files::Config::default();
-        let fm = super::FileManager::new(&config);
+        let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
         let path = std::path::Path::new("./tests/common/notes/Books.md");
 
         if let Ok(_editor) = editor {
@@ -289,7 +287,7 @@ mod tests {
         let txt_ending_tar = std::path::PathBuf::from("./tests/common/test.txt");
 
         let config = files::Config::default();
-        let fm = super::FileManager::new(&config);
+        let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
 
         let mut no_ending = std::path::PathBuf::from("./tests/common/test");
         let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");

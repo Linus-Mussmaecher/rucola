@@ -49,11 +49,7 @@ impl Default for Config {
         Self {
             enable_html: true,
             mathjax: true,
-            vault_path: if cfg!(test) {
-                Some(path::PathBuf::from("./tests/common/notes/"))
-            } else {
-                None
-            },
+            vault_path: None,
             theme: "default_light_theme".to_string(),
             stats_show: StatsShow::Both,
             editor: None,
@@ -87,13 +83,13 @@ pub fn load_configurations(
 
     // === Step 2: Fix home path ===
     // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
-    config.vault_path = args
+    let full_vault_path = args
         .target_folder
         // first attempt to extend the command line given path if one was passed
         .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
         // if none was given, expand the path given from the config file
         .or_else(|| {
-            config.vault_path.and_then(|conf_path_buf| {
+            config.vault_path.take().and_then(|conf_path_buf| {
                 expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
             })
         })
@@ -104,7 +100,8 @@ pub fn load_configurations(
             } else {
                 path
             }
-        });
+        })
+        .unwrap_or_else(|| std::env::current_dir().expect("To get current working directory."));
 
     // === Step 3: Load style file ===
     config.theme = args.style.unwrap_or(config.theme);
@@ -113,9 +110,9 @@ pub fn load_configurations(
 
     Ok((
         uistyles,
-        files::HtmlBuilder::new(&config),
-        files::FileManager::new(&config),
-        files::FileTracker::new(&config),
+        files::HtmlBuilder::new(&config, full_vault_path.clone()),
+        files::FileManager::new(&config, full_vault_path.clone()),
+        files::FileTracker::new(&config, full_vault_path),
         config.stats_show,
     ))
 }

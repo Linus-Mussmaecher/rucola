@@ -162,8 +162,8 @@ mod tests {
     #[test]
     fn test_filters() {
         let config = files::Config::default();
-        let tracker = files::FileTracker::new(&config);
-        let builder = files::HtmlBuilder::new(&config);
+        let tracker = files::FileTracker::new(&config, std::path::PathBuf::from("./tests"));
+        let builder = files::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
         assert_eq!(index.inner.len(), 11);
