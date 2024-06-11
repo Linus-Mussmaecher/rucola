@@ -32,15 +32,10 @@ impl FileTracker {
         let (sender, receiver) = mpsc::channel();
 
         // Create watcher so we can store it in the file, delaying its drop (which stops its function) until the end of the lifetime of this index.
-        let mut watcher = notify::recommended_watcher(move |res| {
+        let watcher = notify::recommended_watcher(move |res| {
             sender.send(res).unwrap();
         })
-        .unwrap();
-
-        // Start watching the vault.
-        watcher
-            .watch(&vault_path, notify::RecursiveMode::Recursive)
-            .expect("Fixed config does not fail.");
+        .expect("Watcher to not error on creation.");
 
         Self {
             vault_path,
@@ -51,6 +46,14 @@ impl FileTracker {
             file_change_channel: receiver,
         }
     }
+
+    /// Start watching the vault path.
+    /// This action is delayed until now so the watcher is not active while the initial indexing creates a ton of HTML files, which would trigger a ton of file events and a significant hangup.
+    pub fn initialize_watching(&mut self) -> Result<(), notify::Error> {
+        self.watcher
+            .watch(&self.vault_path, notify::RecursiveMode::Recursive)
+    }
+
     /// Returns a file walker that iterates over all notes to index.
     pub fn get_walker(&self) -> ignore::Walk {
         ignore::WalkBuilder::new(&self.vault_path)

@@ -26,7 +26,7 @@ impl NoteIndex {
     ///
     /// All IO errors that happeded during the creation or the (potential) HTML conversion are returned alongside.
     pub fn new(
-        tracker: files::FileTracker,
+        mut tracker: files::FileTracker,
         builder: files::HtmlBuilder,
     ) -> (Self, Vec<error::RucolaError>) {
         // create an error struct
@@ -59,6 +59,12 @@ impl NoteIndex {
                     Err(e) => Some(e),
                 }),
         );
+
+        // let the watcher start watching _after_ all htmls have been re-done
+        match tracker.initialize_watching() {
+            Ok(_) => {}
+            Err(e) => errors.push(e.into()),
+        };
 
         (
             Self {
