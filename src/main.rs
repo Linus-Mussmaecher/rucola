@@ -1,10 +1,6 @@
 // Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
 use clap::Parser;
-use crossterm::{
-    event,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
+use crossterm::{event, terminal, ExecutableCommand};
 use ratatui::prelude::*;
 use std::panic;
 
@@ -154,8 +150,8 @@ fn init_hooks() -> error::Result<()> {
 
 /// Ratatui boilerplate to put the terminal into a TUI state
 fn init_terminal() -> std::io::Result<Terminal<impl ratatui::backend::Backend>> {
-    std::io::stdout().execute(EnterAlternateScreen)?;
-    enable_raw_mode()?;
+    std::io::stdout().execute(terminal::EnterAlternateScreen)?;
+    terminal::enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
     Ok(terminal)
@@ -163,8 +159,8 @@ fn init_terminal() -> std::io::Result<Terminal<impl ratatui::backend::Backend>> 
 
 /// Ratatui boilerplate to restore the terminal to a usable state after program exits (regularly or by panic)
 fn restore_terminal() -> std::io::Result<()> {
-    std::io::stdout().execute(LeaveAlternateScreen)?;
-    disable_raw_mode()?;
+    std::io::stdout().execute(terminal::LeaveAlternateScreen)?;
+    terminal::disable_raw_mode()?;
     Ok(())
 }
 
