@@ -113,8 +113,29 @@ impl App {
     ) -> error::Result<ui::TerminalMessage> {
         // Check for file changes
         let mut index = self.index.borrow_mut();
-        let modifications = index.handle_file_events()?;
+        let (modifications, id_changes) = index.handle_file_events()?;
         drop(index);
+
+        // synchronize display stack with id changes from file events
+        'changes: for (old_id, maybe_new_id) in id_changes {
+            // if an id was changed, update all displays referring to it
+            if let Some(new_id) = maybe_new_id {
+                for display_id in self.display_stack.iter_mut() {
+                    if *display_id == old_id {
+                        *display_id = new_id;
+                        continue 'changes;
+                    }
+                }
+            } else {
+                // if an id was deleted, remove all such displays from the stack
+                self.display_stack
+                    .retain(|display_id| *display_id != old_id);
+            }
+        }
+
+        // remove 'empty' ids, indicating that
+        self.display_stack
+            .retain(|display_id| !display_id.is_empty());
 
         if modifications {
             // if anything happened in the file system, better refresh the filters
@@ -150,12 +171,6 @@ impl App {
                 // Pop the top of the stack - which should correspond to the currently displayed note.
                 self.display_stack.pop();
                 self.set_display_to_top()?;
-            }
-            ui::Message::DisplayStackReplaceDelay(new_id) => {
-                self.display_stack.pop();
-                self.display_stack.push(new_id.clone());
-                // here, no set_display_to_top, as the this is used by rename/move and the new not may not be updated in the index yet.
-                // refresh will be triggered next frame by the caused file modification
             }
             ui::Message::DisplayStackPush(new_id) => {
                 // Push a new id on top of the display stack.

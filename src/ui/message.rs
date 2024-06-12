@@ -11,9 +11,6 @@ pub enum Message {
     DisplayStackPop,
     /// Pushes the given id to the top of the display stack.
     DisplayStackPush(String),
-    /// Replaces the top of the display stack (pop + push).
-    /// Refresh of the actually  displayed screen is not triggered immediately.
-    DisplayStackReplaceDelay(String),
     /// Restore the terminal, execute the given command and re-enter
     OpenExternalCommand(std::process::Command),
 }
@@ -35,7 +32,6 @@ impl From<Message> for TerminalMessage {
             Message::None
             | Message::DisplayStackClear
             | Message::DisplayStackPop
-            | Message::DisplayStackReplaceDelay(_)
             | Message::DisplayStackPush(_) => Self::None,
             Message::Quit => Self::Quit,
             Message::OpenExternalCommand(cmd) => Self::OpenExternalCommand(cmd),

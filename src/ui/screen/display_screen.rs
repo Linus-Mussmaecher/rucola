@@ -345,17 +345,13 @@ impl super::Screen for DisplayScreen {
                 }
                 KeyCode::Enter => {
                     self.mode = DisplayMode::Display;
-                    if let Some(new_name) = super::extract_string_and_clear(&mut self.name_area) {
-                        let new_id = data::name_to_id(&new_name);
-                        self.manager.rename_note_file(
-                            &mut self.index,
-                            &data::name_to_id(&self.note.name),
-                            new_name,
-                        )?;
-                        return Ok(ui::Message::DisplayStackReplaceDelay(new_id));
-                    } else {
-                        return Err(error::RucolaError::Input("New name is empty.".to_string()));
-                    }
+                    self.manager.rename_note_file(
+                        &mut self.index,
+                        &data::name_to_id(&self.note.name),
+                        super::extract_string_and_clear(&mut self.name_area).ok_or_else(|| {
+                            error::RucolaError::Input("New name is empty.".to_string())
+                        })?,
+                    )?;
                 }
                 _ => {
                     self.name_area.input(key);
@@ -368,19 +364,13 @@ impl super::Screen for DisplayScreen {
                 }
                 KeyCode::Enter => {
                     self.mode = DisplayMode::Display;
-                    if let Some(new_name) = super::extract_string_and_clear(&mut self.name_area) {
-                        let new_id = data::name_to_id(&new_name);
-                        self.manager.move_note_file(
-                            &mut self.index,
-                            &data::name_to_id(&self.note.name),
-                            new_name,
-                        )?;
-                        return Ok(ui::Message::DisplayStackReplaceDelay(new_id));
-                    } else {
-                        return Err(error::RucolaError::Input(
-                            "Move location is empty.".to_string(),
-                        ));
-                    }
+                    self.manager.move_note_file(
+                        &mut self.index,
+                        &data::name_to_id(&self.note.name),
+                        super::extract_string_and_clear(&mut self.name_area).ok_or_else(|| {
+                            error::RucolaError::Input("Move location is empty.".to_string())
+                        })?,
+                    )?;
                 }
 
                 _ => {

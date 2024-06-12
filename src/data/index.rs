@@ -4,7 +4,11 @@ use crate::{error, io};
 
 use super::Note;
 
+/// Contains a NoteIndex and wraps it to provide easy mutable access from different areas of the code.
 pub type NoteIndexContainer = std::rc::Rc<std::cell::RefCell<NoteIndex>>;
+
+/// Indicates a note with old id .0 has changed id to .1.unwrap() or was deleted (.1 = None).
+pub type IdChange = (String, Option<String>);
 
 /// Contains an indexed and hashed list of notes
 pub struct NoteIndex {
@@ -86,9 +90,10 @@ impl NoteIndex {
     ///  - new file creations with in the vault folder are checked for notes and added if appropriate
     ///  - removed files are removed from the index (if they were present)
     ///  - Modifications of files are checked for being notes and if so, the respective index entries are updated with the new data.
-    /// Returns wether the index has changed.
-    pub fn handle_file_events(&mut self) -> error::Result<bool> {
+    /// Returns wether the index has changed, and a list of all IdChanges.
+    pub fn handle_file_events(&mut self) -> error::Result<(bool, Vec<IdChange>)> {
         let mut modifications = false;
+        let mut id_changes = vec![];
         for event in self.tracker.try_events_iter().flatten() {
             match event.kind {
                 notify::EventKind::Create(kind) => {
@@ -117,25 +122,38 @@ impl NoteIndex {
                     match kind {
                         // Renames and moves
                         notify::event::ModifyKind::Name(mode) => match mode {
-                            notify::event::RenameMode::From => {
-                                self.inner
-                                    .retain(|_, note| !event.paths.contains(&note.path));
-                                modifications = true;
-                            }
-                            notify::event::RenameMode::To => {
-                                for path in event.paths {
-                                    if self.tracker.is_tracked(&path) {
-                                        if let Ok(note) = super::Note::from_path(&path) {
+                            notify::event::RenameMode::From => {}
+                            notify::event::RenameMode::To => {}
+                            notify::event::RenameMode::Both => {
+                                let from = event.paths.get(0).ok_or_else(|| {
+                                    error::RucolaError::NotifyEventError(event.clone())
+                                })?;
+                                let to = event.paths.get(1).ok_or_else(|| {
+                                    error::RucolaError::NotifyEventError(event.clone())
+                                })?;
+                                // find the id of the first note with this path
+                                if let Some(old_id) = self
+                                    .inner
+                                    .iter()
+                                    .find(|(_id, note)| note.path.to_path_buf() == *from)
+                                    .map(|(id, _n)| id.to_owned())
+                                {
+                                    // remove old note
+                                    self.inner.remove(&old_id);
+                                    modifications = true;
+                                    // add new note
+                                    if self.tracker.is_tracked(to) {
+                                        if let Ok(note) = super::Note::from_path(to) {
                                             // create html on creation
                                             self.builder.create_html(&note, false)?;
                                             // insert the note from the new location
-                                            self.inner.insert(super::name_to_id(&note.name), note);
-                                            modifications = true;
+                                            let new_id = super::name_to_id(&note.name);
+                                            self.inner.insert(new_id.clone(), note);
+                                            id_changes.push((old_id, Some(new_id)));
                                         }
                                     }
                                 }
                             }
-                            notify::event::RenameMode::Both => {}
                             notify::event::RenameMode::Any => {}
                             notify::event::RenameMode::Other => {}
                         },
@@ -161,9 +179,20 @@ impl NoteIndex {
                 // Remove events: Keep only those notes whose path was not removed
                 notify::EventKind::Remove(kind) => {
                     if kind == notify::event::RemoveKind::File {
-                        self.inner
-                            .retain(|_, note| !event.paths.contains(&note.path));
-                        modifications = true;
+                        let deleted_path = event
+                            .paths
+                            .first()
+                            .ok_or_else(|| error::RucolaError::NotifyEventError(event.clone()))?;
+                        if let Some(old_id) = self
+                            .inner
+                            .iter()
+                            .find(|(_id, note)| note.path.to_path_buf() == *deleted_path)
+                            .map(|(id, _n)| id.to_owned())
+                        {
+                            self.inner.remove(&old_id);
+                            modifications = true;
+                            id_changes.push((old_id, None));
+                        }
                     }
                 }
                 // Do nothing in the other cases
@@ -172,7 +201,9 @@ impl NoteIndex {
                 notify::EventKind::Any => {}
             }
         }
-        Ok(modifications)
+        // just to be sure
+        modifications |= !id_changes.is_empty();
+        Ok((modifications, id_changes))
     }
 
     /// Returns an iterator over pairs of (id, name) of notes linked from this note.
