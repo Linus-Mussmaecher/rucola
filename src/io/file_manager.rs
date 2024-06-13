@@ -309,6 +309,35 @@ mod tests {
     }
 
     #[test]
+    fn test_create_other_suffix() {
+        let tmp = testdir::testdir!();
+
+        let fm = super::FileManager::new(
+            &crate::Config {
+                default_extension: String::from("txt"),
+                file_types: vec![String::from("txt")],
+                ..Default::default()
+            },
+            tmp.clone(),
+        );
+
+        fm.create_note_file("Lie Group").unwrap();
+        fm.create_note_file("Math/Atlas").unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.txt"));
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.txt"));
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        // check we can create notes
+        let _lg = crate::data::Note::from_path(&lg_path).unwrap();
+        let _at = crate::data::Note::from_path(&at_path).unwrap();
+    }
+
+    #[test]
     fn test_delete() {
         let tmp = testdir::testdir!();
 
