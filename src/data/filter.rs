@@ -159,7 +159,7 @@ mod tests {
     use crate::{data, io};
 
     #[test]
-    fn test_filters() {
+    fn test_filter() {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
@@ -181,6 +181,20 @@ mod tests {
             title: String::new(),
         };
 
+        assert!(filter1.apply(linux, &index).is_some());
+        assert!(filter1.apply(osx, &index).is_some());
+        assert!(filter1.apply(win, &index).is_none());
+    }
+
+    #[test]
+    fn test_filter_from_string() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
         // === Filter 2 ===
 
         let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false);
@@ -198,10 +212,6 @@ mod tests {
         );
         assert_eq!(filter2.title, "");
 
-        assert!(filter1.apply(linux, &index).is_some());
-        assert!(filter1.apply(osx, &index).is_some());
-        assert!(filter1.apply(win, &index).is_none());
-
         let liegroup = index.inner.get("lie-group").unwrap();
         let chart = index.inner.get("chart").unwrap();
         let manifold = index.inner.get("manifold").unwrap();
@@ -213,7 +223,10 @@ mod tests {
         assert!(filter2.apply(manifold, &index).is_none());
         assert!(filter2.apply(smoothmap, &index).is_none());
         assert!(filter2.apply(topology, &index).is_none());
+    }
 
+    #[test]
+    fn test_filter_from_string_all() {
         // === Filter 3 ===
         let filter3 = Filter::new(
             "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux",
@@ -236,7 +249,10 @@ mod tests {
             vec![("atlas".to_string(), true), ("linux".to_string(), false)]
         );
         assert_eq!(filter3.title, "");
+    }
 
+    #[test]
+    fn test_filter_from_string_case_insensitive() {
         // === Filter 4 ===
         let filter4 = Filter::new("<aTlas >Smooth-mAp", true);
 

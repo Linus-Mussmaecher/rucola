@@ -380,8 +380,7 @@ impl super::Screen for DisplayScreen {
             DisplayMode::Delete => match key.code {
                 KeyCode::Enter => {
                     // delete it from index & filesystem
-                    self.manager
-                        .delete_note_file(&mut self.index, &data::name_to_id(&self.note.name))?;
+                    self.manager.delete_note_file(self.note.path.as_path())?;
                     return Ok(ui::Message::DisplayStackPop);
                 }
                 _ => {

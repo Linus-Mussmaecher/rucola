@@ -192,33 +192,30 @@ impl FileManager {
     }
 
     /// Follows a notes path and deletes it in the file system.
-    /// Deletion from the index is handled centrally by the file watcher of the index itself.
-    pub fn delete_note_file(
-        &self,
-        index: &mut data::NoteIndexContainer,
-        id: &str,
-    ) -> error::Result<()> {
-        // Follow its path and delete it
-        fs::remove_file(path::Path::new(
-            // get the note
-            &index
-                .borrow_mut()
-                .get(id)
-                .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?
-                .path,
-        ))?;
+    pub fn delete_note_file(&self, path: &path::Path) -> error::Result<()> {
+        if path.starts_with(&self.vault_path) {
+            // Follow its path and delete it
+            fs::remove_file(path)?;
+        }
         Ok(())
     }
 
     /// Creates a note of the given name in the file system (relative to the vault).
     /// Registration in the index is handled centrally by the file watcher of the index itself.
-    pub fn create_note_file(&self, input_path: Option<String>) -> error::Result<()> {
+    pub fn create_note_file(&self, input_path: &str) -> error::Result<()> {
         // Piece together the file path
         let mut path = self.vault_path.clone();
-        path.push(input_path.unwrap_or_else(|| "Untitled".to_owned()));
+        path.push(input_path);
 
         // If there was no manual extension set, take the default one
         self.ensure_file_extension(&mut path);
+
+        // ensure parent directory exists
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
 
         // Create the file
         let mut file = fs::File::create(path.clone())?;
@@ -267,7 +264,7 @@ impl FileManager {
 mod tests {
 
     #[test]
-    fn test_opening() {
+    fn test_edit() {
         let editor = std::env::var("EDITOR");
 
         let config = crate::Config::default();
@@ -279,6 +276,56 @@ mod tests {
             fm.create_edit_command(&path.to_path_buf()).unwrap();
         }
     }
+
+    #[test]
+    fn test_create() {
+        let tmp = std::env::temp_dir();
+
+        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+
+        fm.create_note_file("Lie Group").unwrap();
+        fm.create_note_file("Math/Atlas").unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.md"));
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.md"));
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        // check we can create notes
+        let _lg = crate::data::Note::from_path(&lg_path).unwrap();
+        let _at = crate::data::Note::from_path(&at_path).unwrap();
+    }
+
+    #[test]
+    fn test_delete() {
+        let tmp = std::env::temp_dir();
+
+        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+
+        fm.create_note_file("Lie Group").unwrap();
+        fm.create_note_file("Math/Atlas").unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.md"));
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.md"));
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        fm.delete_note_file(&lg_path).unwrap();
+        assert!(!lg_path.exists());
+        assert!(at_path.exists());
+
+        fm.delete_note_file(&at_path).unwrap();
+        assert!(!lg_path.exists());
+        assert!(!at_path.exists());
+    }
+
+    // TODO: Write tests for rename, move, link updating
 
     #[test]
     fn test_file_endings() {

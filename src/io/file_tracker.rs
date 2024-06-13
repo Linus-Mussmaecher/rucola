@@ -88,14 +88,11 @@ impl FileTracker {
 mod tests {
 
     #[test]
-    fn test_file_endings() {
+    fn test_tracker_basic() {
         let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
         let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
         let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
-        let tex = std::path::PathBuf::from("./tests/common/notes/Books.tex");
-        let md_ignored = std::path::PathBuf::from("./tests/.html/books.md");
-        let html_ignored = std::path::PathBuf::from("./tests/.html/books.html");
-        let md_foreign = std::path::PathBuf::from("./README.md");
+        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let config = crate::Config::default();
 
@@ -105,10 +102,42 @@ mod tests {
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
         assert!(!tracker.is_tracked(&txt));
-        assert!(!tracker.is_tracked(&tex));
+        assert!(!tracker.is_tracked(&rs));
+    }
+
+    #[test]
+    fn test_tracker_ignored() {
+        let md_ignored = std::path::PathBuf::from("./tests/.html/books.md");
+        let html_ignored = std::path::PathBuf::from("./tests/.html/books.html");
+
+        let config = crate::Config::default();
+
+        let tracker =
+            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
+
         assert!(!tracker.is_tracked(&md_ignored));
         assert!(!tracker.is_tracked(&html_ignored));
+    }
+
+    #[test]
+    fn test_tracker_foreign() {
+        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
+        let md_foreign = std::path::PathBuf::from("./README.md");
+
+        let config = crate::Config::default();
+
+        let tracker =
+            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
+
+        assert!(tracker.is_tracked(&md));
         assert!(!tracker.is_tracked(&md_foreign));
+    }
+    #[test]
+    fn test_tracker_txt() {
+        let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
+        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
+        let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
+        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let tracker = super::FileTracker::new(
             &crate::Config {
@@ -122,7 +151,15 @@ mod tests {
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
         assert!(tracker.is_tracked(&txt));
-        assert!(!tracker.is_tracked(&tex));
+        assert!(!tracker.is_tracked(&rs));
+    }
+
+    #[test]
+    fn test_tracker_all() {
+        let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
+        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
+        let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
+        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let tracker = super::FileTracker::new(
             &crate::Config {
@@ -136,6 +173,6 @@ mod tests {
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
         assert!(tracker.is_tracked(&txt));
-        assert!(tracker.is_tracked(&tex));
+        assert!(tracker.is_tracked(&rs));
     }
 }

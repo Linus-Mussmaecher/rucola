@@ -373,12 +373,22 @@ impl super::Screen for SelectScreen {
                 match key.code {
                     // D: Delete note
                     KeyCode::Char('d' | 'D') => {
-                        // Get selected element, extract its id
-                        if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
+                        if let Some(path) = self
+                            // get the selected item in the list for the id
+                            .local_stats
+                            .filtered_stats
+                            .get(self.selected)
+                            // use this id in the index to get the note
+                            .and_then(|env_stats| {
+                                // use the id to get the path
+                                self.index
+                                    .borrow()
+                                    .get(&env_stats.id)
+                                    .map(|note| note.path.clone())
+                            })
                         {
                             // delete it from index & filesystem
-                            self.manager
-                                .delete_note_file(&mut self.index, &env_stats.id)?;
+                            self.manager.delete_note_file(path.as_path())?;
                             // if successfull, refresh the ui
                             self.refresh_env_stats();
                         }
@@ -395,12 +405,13 @@ impl super::Screen for SelectScreen {
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
                                 // use the id to get the path
-                                self.index.borrow().get(&env_stats.id).map(|note| {
-                                    // use the config to create a valid opening command
-                                    note.path.clone()
-                                })
+                                self.index
+                                    .borrow()
+                                    .get(&env_stats.id)
+                                    .map(|note| note.path.clone())
                             })
                         {
+                            // use the config to create a valid opening command
                             return Ok(ui::Message::OpenExternalCommand(
                                 self.manager.create_edit_command(&res)?,
                             ));
@@ -454,10 +465,14 @@ impl super::Screen for SelectScreen {
                         match mode {
                             SelectMode::Create => {
                                 // Create & register the note
-                                self.manager
-                                    .create_note_file(super::extract_string_and_clear(
-                                        &mut self.name_area,
-                                    ))?;
+                                self.manager.create_note_file(
+                                    &super::extract_string_and_clear(&mut self.name_area)
+                                        .ok_or_else(|| {
+                                            error::RucolaError::Input(String::from(
+                                                "New note may not be empty.",
+                                            ))
+                                        })?,
+                                )?;
                                 // if successfull, refresh the ui
                                 self.refresh_env_stats();
                             }

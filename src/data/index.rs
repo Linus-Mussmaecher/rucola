@@ -242,7 +242,7 @@ mod tests {
     use crate::io;
 
     #[test]
-    fn test_indexing() {
+    fn test_index() {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
@@ -266,7 +266,30 @@ mod tests {
     }
 
     #[test]
-    fn test_links_blinks() {
+    fn test_links() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
+        assert_eq!(
+            index.links_vec("lie-group"),
+            vec![
+                ("manifold".to_string(), "Manifold".to_string()),
+                ("smooth-map".to_string(), "Smooth Map".to_string()),
+                ("topology".to_string(), "Topology".to_string()),
+            ]
+        );
+        assert_eq!(
+            index.blinks_vec("lie-group"),
+            vec![("manifold".to_string(), "Manifold".to_string()),]
+        );
+    }
+
+    #[test]
+    fn test_blinks() {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
