@@ -227,10 +227,11 @@ mod tests {
         let config = crate::Config::default();
         let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
 
-        let books =
-            crate::data::Note::from_path(&Path::new("./tests/common/notes/Books.md")).unwrap();
+        let os =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/Operating Systems.md"))
+                .unwrap();
 
-        hb.create_html(&books, true).unwrap();
+        hb.create_html(&os, true).unwrap();
     }
 
     #[test]
@@ -239,11 +240,11 @@ mod tests {
         let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
 
         // with math
-        let liegroup =
-            crate::data::Note::from_path(&Path::new("./tests/common/notes/math/Lie Group.md"))
+        let smooth_map =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/math/Smooth Map.md"))
                 .unwrap();
 
-        hb.create_html(&liegroup, true).unwrap();
+        hb.create_html(&smooth_map, true).unwrap();
     }
 
     #[test]
@@ -271,17 +272,19 @@ mod tests {
         let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
 
         let books =
-            crate::data::Note::from_path(&Path::new("./tests/common/notes/Books.md")).unwrap();
+            crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
 
-        if Path::new("./tests/.html/books.html").exists() {
-            std::fs::remove_file(Path::new("./tests/.html/books.html")).unwrap();
+        let b_path = hb.name_to_html_path("Books");
+
+        if b_path.exists() {
+            std::fs::remove_file(&b_path).unwrap();
         }
 
-        assert!(!Path::new("./tests/.html/books.html").exists());
+        assert!(!b_path.exists());
 
         hb.create_html(&books, true).unwrap();
 
-        assert!(Path::new("./tests/.html/books.html").exists());
+        assert!(b_path.exists());
     }
 
     #[test]
@@ -291,18 +294,20 @@ mod tests {
 
         // with math
         let liegroup =
-            crate::data::Note::from_path(&Path::new("./tests/common/notes/math/Lie Group.md"))
+            crate::data::Note::from_path(Path::new("./tests/common/notes/math/Lie Group.md"))
                 .unwrap();
 
-        if Path::new("./tests/.html/lie-group.html").exists() {
-            std::fs::remove_file(Path::new("./tests/.html/lie-group.html")).unwrap();
+        let lg_path = hb.name_to_html_path("Lie Group");
+
+        if Path::new(&lg_path).exists() {
+            std::fs::remove_file(&lg_path).unwrap();
         }
 
-        assert!(!Path::new("./tests/.html/lie-group.html").exists());
+        assert!(!lg_path.exists());
 
         hb.create_html(&liegroup, true).unwrap();
 
-        assert!(Path::new("./tests/.html/lie-group.html").exists());
+        assert!(lg_path.exists());
     }
 
     #[test]
