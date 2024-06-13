@@ -61,12 +61,12 @@ impl HtmlBuilder {
 
     /// For a given note id, returns the path its HTML representation _would_ be stored at.
     /// Makes no guarantees if that representation currently exists.
-    pub fn id_to_path(&self, id: &str) -> path::PathBuf {
+    pub fn name_to_html_path(&self, name: &str) -> path::PathBuf {
         // calculate target path
         let mut tar_path = self.vault_path.clone();
         tar_path.push(".html/");
 
-        tar_path.set_file_name(format!(".html/{}", id));
+        tar_path.set_file_name(format!(".html/{}", &data::name_to_id(name)));
         tar_path.set_extension("html");
         tar_path
     }
@@ -119,7 +119,7 @@ impl HtmlBuilder {
             }
         }
 
-        let tar_path = self.id_to_path(&data::name_to_id(&note.name));
+        let tar_path = self.name_to_html_path(&note.name);
 
         // ensure parent exists
         if let Some(parent) = tar_path.parent() {
@@ -194,7 +194,7 @@ impl HtmlBuilder {
     ///  - the systems default programms
     /// for an applicable program.
     pub fn create_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
-        let path = self.id_to_path(&data::name_to_id(&note.name));
+        let path = self.name_to_html_path(&note.name);
         // take the editor from the config file
         self.viewer
             .as_ref()
@@ -247,16 +247,20 @@ mod tests {
     }
 
     #[test]
-    fn test_id_to_path() {
+    fn test_name_to_html_path() {
         let config = crate::Config::default();
         let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
 
         assert_eq!(
-            hb.id_to_path("lie-group"),
+            hb.name_to_html_path("Lie Group"),
             PathBuf::from("./tests/.html/lie-group.html")
         );
         assert_eq!(
-            hb.id_to_path("books"),
+            hb.name_to_html_path("lie-group"),
+            PathBuf::from("./tests/.html/lie-group.html")
+        );
+        assert_eq!(
+            hb.name_to_html_path("books"),
             PathBuf::from("./tests/.html/books.html")
         );
     }
