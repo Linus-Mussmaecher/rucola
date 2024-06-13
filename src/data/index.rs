@@ -125,7 +125,7 @@ impl NoteIndex {
                             notify::event::RenameMode::From => {}
                             notify::event::RenameMode::To => {}
                             notify::event::RenameMode::Both => {
-                                let from = event.paths.get(0).ok_or_else(|| {
+                                let from = event.paths.first().ok_or_else(|| {
                                     error::RucolaError::NotifyEventError(event.clone())
                                 })?;
                                 let to = event.paths.get(1).ok_or_else(|| {

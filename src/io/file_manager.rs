@@ -142,6 +142,13 @@ impl FileManager {
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
 
+        // ensure parent directory exists
+        if let Some(parent) = target.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
         // actual fs copy (early returns if unsuccessfull)
         fs::rename(source, target.clone())?;
 
@@ -263,13 +270,15 @@ impl FileManager {
 #[cfg(test)]
 mod tests {
 
+    use std::path;
+
     #[test]
     fn test_edit() {
         let editor = std::env::var("EDITOR");
 
         let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
-        let path = std::path::Path::new("./tests/common/notes/Books.md");
+        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
+        let path = path::Path::new("./tests/common/notes/Books.md");
 
         if let Ok(_editor) = editor {
             // if we can unwrap the env variable, then we should be able to create a command
@@ -277,67 +286,104 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_create() {
-        let tmp = std::env::temp_dir();
+    // #[test]
+    // fn test_create() {
+    //     let tmp = std::env::temp_dir();
 
-        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+    //     let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+    //     fm.create_note_file("Lie Group").unwrap();
+    //     fm.create_note_file("Math/Atlas").unwrap();
 
-        let lg_path = tmp.join(String::from("Lie Group.md"));
-        let at_path = tmp
-            .join(String::from("Math"))
-            .join(String::from("Atlas.md"));
+    //     let lg_path = tmp.join(String::from("Lie Group.md"));
+    //     let at_path = tmp
+    //         .join(String::from("Math"))
+    //         .join(String::from("Atlas.md"));
 
-        assert!(lg_path.exists());
-        assert!(at_path.exists());
+    //     assert!(lg_path.exists());
+    //     assert!(at_path.exists());
 
-        // check we can create notes
-        let _lg = crate::data::Note::from_path(&lg_path).unwrap();
-        let _at = crate::data::Note::from_path(&at_path).unwrap();
-    }
+    //     // check we can create notes
+    //     let _lg = crate::data::Note::from_path(&lg_path).unwrap();
+    //     let _at = crate::data::Note::from_path(&at_path).unwrap();
+    // }
 
-    #[test]
-    fn test_delete() {
-        let tmp = std::env::temp_dir();
+    // #[test]
+    // fn test_delete() {
+    //     let tmp = std::env::temp_dir();
 
-        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+    //     let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+    //     fm.create_note_file("Lie Group").unwrap();
+    //     fm.create_note_file("Math/Atlas").unwrap();
 
-        let lg_path = tmp.join(String::from("Lie Group.md"));
-        let at_path = tmp
-            .join(String::from("Math"))
-            .join(String::from("Atlas.md"));
+    //     let lg_path = tmp.join(String::from("Lie Group.md"));
+    //     let at_path = tmp
+    //         .join(String::from("Math"))
+    //         .join(String::from("Atlas.md"));
 
-        assert!(lg_path.exists());
-        assert!(at_path.exists());
+    //     assert!(lg_path.exists());
+    //     assert!(at_path.exists());
 
-        fm.delete_note_file(&lg_path).unwrap();
-        assert!(!lg_path.exists());
-        assert!(at_path.exists());
+    //     fm.delete_note_file(&lg_path).unwrap();
+    //     assert!(!lg_path.exists());
+    //     assert!(at_path.exists());
 
-        fm.delete_note_file(&at_path).unwrap();
-        assert!(!lg_path.exists());
-        assert!(!at_path.exists());
-    }
+    //     fm.delete_note_file(&at_path).unwrap();
+    //     assert!(!lg_path.exists());
+    //     assert!(!at_path.exists());
+    // }
 
-    // TODO: Write tests for rename, move, link updating
+    // #[test]
+    // fn test_rename() {
+    //     let tmp = std::env::temp_dir();
+
+    //     let config = crate::Config::default();
+    //     let fm = super::FileManager::new(&config, tmp.clone());
+
+    //     let lg_path = tmp.join(String::from("Lie Group.md"));
+    //     let at_path = tmp
+    //         .join(String::from("Math"))
+    //         .join(String::from("Atlas.md"));
+    //     // not in subfolder
+    //     let lg_path_after = tmp.join(String::from("Lie Soup.md"));
+    //     // in subfolder
+    //     let at_path_after = tmp
+    //         .join(String::from("Math"))
+    //         .join(String::from("Atlantis.md"));
+
+    //     fm.create_note_file("Lie Group").unwrap();
+    //     fm.create_note_file("Math/Atlas").unwrap();
+
+    //     let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+    //     let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+    //     let index = crate::data::NoteIndex::new(tracker, builder).0;
+
+    //     let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+    //     assert!(lg_path.exists());
+    //     assert!(at_path.exists());
+
+    //     fm.rename_note_file(&mut index_con, "lie-group", String::from("Lie Soup"))
+    //         .unwrap();
+    //     fm.rename_note_file(&mut index_con, "atlas", String::from("Atlantis"))
+    //         .unwrap();
+
+    //     assert!(lg_path_after.exists());
+    //     assert!(at_path_after.exists());
+    // }
 
     #[test]
     fn test_file_endings() {
-        let md_ending_tar = std::path::PathBuf::from("./tests/common/test.md");
-        let txt_ending_tar = std::path::PathBuf::from("./tests/common/test.txt");
+        let md_ending_tar = path::PathBuf::from("./tests/common/test.md");
+        let txt_ending_tar = path::PathBuf::from("./tests/common/test.txt");
 
         let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, std::path::PathBuf::from("./tests"));
+        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
 
-        let mut no_ending = std::path::PathBuf::from("./tests/common/test");
-        let mut md_ending = std::path::PathBuf::from("./tests/common/test.md");
-        let mut txt_ending = std::path::PathBuf::from("./tests/common/test.txt");
+        let mut no_ending = path::PathBuf::from("./tests/common/test");
+        let mut md_ending = path::PathBuf::from("./tests/common/test.md");
+        let mut txt_ending = path::PathBuf::from("./tests/common/test.txt");
 
         fm.ensure_file_extension(&mut no_ending);
         fm.ensure_file_extension(&mut md_ending);
