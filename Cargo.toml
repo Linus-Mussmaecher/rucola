@@ -27,6 +27,9 @@ thiserror = "^1.0"
 serde = { version = "1.0", features = ["derive"] }
 confy = "^0.6"
 
+[dev-dependencies]
+testdir = "^0.9"
+
 [[bin]]
 name = "rucola"
 test = true
