@@ -210,21 +210,101 @@ impl HtmlBuilder {
 #[cfg(test)]
 mod tests {
 
+    use std::path::{Path, PathBuf};
+
     #[test]
     fn test_viewing() {
         let config = crate::Config::default();
-        let fm = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let fm = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
         let note =
-            crate::data::Note::from_path(std::path::Path::new("./tests/common/notes/Books.md"))
-                .unwrap();
+            crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
 
         fm.create_view_command(&note).unwrap();
     }
 
     #[test]
+    fn test_create_html_no_panic() {
+        let config = crate::Config::default();
+        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+
+        let books =
+            crate::data::Note::from_path(&Path::new("./tests/common/notes/Books.md")).unwrap();
+
+        hb.create_html(&books, true).unwrap();
+    }
+
+    #[test]
+    fn test_create_html_no_panic_math() {
+        let config = crate::Config::default();
+        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+
+        // with math
+        let liegroup =
+            crate::data::Note::from_path(&Path::new("./tests/common/notes/math/Lie Group.md"))
+                .unwrap();
+
+        hb.create_html(&liegroup, true).unwrap();
+    }
+
+    #[test]
+    fn test_id_to_path() {
+        let config = crate::Config::default();
+        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+
+        assert_eq!(
+            hb.id_to_path("lie-group"),
+            PathBuf::from("./tests/.html/lie-group.html")
+        );
+        assert_eq!(
+            hb.id_to_path("books"),
+            PathBuf::from("./tests/.html/books.html")
+        );
+    }
+
+    #[test]
+    fn test_create_html_creates_files() {
+        let config = crate::Config::default();
+        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+
+        let books =
+            crate::data::Note::from_path(&Path::new("./tests/common/notes/Books.md")).unwrap();
+
+        if Path::new("./tests/.html/books.html").exists() {
+            std::fs::remove_file(Path::new("./tests/.html/books.html")).unwrap();
+        }
+
+        assert!(!Path::new("./tests/.html/books.html").exists());
+
+        hb.create_html(&books, true).unwrap();
+
+        assert!(Path::new("./tests/.html/books.html").exists());
+    }
+
+    #[test]
+    fn test_create_html_creates_files_with_math() {
+        let config = crate::Config::default();
+        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+
+        // with math
+        let liegroup =
+            crate::data::Note::from_path(&Path::new("./tests/common/notes/math/Lie Group.md"))
+                .unwrap();
+
+        if Path::new("./tests/.html/lie-group.html").exists() {
+            std::fs::remove_file(Path::new("./tests/.html/lie-group.html")).unwrap();
+        }
+
+        assert!(!Path::new("./tests/.html/lie-group.html").exists());
+
+        hb.create_html(&liegroup, true).unwrap();
+
+        assert!(Path::new("./tests/.html/lie-group.html").exists());
+    }
+
+    #[test]
     fn test_replacements() {
         let config = crate::Config::default();
-        let mut hb = super::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let mut hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
 
         let field = "\\field{R} \neq \\field{C}".to_string();
         let topology = "\\topology{O} = \\topology{P}(X)".to_string();

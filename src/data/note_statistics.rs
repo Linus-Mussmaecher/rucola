@@ -177,7 +177,7 @@ mod tests {
     use crate::{data, io};
 
     #[test]
-    fn test_env_stats_general() {
+    fn test_env_stats_1_tags_any() {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
@@ -208,7 +208,18 @@ mod tests {
         assert_eq!(env1.local_global_links, 10);
         assert_eq!(env1.global_local_links, 12);
         assert_eq!(env1.broken_links, 1);
+    }
 
+    #[test]
+    fn test_env_stats_2_tags_all() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
         // === Filter 2 ===
 
         let filter2 = data::Filter {
@@ -240,6 +251,18 @@ mod tests {
                 assert_eq!(ma.outlinks_global, 4);
                 assert_eq!(ma.broken_links, 0);
             });
+    }
+
+    #[test]
+    fn test_env_stats_3_title() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // === Filter 3 ===
 
@@ -258,6 +281,18 @@ mod tests {
         assert_eq!(env3.local_global_links, 6);
         assert_eq!(env3.global_local_links, 0);
         assert_eq!(env3.broken_links, 0);
+    }
+
+    #[test]
+    fn test_env_stats_4_blinks() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // === Filter 4 ===
 
@@ -276,6 +311,18 @@ mod tests {
         assert_eq!(env4.local_global_links, 5);
         assert_eq!(env4.global_local_links, 8);
         assert_eq!(env4.broken_links, 1);
+    }
+
+    #[test]
+    fn test_env_stats_5_links_blinks() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 11);
+
+        let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // === Filter 5 ===
 

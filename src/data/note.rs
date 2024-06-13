@@ -78,3 +78,37 @@ impl Note {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn test_loading() {
+        let _note =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
+    }
+
+    #[test]
+    fn test_values() {
+        let note =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/math/Chart.md")).unwrap();
+
+        assert_eq!(note.name, String::from("Chart"));
+        assert_eq!(
+            note.tags,
+            vec![String::from("#diffgeo"), String::from("#topology")]
+        );
+        assert_eq!(
+            note.links,
+            vec![String::from("manifold"), String::from("diffeomorphism")]
+        );
+        assert_eq!(note.words, 115);
+        assert_eq!(note.characters, 678);
+        assert_eq!(
+            note.path,
+            PathBuf::from("./tests/common/notes/math/Chart.md")
+        );
+    }
+}
