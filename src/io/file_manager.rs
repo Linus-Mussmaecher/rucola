@@ -47,14 +47,12 @@ impl FileManager {
         id: &str,
         new_name: String,
     ) -> error::Result<()> {
-        let index_b = index.borrow_mut();
-        // Retrieve the old version from the table
-        let note = index_b
-            .get(id)
-            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
-
-        // Remember old path
-        let old_path = note.path.clone();
+        // Check that the new name isn't empty
+        if new_name.is_empty() {
+            return Err(error::RucolaError::Input(String::from(
+                "Name cannot be empty!",
+            )));
+        }
 
         // Create a path from the input.
         let input_path = path::Path::new(&new_name);
@@ -66,8 +64,15 @@ impl FileManager {
             ));
         }
 
+        // Retrieve the old version from the table
+        // This will not be changed - all changes to the index are handled by the watcher.
+        let index_b = index.borrow_mut();
+        let note = index_b
+            .get(id)
+            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
+
         // Create a new path by combining the name from the input with the rest of the old path.
-        let mut new_path = old_path.clone();
+        let mut new_path = note.path.clone();
         new_path.set_file_name(
             input_path
                 .file_name()
@@ -76,104 +81,30 @@ impl FileManager {
 
         // If this new name has not introduced an extension, re-set the previous one.
         if new_path.extension().is_none() {
-            if let Some(old_extension) = old_path.extension() {
+            if let Some(old_extension) = note.path.extension() {
                 new_path.set_extension(old_extension);
             } else {
                 self.ensure_file_extension(&mut new_path);
             }
         }
 
-        // make sure the mutable borrow from the first line in the function is dropped
-        drop(index_b);
-
-        // Actual move
-        self.move_note_file_inner(id, index, old_path, new_path)
-    }
-
-    pub fn move_note_file(
-        &self,
-        index: &mut data::NoteIndexContainer,
-        id: &str,
-        mut new_path_buf: String,
-    ) -> error::Result<()> {
-        let index_b = index.borrow_mut();
-        // Retrieve the old version from the table
-        let note = index_b
-            .get(id)
-            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
-
-        // If a directory is given, re-use the old name
-        if new_path_buf.ends_with('/') {
-            new_path_buf.push_str(&note.name);
-        }
-
-        // Create a path from the given buffer (handling the parsing of the path).
-        // Then extend vault path with given path
-        let mut new_path = self.vault_path.clone();
-        new_path.push(path::Path::new(&new_path_buf));
-
-        // If this has not introduced an extension, re-set the previous one.
-        if new_path.extension().is_none() {
-            if let Some(old_ext) = note.path.extension() {
-                new_path.set_extension(old_ext);
-            }
-        }
-        // If this has still not introduced an extension, ask the config file for a default one.
-        self.ensure_file_extension(&mut new_path);
-
-        let old_path = note.path.clone();
-
-        // make sure the mutable borrow from the first line in this function is dropped
-        drop(index_b);
-        // Acutally move the file and update the index
-        self.move_note_file_inner(id, index, old_path, new_path.to_path_buf())
-    }
-
-    /// Moves the file from source to target, if successful removes the old note from the table and inserts a new note with most values copied from the one removed and path, name and index updated to reflect the new path.
-    fn move_note_file_inner(
-        &self,
-        old_id: &str,
-        index: &mut data::NoteIndexContainer,
-        source: path::PathBuf,
-        target: path::PathBuf,
-    ) -> error::Result<()> {
-        // borrow index mutably
-        let index = index.borrow();
-
-        // create new name and id
-        let new_name = target
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .ok_or_else(|| error::RucolaError::Input(String::from("Name cannot be empty!")))?;
-
-        if new_name.is_empty() {
-            return Err(error::RucolaError::Input(String::from(
-                "Name cannot be empty!",
-            )));
-        }
-
         // ensure parent directory exists
-        if let Some(parent) = target.parent() {
+        if let Some(parent) = new_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent)?;
             }
         }
 
         // actual fs copy (early returns if unsuccessfull)
-        fs::rename(source, target)?;
-
-        // Extract old note from the index.
-        let note = index
-            .get(old_id)
-            .ok_or_else(|| error::RucolaError::NoteNotFound(old_id.to_owned()))?;
+        fs::rename(&note.path, &new_path)?;
 
         // === RENAMING ===
         // Create a regex that find links to the old name or id
         let mut regex_builder = String::new();
         regex_builder.push_str("(\\[\\[)(");
-        regex_builder.push_str(&note.name); // at this point, this is still the old name
+        regex_builder.push_str(&note.name); // this is still the old name
         regex_builder.push('|');
-        regex_builder.push_str(old_id);
+        regex_builder.push_str(id);
         regex_builder.push_str(")(\\|?[^\\|^\\]^\\]]*\\]\\])");
 
         let mut replacement_builder = String::new();
@@ -182,11 +113,11 @@ impl FileManager {
         replacement_builder.push_str("${3}");
 
         let reg = regex::Regex::new(&regex_builder)?;
-        for other_note in index
+        for other_note in index_b
             // search for references to the old id.
-            .blinks_vec(old_id)
+            .blinks_vec(id)
             .iter()
-            .filter_map(|(id, _)| index.get(id))
+            .filter_map(|(id, _)| index_b.get(id))
         {
             // open the file once to read its old content
             let old_content = std::fs::read_to_string(&other_note.path)?;
@@ -204,6 +135,39 @@ impl FileManager {
             // write new new (mostly old) string into the file
             file.write_all(res.as_bytes())?;
         }
+
+        Ok(())
+    }
+
+    pub fn move_note_file(
+        &self,
+        index: &mut data::NoteIndexContainer,
+        id: &str,
+        new_path_buf: String,
+    ) -> error::Result<()> {
+        let index_b = index.borrow_mut();
+        // Retrieve the note in question from the table
+        // It will not be changed - all changes to the index are handled by the watcher.
+        let note = index_b
+            .get(id)
+            .ok_or_else(|| error::RucolaError::NoteNotFound(id.to_owned()))?;
+
+        // Create a path from the given buffer (handling the parsing of the path).
+        // Then extend vault path with given path
+        let mut new_path = self.vault_path.join(new_path_buf).join(&note.name);
+
+        // Ensure file extension just to be safe
+        self.ensure_file_extension(&mut new_path);
+
+        // Ensure parent directory exists
+        if let Some(parent) = new_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        // actual fs copy (early returns if unsuccessfull)
+        fs::rename(&note.path, &new_path)?;
 
         Ok(())
     }
@@ -478,65 +442,6 @@ mod tests {
     }
 
     #[test]
-    fn test_move_updates_links() {
-        let tmp = testdir::testdir!();
-
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, tmp.clone());
-
-        let at_path = tmp.join(String::from("Atlas.md"));
-        let ma_path = tmp.join(String::from("Manifold.md"));
-        let to_path = tmp.join(String::from("Topology.md"));
-
-        fm.create_note_file("Atlas").unwrap();
-        fm.create_note_file("Manifold").unwrap();
-        fm.create_note_file("Topology").unwrap();
-
-        std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Atlas.md"),
-            &at_path,
-        )
-        .unwrap();
-        std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Manifold.md"),
-            &ma_path,
-        )
-        .unwrap();
-        std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Topology.md"),
-            &to_path,
-        )
-        .unwrap();
-
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(tracker, builder).0;
-
-        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
-
-        assert!(at_path.exists());
-        assert!(ma_path.exists());
-        assert!(to_path.exists());
-
-        let ma_content = std::fs::read_to_string(&ma_path).unwrap();
-
-        assert!(ma_content.contains("[[Atlas]]"));
-        assert!(!ma_content.contains("[[Atlantis]]"));
-        assert!(ma_content.contains("[[Topology|topological space]]"));
-
-        fm.move_note_file(&mut index_con, "topology", String::from("Math/"))
-            .unwrap();
-        // since we are not updating the index in between, topology must be done before atlas
-        fm.move_note_file(&mut index_con, "atlas", String::from("Math/Atlantis"))
-            .unwrap();
-
-        let ma_content = std::fs::read_to_string(&ma_path).unwrap();
-        assert!(!ma_content.contains("[[Atlas]]"));
-        assert!(ma_content.contains("[[Atlantis]]"));
-        assert!(ma_content.contains("[[Topology|topological space]]"));
-    }
-
-    #[test]
     fn test_move() {
         let tmp = testdir::testdir!();
 
@@ -551,10 +456,11 @@ mod tests {
         let lg_path_after = tmp
             .join(String::from("Topology"))
             .join(String::from("Lie Group.md"));
-        // with renaming
+        // with renaming -> should error
         let at_path_after = tmp
             .join(String::from("Topology"))
-            .join(String::from("Atlantis.md"));
+            .join(String::from("Atlantis"))
+            .join(String::from("Atlas.md"));
 
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -574,7 +480,9 @@ mod tests {
             .unwrap();
 
         assert!(lg_path_after.exists());
+        assert!(!lg_path.exists());
         assert!(at_path_after.exists());
+        assert!(!at_path.exists());
     }
 
     #[test]

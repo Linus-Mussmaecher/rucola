@@ -87,17 +87,18 @@ impl FileTracker {
 #[cfg(test)]
 mod tests {
 
+    use std::path;
+
     #[test]
     fn test_tracker_basic() {
-        let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
-        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
-        let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
-        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
+        let no_ending = path::PathBuf::from("./tests/common/notes/Booksold");
+        let md = path::PathBuf::from("./tests/common/notes/Books.md");
+        let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
+        let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let config = crate::Config::default();
 
-        let tracker =
-            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
@@ -107,13 +108,12 @@ mod tests {
 
     #[test]
     fn test_tracker_ignored() {
-        let md_ignored = std::path::PathBuf::from("./tests/.html/books.md");
-        let html_ignored = std::path::PathBuf::from("./tests/.html/books.html");
+        let md_ignored = path::PathBuf::from("./tests/.html/books.md");
+        let html_ignored = path::PathBuf::from("./tests/.html/books.html");
 
         let config = crate::Config::default();
 
-        let tracker =
-            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
 
         assert!(!tracker.is_tracked(&md_ignored));
         assert!(!tracker.is_tracked(&html_ignored));
@@ -121,30 +121,29 @@ mod tests {
 
     #[test]
     fn test_tracker_foreign() {
-        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
-        let md_foreign = std::path::PathBuf::from("./README.md");
+        let md = path::PathBuf::from("./tests/common/notes/Books.md");
+        let md_foreign = path::PathBuf::from("./README.md");
 
         let config = crate::Config::default();
 
-        let tracker =
-            super::FileTracker::new(&config, std::path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
 
         assert!(tracker.is_tracked(&md));
         assert!(!tracker.is_tracked(&md_foreign));
     }
     #[test]
     fn test_tracker_txt() {
-        let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
-        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
-        let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
-        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
+        let no_ending = path::PathBuf::from("./tests/common/notes/Booksold");
+        let md = path::PathBuf::from("./tests/common/notes/Books.md");
+        let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
+        let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let tracker = super::FileTracker::new(
             &crate::Config {
                 file_types: vec!["md".to_owned(), "txt".to_owned()],
                 ..Default::default()
             },
-            std::path::PathBuf::from("./tests"),
+            path::PathBuf::from("./tests"),
         )
         .unwrap();
 
@@ -156,17 +155,17 @@ mod tests {
 
     #[test]
     fn test_tracker_all() {
-        let no_ending = std::path::PathBuf::from("./tests/common/notes/Booksold");
-        let md = std::path::PathBuf::from("./tests/common/notes/Books.md");
-        let txt = std::path::PathBuf::from("./tests/common/notes/Books.txt");
-        let rs = std::path::PathBuf::from("./tests/common/notes/Books.rs");
+        let no_ending = path::PathBuf::from("./tests/common/notes/Booksold");
+        let md = path::PathBuf::from("./tests/common/notes/Books.md");
+        let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
+        let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
         let tracker = super::FileTracker::new(
             &crate::Config {
                 file_types: vec!["all".to_owned()],
                 ..Default::default()
             },
-            std::path::PathBuf::from("./tests"),
+            path::PathBuf::from("./tests"),
         )
         .unwrap();
 
@@ -175,4 +174,186 @@ mod tests {
         assert!(tracker.is_tracked(&txt));
         assert!(tracker.is_tracked(&rs));
     }
+
+    // #[test]
+    // fn test_watcher_create() {
+    //     let tmp = testdir::testdir!();
+
+    //     let config = crate::Config::default();
+    //     let fm = crate::io::FileManager::new(&config, tmp.clone());
+    //     let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+    //     let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+    //     let mut index = crate::data::NoteIndex::new(tracker, builder).0;
+
+    //     assert!(index.get("atlas").is_none());
+    //     assert!(index.get("lie-group").is_none());
+
+    //     fm.create_note_file("Lie Group").unwrap();
+
+    //     let (modifications, id_changes) = index.handle_file_events().unwrap();
+
+    //     assert!(modifications);
+    //     assert!(id_changes.is_empty());
+
+    //     assert!(index.get("atlas").is_none());
+    //     assert!(index.get("lie-group").is_some());
+
+    //     fm.create_note_file("Math/Atlas").unwrap();
+
+    //     let (modifications, id_changes) = index.handle_file_events().unwrap();
+
+    //     assert!(modifications);
+    //     assert!(id_changes.is_empty());
+
+    //     assert!(index.get("atlas").is_some());
+    //     assert!(index.get("lie-group").is_some());
+    // }
+
+    #[test]
+    fn test_watcher_rename() {
+        let tmp = testdir::testdir!();
+
+        let config = crate::Config::default();
+        let fm = crate::io::FileManager::new(&config, tmp.clone());
+        fm.create_note_file("Lie Group").unwrap();
+        fm.create_note_file("Math/Atlas").unwrap();
+
+        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+        let index = crate::data::NoteIndex::new(tracker, builder).0;
+        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        assert!(index_con.borrow().get("atlas").is_some());
+        assert!(index_con.borrow().get("lie-group").is_some());
+        assert!(index_con.borrow().get("atlantis").is_none());
+        assert!(index_con.borrow().get("lie-soup").is_none());
+
+        fm.rename_note_file(&mut index_con, "atlas", String::from("Atlantis"))
+            .unwrap();
+        fm.rename_note_file(&mut index_con, "lie-group", String::from("Lie Soup"))
+            .unwrap();
+
+        let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
+        id_changes.sort_unstable_by(|(a1, _b1), (a2, _b2)| a1.cmp(a2));
+
+        assert!(modifications);
+        assert_eq!(
+            id_changes,
+            vec![
+                (String::from("atlas"), Some(String::from("atlantis"))),
+                (String::from("lie-group"), Some(String::from("lie-soup"))),
+            ]
+        );
+
+        assert!(index_con.borrow().get("atlas").is_none());
+        assert!(index_con.borrow().get("lie-group").is_none());
+        assert!(index_con.borrow().get("atlantis").is_some());
+        assert!(index_con.borrow().get("lie-soup").is_some());
+
+        let at = index_con.borrow().get("atlantis").unwrap().clone();
+        let lg = index_con.borrow().get("lie-soup").unwrap().clone();
+
+        assert_eq!(at.name, String::from("Atlantis"));
+        assert_eq!(lg.name, String::from("Lie Soup"));
+
+        assert_eq!(
+            at.path,
+            tmp.join(&path::PathBuf::from("Math"))
+                .join(&path::PathBuf::from("Atlantis.md"))
+        );
+        assert_eq!(lg.path, tmp.join(&path::PathBuf::from("Lie Soup.md")));
+    }
+
+    // #[test]
+    // fn test_watcher_move() {
+    //     let tmp = testdir::testdir!();
+
+    //     let config = crate::Config::default();
+    //     let fm = crate::io::FileManager::new(&config, tmp.clone());
+    //     fm.create_note_file("Lie Group").unwrap();
+    //     fm.create_note_file("Math/Atlas").unwrap();
+
+    //     let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+    //     let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+    //     let index = crate::data::NoteIndex::new(tracker, builder).0;
+    //     let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+    //     assert!(index_con.borrow().get("atlas").is_some());
+    //     assert!(index_con.borrow().get("lie-group").is_some());
+
+    //     fm.move_note_file(&mut index_con, "atlas", String::from("Topology/"))
+    //         .unwrap();
+    //     fm.move_note_file(&mut index_con, "lie-group", String::from("Math/Topology/"))
+    //         .unwrap();
+
+    //     let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
+
+    //     id_changes.sort_unstable_by(|(a1, _b1), (a2, _b2)| a1.cmp(a2));
+
+    //     assert!(modifications);
+    //     assert!(id_changes.is_empty());
+
+    //     assert!(index_con.borrow().get("atlas").is_some());
+    //     assert!(index_con.borrow().get("lie-group").is_some());
+
+    //     let at = index_con.borrow().get("atlas").unwrap().clone();
+    //     let lg = index_con.borrow().get("lie-group").unwrap().clone();
+
+    //     assert_eq!(at.name, String::from("Atlas"));
+    //     assert_eq!(lg.name, String::from("Lie Group"));
+
+    //     assert_eq!(
+    //         at.path,
+    //         tmp.join(&path::PathBuf::from("Math"))
+    //             .join(&path::PathBuf::from("Topology"))
+    //             .join(&path::PathBuf::from("Atlas.md"))
+    //     );
+    //     assert_eq!(
+    //         lg.path,
+    //         tmp.join(&path::PathBuf::from("Topology"))
+    //             .join(&path::PathBuf::from("Lie Group.md"))
+    //     );
+    // }
+
+    // #[test]
+    // fn test_watcher_delete() {
+    //     let tmp = testdir::testdir!();
+
+    //     let config = crate::Config::default();
+    //     let fm = crate::io::FileManager::new(&config, tmp.clone());
+
+    //     fm.create_note_file("Lie Group").unwrap();
+    //     fm.create_note_file("Math/Atlas").unwrap();
+
+    //     let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+    //     let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+    //     let index = crate::data::NoteIndex::new(tracker, builder).0;
+    //     let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+    //     assert!(index_con.borrow().get("atlas").is_some());
+    //     assert!(index_con.borrow().get("lie-group").is_some());
+
+    //     fm.delete_note_file(&tmp.join(String::from("Lie Group.md")))
+    //         .unwrap();
+    //     fm.delete_note_file(
+    //         &tmp.join(String::from("Math"))
+    //             .join(String::from("Atlas.md")),
+    //     )
+    //     .unwrap();
+
+    //     let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
+    //     id_changes.sort_unstable_by(|(a1, _b1), (a2, _b2)| a1.cmp(a2));
+
+    //     assert!(modifications);
+    //     assert_eq!(
+    //         id_changes,
+    //         vec![
+    //             (String::from("atlas"), None),
+    //             (String::from("lie-group"), None),
+    //         ]
+    //     );
+
+    //     assert!(index_con.borrow().get("atlas").is_none());
+    //     assert!(index_con.borrow().get("lie-group").is_none());
+    // }
 }

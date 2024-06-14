@@ -22,6 +22,12 @@ pub struct NoteIndex {
     builder: io::HtmlBuilder,
 }
 
+impl std::fmt::Debug for NoteIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
 impl NoteIndex {
     /// Reads a passed directory recursively, returning a hashmap containing
     ///  - An entry for every '.md' file in the directory or any subdirectories
@@ -149,7 +155,9 @@ impl NoteIndex {
                                             // insert the note from the new location
                                             let new_id = super::name_to_id(&note.name);
                                             self.inner.insert(new_id.clone(), note);
-                                            id_changes.push((old_id, Some(new_id)));
+                                            if old_id != new_id {
+                                                id_changes.push((old_id, Some(new_id)));
+                                            }
                                         }
                                     }
                                 }

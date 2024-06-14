@@ -314,7 +314,7 @@ impl super::Screen for SelectScreen {
                     self.mode = SelectMode::SubmenuSorting;
                 }
                 // F: Go to filter mode
-                KeyCode::Char('f' | 'F') => {
+                KeyCode::Char('f' | 'F' | '/') => {
                     self.mode = SelectMode::Filter;
                 }
                 // C: Clear filter
