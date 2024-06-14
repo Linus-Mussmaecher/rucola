@@ -133,7 +133,6 @@ From the select view, you can access a couple of file management options for you
    If the move causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
  - Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
    The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
- - Reload the vault from the disk, in case you have made external changes.
    When opening a note as described in the previous point, rucola will automatically reload that (and only that note), so this feature should not be neccessary to often.
  - View the currently selected notes HTML representation in an external viewer.
 
@@ -160,7 +159,7 @@ This allows to you to get an overview about a note's connections in your network
 
 You can follow the links to given notes, and go back in your journey to previously visited notes.
 
-Also, you can open the note in an external editor or view, converted to HTML in an external viewer.
+Also, you can delete, move or rename the note as well as modify it in an external editor or view its HTML representation external viewer.
 
 ### HTML conversion
 Rucola can convert markdown notes to HTML documents, which are stored in the `.html` subfolder of your vault directory.
