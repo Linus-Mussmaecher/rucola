@@ -128,10 +128,9 @@ From the select view, you can access a couple of file management options for you
    This will update links in other indexed files to point to the new location.
    If the new name has a non-note file extension (as defined in your config) or causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
  - Move the selected to another location relative to your current vault path.
-   If the input ends with a `/`, the path will be interpreted as a folder and the note, retaining its current name, will be moved into that folder.
-   Otherwise, the input will be interpreted as a file location and the note moved there (and appropriately renamed to the last component of the path) while updating links in other indexed notes to point to the new location.
-   In both cases, if there is no extension given and non-extension are not allowed per your config file, the original extension will be attached.
-   If the move causes the note to end up with a non-note file extension (as defined in your config) or causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
+   Your input will be interpreted as a folder - you cannot rename your notes this way.
+   The extension at the new location will be the one the old file had.
+   If the move causes the file to fall under the rules of your `.gitignore` file (if present), the note will be removed from the index.
  - Edit the note in your configured text editor (such as a terminal based editor like vim or helix, or even obsidian).
    The used editor can be configured in the config file, if none is given, rucola defaults to your systems `$EDITOR` variable.
  - Reload the vault from the disk, in case you have made external changes.
