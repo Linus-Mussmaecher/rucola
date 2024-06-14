@@ -144,10 +144,11 @@ impl App {
             self.set_display_to_top()?;
         }
 
-        if key.is_none() {
+        let key = if let Some(key) = key {
+            key
+        } else {
             return Ok(ui::TerminalMessage::None);
-        }
-        let key = key.expect("This not to be none, because we checked it 3 lines earlier.");
+        };
 
         // Update appropriate screen
         let msg = if let Some(display) = &mut self.display {

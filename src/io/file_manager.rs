@@ -76,7 +76,11 @@ impl FileManager {
 
         // If this new name has not introduced an extension, re-set the previous one.
         if new_path.extension().is_none() {
-            new_path.set_extension(old_path.extension().unwrap_or_default());
+            if let Some(old_extension) = old_path.extension() {
+                new_path.set_extension(old_extension);
+            } else {
+                self.ensure_file_extension(&mut new_path);
+            }
         }
 
         // make sure the mutable borrow from the first line in the function is dropped
@@ -140,7 +144,13 @@ impl FileManager {
         let new_name = target
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
+            .ok_or_else(|| error::RucolaError::Input(String::from("Name cannot be empty!")))?;
+
+        if new_name.is_empty() {
+            return Err(error::RucolaError::Input(String::from(
+                "Name cannot be empty!",
+            )));
+        }
 
         // ensure parent directory exists
         if let Some(parent) = target.parent() {
@@ -233,7 +243,7 @@ impl FileManager {
             "#{}",
             path.file_stem()
                 .map(|fs| fs.to_string_lossy().to_string())
-                .unwrap_or_else(|| "Untitled".to_owned())
+                .unwrap_or_else(|| "note".to_owned())
         )?;
 
         Ok(())
