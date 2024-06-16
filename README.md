@@ -165,7 +165,7 @@ Also, you can delete, move or rename the note as well as modify it in an externa
 Rucola can convert markdown notes to HTML documents, which are stored in the `.html` subfolder of your vault directory.
 This feature uses [comrak](https://github.com/kivikakk/comrak) for the markdown-HTML conversion and supports most of the usual markdown syntax.
 This is especially useful for notes that are difficult to read, for example because they contain lots of LaTeX code or tables - or simply because you prefer a more clean look. 
-HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a MathJax-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
+HTML files are automatically prepended with a `.css`-stylesheet reference if you have configured a source CSS-file, and with a KaTeX-preamble if they contain LaTeX-blocks (with either `$...$` or `$$...$$`).
 Also, you can perform small-scale string replacements in math mode, for example replacing `\field` with `\mathbb` to write fields more semantically clearly.
 
 You can view a single HTML file from the select screen or the display screen.
@@ -204,14 +204,14 @@ The following configuration options manage the HTML files created by rucola:
  - `enable_html` is set to `true` by default, causing all your notes to be converted to HTML files on program start and for those HTMLs to be continuously kept up-to-date in case of file changes.
    Set to `false` to never create HTMLs in the background.
    HTMLs can still be created by choosing the view option on a single file, in which case this file - and only this file, in particular none of the files linked from it - will be converted.
- - `mathjax` is set to `true` by default, but can be set to `false` to never prepend a MathJax preamble to HTML files. While set to `true`, the preamble is only appended if math blocks (delimited by `$...$` and `$$...$$` are detected).
+ - `katex` is set to `true` by default, but can be set to `false` to never prepend a KaTeX preamble to HTML files. While set to `true`, the preamble is only appended if math blocks (delimited by `$...$` and `$$...$$` are detected).
  - `math_replacments` is a vector of pairs of strings.
    In math mode, every appearance of the first string will be replaced by the second one.
    The default replaces `field` with `mathbb` and `lieagl` with `mathfrak` as an example for the TOML syntax and the general idea of using semantically valuable string replacements to make your LaTeX code clearer.
  - `css` is the name of your css style sheet (in your rucola config folder).
    The `.css` file extension can be omitted.
    If not set, no css file will be added to your HTML files.
- - `html_prepend` can contain any text you want to prepend to all your HTML files in addition to the mathjax, css and title tags/scripts.
+ - `html_prepend` can contain any text you want to prepend to all your HTML files in addition to the katex, css and title tags/scripts.
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/).

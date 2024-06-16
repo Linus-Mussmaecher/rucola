@@ -28,7 +28,7 @@ pub struct Config {
     /// String to prepend to all generated html documents (e.g. for MathJax)
     pub(crate) html_prepend: Option<String>,
     /// Wether or not to insert a MathJax preamble in notes containing math code.
-    pub(crate) mathjax: bool,
+    pub(crate) katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     pub(crate) math_replacements: Vec<(String, String)>,
 }
@@ -37,7 +37,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             enable_html: true,
-            mathjax: true,
+            katex: true,
             vault_path: None,
             theme: "default_light_theme".to_string(),
             stats_show: ui::screen::StatsShow::Both,
