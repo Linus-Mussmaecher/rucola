@@ -18,9 +18,9 @@ pub struct Config {
     /// When to show the global stats area
     pub(crate) stats_show: ui::screen::StatsShow,
     /// The editor to use for notes
-    pub(crate) editor: Option<String>,
+    pub(crate) editor: Option<Vec<String>>,
     /// Viewer to open html files with
-    pub(crate) viewer: Option<String>,
+    pub(crate) viewer: Option<Vec<String>>,
     /// When set to true, HTML files are mass-created on start and continuously kept up to date with file changes instead of being created on-demand.
     pub(crate) enable_html: bool,
     /// Path to .css file to style htmls with.
