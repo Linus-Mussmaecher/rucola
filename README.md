@@ -194,8 +194,12 @@ Here is a list of all possible configuration settings:
      Otherwise, local stats are shown.
      This setting therefore avoids showing duplicating stats at all times.
  - `editor` configures the command to edit your notes.
-   This can be a terminal application or an external application.
- - `viewer` configures the command for your HTML viewing application (I use `google-chrome-stable`). If unconfigured, tries to use your systems default application for HTML files.
+   This is a list of string, containg the programm in the first position and all arguments in the further entries, wherby `%p` will be replaced by the path of the note to be openend.
+   For example, if you want to run `my_editor --theme <cool-theme> --path <note_path>`, put `["my_editor", "--theme", "<cool-theme>", "--path", "%p"]`.
+   If unconfigured, tries to use your `EDITOR` environment variable or system default application.
+ - `viewer` configures the command for your HTML viewing application, see `editor` for details.
+   I use `["firefox", "-P", "<my note profile>", "%p"].
+   If unconfigured, tries to use your systems default application for HTML files.
 The following configuration options manage the HTML files created by rucola:
  - `enable_html` is set to `true` by default, causing all your notes to be converted to HTML files on program start and for those HTMLs to be continuously kept up-to-date in case of file changes.
    Set to `false` to never create HTMLs in the background.

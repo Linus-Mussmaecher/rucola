@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path};
+use std::{fs, io::Write, path, process};
 
 use crate::{data, error};
 
@@ -18,7 +18,7 @@ pub struct HtmlBuilder {
     /// A list of strings to replace in math mode to mimic latex commands
     math_replacements: Vec<(String, String)>,
     /// Viewer to open html files with
-    viewer: Option<String>,
+    viewer: Option<Vec<String>>,
 }
 
 impl Default for HtmlBuilder {
@@ -199,7 +199,24 @@ impl HtmlBuilder {
         self.viewer
             .as_ref()
             // create a command from it
-            .map(|viewer_string| open::with_command(&path, viewer_string))
+            .and_then(|viewer_arg_list| {
+                let mut iter = viewer_arg_list.iter();
+                if let Some(programm) = iter.next() {
+                    let mut cmd = process::Command::new(programm);
+                    for arg in iter {
+                        if arg == "%p" {
+                            // special argument for the user to indicate where to put the path
+                            cmd.arg(&path);
+                        } else {
+                            // all other arguments are appended in order
+                            cmd.arg(arg);
+                        }
+                    }
+                    Some(cmd)
+                } else {
+                    None
+                }
+            })
             // if it was not there, take the default command
             .or_else(|| open::commands(&path).pop())
             // if it was also not there, throw an error

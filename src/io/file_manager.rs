@@ -1,5 +1,5 @@
 use crate::{data, error};
-use std::{fs, io::Write, path};
+use std::{fs, io::Write, path, process};
 
 /// Saves configurations to manipulate the file system the notes are stored in.
 #[derive(Debug, Clone)]
@@ -9,7 +9,7 @@ pub struct FileManager {
     /// Default file ending for newly created notes
     default_extension: String,
     /// The editor to use for notes
-    editor: Option<String>,
+    editor: Option<Vec<String>>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -228,7 +228,24 @@ impl FileManager {
         self.editor
             .as_ref()
             // create a command from it
-            .map(|editor_string| open::with_command(path, editor_string))
+            .and_then(|editor_arg_list| {
+                let mut iter = editor_arg_list.iter();
+                if let Some(programm) = iter.next() {
+                    let mut cmd = process::Command::new(programm);
+                    for arg in iter {
+                        if arg == "%p" {
+                            // special argument for the user to indicate where to put the path
+                            cmd.arg(&path);
+                        } else {
+                            // all other arguments are appended in order
+                            cmd.arg(arg);
+                        }
+                    }
+                    Some(cmd)
+                } else {
+                    None
+                }
+            })
             // Try the $EDITOR variable
             .or_else(|| {
                 std::env::var("EDITOR")
