@@ -14,7 +14,7 @@ pub struct HtmlBuilder {
     /// String to prepend to all generated html documents (e.g. for MathJax)
     html_prepend: Option<String>,
     /// Wether or not to insert a MathJax preamble in notes containing math code.
-    mathjax: bool,
+    katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     math_replacements: Vec<(String, String)>,
     /// Viewer to open html files with
@@ -53,7 +53,7 @@ impl HtmlBuilder {
             enable_html: config.enable_html,
             css_path,
             html_prepend: config.html_prepend.clone(),
-            mathjax: config.mathjax,
+            katex: config.katex,
             math_replacements: config.math_replacements.clone(),
             viewer: config.viewer.clone(),
         }
@@ -131,6 +131,7 @@ impl HtmlBuilder {
         // get file (creates it if it doesn't exist)
         let mut tar_file = fs::File::create(&tar_path)?;
 
+        writeln!(tar_file, "<!DOCTYPE html>")?;
         writeln!(tar_file, "<title>{}</title>", note.name)?;
         self.add_preamble(&mut tar_file, contains_math)?;
 
@@ -171,14 +172,32 @@ impl HtmlBuilder {
             )?;
         }
         // Prepend mathjax code
-        if contains_math && self.mathjax {
+        if contains_math && self.katex {
             writeln!(
                 html,
-                r#"<script type="text/x-mathjax-config">MathJax.Hub.Config({{tex2jax: {{inlineMath: [ ['$','$'] ],processEscapes: true}}}});</script>"#
+                r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww" crossorigin="anonymous">"#
             )?;
             writeln!(
                 html,
-                r#"<script type="text/javascript"src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>"#
+                r#"<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd" crossorigin="anonymous"></script>"#
+            )?;
+            writeln!(
+                html,
+                r#"<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>"#
+            )?;
+            writeln!(
+                html,
+                r##"<script>
+    document.addEventListener("DOMContentLoaded", function() {{
+        renderMathInElement(document.body, {{
+          delimiters: [
+              {{left: '$$', right: '$$', display: true}},
+              {{left: '$', right: '$', display: false}},
+          ],
+          throwOnError : false
+        }});
+    }});
+</script>"##
             )?;
         }
         // Prepend all other manual configured prefixes
