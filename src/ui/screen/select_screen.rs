@@ -183,6 +183,20 @@ impl SelectScreen {
         self.name_area.set_block(Block::bordered().title(title_top));
     }
 
+    /// Sets the title & content of the name_area block
+    fn set_name_area(&mut self, title: &str, content: Option<String>) {
+        let title_top = block::Title::from(Line::from(vec![Span::styled(
+            title.to_owned(),
+            self.styles.title_style,
+        )]));
+
+        self.name_area.set_block(Block::bordered().title(title_top));
+        // it is assumed the buffer is empty so far
+        if let Some(content) = content {
+            self.name_area.insert_str(content);
+        }
+    }
+
     /// Returns the heights of the global and local stats area with this filter string
     pub fn stats_heights(&self, filter_string: Option<&String>) -> (u16, u16) {
         let filtered = filter_string.map(|s| !s.is_empty()).unwrap_or(false);
@@ -420,14 +434,31 @@ impl super::Screen for SelectScreen {
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
                         self.mode = SelectMode::Create;
+                        self.set_name_area("Enter name of new note...", None);
                     }
                     // R: Rename note
                     KeyCode::Char('r' | 'R') => {
                         self.mode = SelectMode::Rename;
+                        let name = self
+                            // get the selected item in the list for the id
+                            .local_stats
+                            .filtered_stats
+                            .get(self.selected)
+                            // use this id in the index to get the note
+                            .and_then(|env_stats| {
+                                // use the id to get the name
+                                self.index
+                                    .borrow()
+                                    .get(&env_stats.id)
+                                    .map(|note| note.name.clone())
+                            });
+
+                        self.set_name_area("Enter new name...", name);
                     }
                     // M: Move note
                     KeyCode::Char('m' | 'M') => {
                         self.mode = SelectMode::Move;
+                        self.set_name_area("Enter new location relativ to vault...", None);
                     }
                     // Open view mode
                     KeyCode::Char('v' | 'V') => {

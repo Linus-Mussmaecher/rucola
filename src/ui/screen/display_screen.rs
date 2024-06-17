@@ -112,6 +112,20 @@ impl DisplayScreen {
             mode: DisplayMode::Display,
         })
     }
+
+    /// Sets the title & content of the name_area block
+    fn set_name_area(&mut self, title: &str, content: Option<String>) {
+        let title_top = block::Title::from(Line::from(vec![Span::styled(
+            title.to_owned(),
+            self.styles.title_style,
+        )]));
+
+        self.name_area.set_block(Block::bordered().title(title_top));
+        // it is assumed the buffer is empty so far
+        if let Some(content) = content {
+            self.name_area.insert_str(content);
+        }
+    }
 }
 
 impl super::Screen for DisplayScreen {
@@ -326,10 +340,12 @@ impl super::Screen for DisplayScreen {
                 // R: Rename note
                 KeyCode::Char('r' | 'R') => {
                     self.mode = DisplayMode::Rename;
+                    self.set_name_area("Enter new name...", Some(self.note.name.clone()));
                 }
                 // M: Move note
                 KeyCode::Char('m' | 'M') => {
                     self.mode = DisplayMode::Move;
+                    self.set_name_area("Enter new location...", None);
                 }
                 // D: Move note
                 KeyCode::Char('d' | 'D') => {
