@@ -198,6 +198,7 @@ mod tests {
             links: vec![],
             blinks: vec![],
             title: String::new(),
+            full_text: None,
         };
 
         let env1 = EnvironmentStats::new_with_filter(&index, filter1);
@@ -231,6 +232,7 @@ mod tests {
             links: vec![],
             blinks: vec![],
             title: String::new(),
+            full_text: None,
         };
         let env2 = EnvironmentStats::new_with_filter(&index, filter2);
 
@@ -272,6 +274,7 @@ mod tests {
             links: vec![],
             blinks: vec![],
             title: "operating".to_string(),
+            full_text: None,
         };
         let env3 = EnvironmentStats::new_with_filter(&index, filter3);
 
@@ -302,6 +305,7 @@ mod tests {
             links: vec![],
             blinks: vec![("atlas".to_string(), true)],
             title: String::new(),
+            full_text: None,
         };
         let env4 = EnvironmentStats::new_with_filter(&index, filter4);
 
@@ -332,6 +336,7 @@ mod tests {
             links: vec![("smooth-map".to_string(), true)],
             blinks: vec![("atlas".to_string(), true)],
             title: String::new(),
+            full_text: None,
         };
         let env5 = EnvironmentStats::new_with_filter(&index, filter5);
 
