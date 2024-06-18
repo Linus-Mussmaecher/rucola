@@ -16,6 +16,8 @@ enum SelectMode {
     SubmenuSorting,
     /// Typing into the filter box.
     Filter,
+    /// Show the help screen for the filter box.
+    FilterHelp,
     /// Typing into the create box.
     Create,
     /// Typing into the create box to rename a note.
@@ -149,7 +151,9 @@ impl SelectScreen {
                 if self.any_conditions { "ny" } else { "ll" },
                 self.styles.text_style,
             ),
-            Span::styled(" Conditions", self.styles.text_style),
+            Span::styled(" Conditions──", self.styles.text_style),
+            Span::styled("H", self.styles.hotkey_style),
+            Span::styled("elp", self.styles.text_style),
         ]))
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
@@ -327,9 +331,13 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('s' | 'S') => {
                     self.mode = SelectMode::SubmenuSorting;
                 }
-                // F: Go to filter mode
+                // F or /: Go to filter mode
                 KeyCode::Char('f' | 'F' | '/') => {
                     self.mode = SelectMode::Filter;
+                }
+                // ?: Go to filter help mode
+                KeyCode::Char('?' | 'h' | 'H') => {
+                    self.mode = SelectMode::FilterHelp;
                 }
                 // C: Clear filter
                 KeyCode::Char('c' | 'C') => {
@@ -380,6 +388,16 @@ impl super::Screen for SelectScreen {
                         self.filter_area.input(key);
                         self.filter(self.filter_from_input());
                     }
+                };
+            }
+            SelectMode::FilterHelp => {
+                match key.code {
+                    // Escape or Enter: Back to main mode
+                    KeyCode::Esc | KeyCode::Char('c' | 'C') => {
+                        self.mode = SelectMode::Select;
+                    }
+                    // All other key events are ignored
+                    _ => {}
                 };
             }
             // File mode: Wait for second input
@@ -770,7 +788,7 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Move
                 | SelectMode::SubmenuFile
                 | SelectMode::SubmenuSorting => Some(self.selected),
-                SelectMode::Filter | SelectMode::Create => None,
+                SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
             });
 
         // Generate row data
@@ -977,6 +995,80 @@ impl super::Screen for SelectScreen {
                 // Clear the area and then render the widget on top.
                 Widget::render(Clear, center_area, buf);
                 Widget::render(create_input, center_area, buf);
+            }
+            SelectMode::FilterHelp => {
+                let help_widths = [Constraint::Length(9), Constraint::Min(0)];
+
+                let help_rows = [
+                    Row::new(vec![
+                        Cell::from("#[tag]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes with tag [tag].").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("!#[tag]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes without tag [tag].").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from(">[note]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes linking to [note].").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("<[note]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes linked to from [note].")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("!>[note]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes not linking to [note].")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("!<[note]").style(self.styles.subtitle_style),
+                        Cell::from("Show notes not linked to from [note].")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("|").style(self.styles.subtitle_style),
+                        Cell::from("All text after | will be searched in the full text.")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from(" ").style(self.styles.subtitle_style),
+                        Cell::from("All other text will be matched against the title.")
+                            .style(self.styles.text_style),
+                    ]),
+                ];
+
+                let help_table = Table::new(help_rows, help_widths).column_spacing(1).block(
+                    Block::bordered()
+                        .title("Filter Syntax".set_style(self.styles.title_style))
+                        .title(
+                            block::Title::from(Line::from(vec![
+                                Span::styled("C", self.styles.hotkey_style),
+                                Span::styled("lose", self.styles.text_style),
+                            ]))
+                            .position(block::Position::Bottom)
+                            .alignment(Alignment::Right),
+                        ),
+                );
+
+                let popup_areas = Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(10),
+                    Constraint::Fill(1),
+                ])
+                .split(area);
+
+                let center_area = Layout::horizontal([
+                    Constraint::Fill(1),
+                    Constraint::Length(64),
+                    Constraint::Fill(1),
+                ])
+                .split(popup_areas[1])[1];
+
+                // Clear the area and then render the help menu on top.
+                Widget::render(Clear, center_area, buf);
+                Widget::render(help_table, center_area, buf);
             }
         }
     }
