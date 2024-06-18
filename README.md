@@ -91,7 +91,7 @@ These statistics let you judge how well-connected a note is, and wether it is mo
 You can configure which statistics block are shown at which time.
 
 #### Filtering
-The filtering works by a default fuzzy matcher.
+The filtering works by a default fuzzy matcher, matching your input to the note _title_.
 In addition, you can include _condition words_ to search for notes fulfilling certain conditions.
 A condition always starts with an identifier and goes to the next whitespace.
  - `#[tag]` declares a tag condition:
@@ -112,10 +112,20 @@ A condition always starts with an identifier and goes to the next whitespace.
  - `!<[note]` declares a backlink exclusion condition:
    Only notes that are not linked to from the note `[note]` will be shown.
 
-Only words not starting with any of these identifiers will be used in the fuzzy match.
-The order of these conditions words and fuzzy-matching words can be freely chosen.
+Only words not starting with any of these identifiers will be used in the title match.
+The order of these conditions words and title matching words can be freely chosen.
+All of these conditions and the title match are case insensitive.
 
-For example, the filter string `#math !#math/topology >Topology map` shows all notes that are tagged as `#math` (or any nested subtag such as `#math/geometry`), not tagged with the nested tag `#math/topology` but still link to the `Topology` note and whose title contains some variation of `map`.
+Additionally, you can search the full text of your notes.
+When including the character `|` in your search string, everything previous to the `|` will be matched as described above, while everything after will be searched for in the full text content of your files verbatim (without fuzzy matching).
+Full text searching is case insensitive.
+
+The `Any/All conditions` setting can be toggled with the `A` key.
+For the purposes of this function, the entirety of your input title is treated as a single condition.
+
+For example, the filter string `#math !#math/topology >Topology map |discrete` with the `All conditions` setting shows all notes that are tagged as `#math` (or any nested subtag such as `#math/geometry`), not tagged with the nested tag `#math/topology` but still link to the `Topology` note, whose title contains some variation of `map` and whose full text contains the word `discrete`.
+
+Notes will always be ordered in descending order of their match score for the title matching.
 
 #### File Management
 From the select view, you can access a couple of file management options for your notes:

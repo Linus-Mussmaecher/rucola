@@ -12,6 +12,8 @@ pub struct Filter {
     pub blinks: Vec<(String, bool)>,
     /// The words to search the note title for. Will be fuzzy matched with the note title.
     pub title: String,
+    /// Everything to be searched for in the full text of the notes, in lowercase.
+    pub full_text: Option<String>,
 }
 
 impl Filter {
@@ -21,8 +23,13 @@ impl Filter {
         let mut blinks = Vec::new();
         let mut title = String::new();
 
+        let (filters, full_text) = filter_string
+            .split_once("|")
+            .map(|(filters, rest)| (filters, Some(rest.to_lowercase())))
+            .unwrap_or((&filter_string, None));
+
         // Go through words
-        for word in filter_string.split_whitespace() {
+        for word in filters.split_whitespace() {
             if word.starts_with("!#") {
                 tags.push((word.trim_start_matches('!').to_string(), false));
                 continue;
@@ -70,6 +77,7 @@ impl Filter {
             links,
             blinks,
             title,
+            full_text,
         }
     }
 
@@ -140,13 +148,35 @@ impl Filter {
             }
         }
 
+        if let Some(text) = &self.full_text {
+            if std::fs::read_to_string(&note.path)
+                .map(|content| content.to_lowercase().contains(text))
+                .unwrap_or(false)
+            {
+                any = true;
+            } else {
+                all = false;
+            }
+        }
+
+        let fuz_match = if self.title.is_empty() {
+            None
+        } else {
+            let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
+            let fuzzy_match = matcher.fuzzy_match(&note.name, &self.title);
+            if fuzzy_match.is_some() {
+                any = true;
+            } else {
+                all = false;
+            }
+            fuzzy_match
+        };
         // if all conditions are empty, return match score (only title search)
-        if self.tags.is_empty() && self.links.is_empty() && self.blinks.is_empty()  ||
+        if self.tags.is_empty() && self.links.is_empty() && self.blinks.is_empty() && self.full_text.is_none() && self.title.is_empty()  ||
             // also return match score if the required amount of conditions are fulfilled
             (!self.any && all || self.any && any)
         {
-            let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
-            matcher.fuzzy_match(&note.name, &self.title)
+            fuz_match.or(Some(0))
         } else {
             // else, an exclusion criterion was triggered
             None
@@ -179,6 +209,7 @@ mod tests {
             links: vec![],
             blinks: vec![],
             title: String::new(),
+            full_text: None,
         };
 
         assert!(filter1.apply(linux, &index).is_some());
@@ -229,7 +260,7 @@ mod tests {
     fn test_filter_from_string_all() {
         // === Filter 3 ===
         let filter3 = Filter::new(
-            "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux",
+            "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux |equivalent",
             false,
         );
 
@@ -249,6 +280,8 @@ mod tests {
             vec![("atlas".to_string(), true), ("linux".to_string(), false)]
         );
         assert_eq!(filter3.title, "");
+
+        assert_eq!(filter3.full_text, Some(String::from("equivalent")));
     }
 
     #[test]
