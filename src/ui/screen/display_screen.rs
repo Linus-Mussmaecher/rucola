@@ -151,43 +151,6 @@ impl super::Screen for DisplayScreen {
         )])
         .alignment(Alignment::Center);
 
-        // Display the note's tags
-        let tags = self
-            .note
-            .tags
-            .iter()
-            .enumerate()
-            .flat_map(|(index, s)| {
-                [
-                    Span::styled(if index == 0 { "" } else { ", " }, self.styles.text_style),
-                    Span::styled(s.as_str(), self.styles.subtitle_style),
-                ]
-            })
-            .collect_vec();
-
-        // Stats Area
-        let stats_rows = [
-            Row::new(vec![
-                Cell::from("Words:"),
-                Cell::from(format!("{:7}", self.note.words)),
-                Cell::from("Tags:"),
-                Cell::from(Line::from(tags)),
-            ]),
-            Row::new(vec![
-                Cell::from("Chars:"),
-                Cell::from(format!("{:7}", self.note.characters)),
-                Cell::from("Path:"),
-                Cell::from(self.note.path.to_str().unwrap_or_default()),
-            ]),
-        ];
-
-        let stats_widths = [
-            Constraint::Length(8),
-            Constraint::Length(12),
-            Constraint::Length(8),
-            Constraint::Min(20),
-        ];
-
         let instructions_bot_right = block::Title::from(Line::from(vec![
             Span::styled("V", self.styles.hotkey_style),
             Span::styled("iew──", self.styles.text_style),
@@ -203,13 +166,11 @@ impl super::Screen for DisplayScreen {
         .alignment(Alignment::Right)
         .position(block::Position::Bottom);
 
-        let stats = Table::new(stats_rows, stats_widths)
-            .column_spacing(1)
-            .block(
-                Block::bordered()
-                    .title("Statistics".set_style(self.styles.title_style))
-                    .title(instructions_bot_right),
-            );
+        let stats = self.note.to_stats_table(&self.styles).block(
+            Block::bordered()
+                .title("Statistics".set_style(self.styles.title_style))
+                .title(instructions_bot_right),
+        );
 
         // === All the links ===
 
