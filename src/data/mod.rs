@@ -3,6 +3,7 @@ pub use note::Note;
 
 mod note_statistics;
 pub use note_statistics::EnvironmentStats;
+pub use note_statistics::SortingMode;
 
 mod filter;
 pub use filter::Filter;

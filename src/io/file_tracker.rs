@@ -221,16 +221,16 @@ mod tests {
         let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
         let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
         let index = crate::data::NoteIndex::new(tracker, builder).0;
-        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(index_con.borrow().get("atlas").is_some());
         assert!(index_con.borrow().get("lie-group").is_some());
         assert!(index_con.borrow().get("atlantis").is_none());
         assert!(index_con.borrow().get("lie-soup").is_none());
 
-        fm.rename_note_file(&mut index_con, "atlas", String::from("Atlantis"))
+        fm.rename_note_file(index_con.clone(), "atlas", String::from("Atlantis"))
             .unwrap();
-        fm.rename_note_file(&mut index_con, "lie-group", String::from("Lie Soup"))
+        fm.rename_note_file(index_con.clone(), "lie-group", String::from("Lie Soup"))
             .unwrap();
 
         let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
@@ -258,10 +258,10 @@ mod tests {
 
         assert_eq!(
             at.path,
-            tmp.join(&path::PathBuf::from("Math"))
-                .join(&path::PathBuf::from("Atlantis.md"))
+            tmp.join(path::PathBuf::from("Math"))
+                .join(path::PathBuf::from("Atlantis.md"))
         );
-        assert_eq!(lg.path, tmp.join(&path::PathBuf::from("Lie Soup.md")));
+        assert_eq!(lg.path, tmp.join(path::PathBuf::from("Lie Soup.md")));
     }
 
     // #[test]

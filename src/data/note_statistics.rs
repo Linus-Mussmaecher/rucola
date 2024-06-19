@@ -1,4 +1,5 @@
 use crate::data;
+use ratatui::{prelude::*, widgets::*};
 use std::collections::HashMap;
 
 /// A struct describing statistics to a note in relation to a containing environment.
@@ -7,18 +8,18 @@ pub struct NoteEnvStatistics {
     /// The notes id
     pub id: String,
     /// The fuzzy match score of this note with the filter used to create the environment
-    pub match_score: i64,
+    match_score: i64,
     /// The amount of links pointing to this note from anywhere.
-    pub inlinks_global: usize,
+    inlinks_global: usize,
     /// The amount of links pointing to this note from other notes within the environment.
-    pub inlinks_local: usize,
+    inlinks_local: usize,
     /// The amount of links going out from this note to other notes within the environment.
-    pub outlinks_local: usize,
+    outlinks_local: usize,
     /// The amount of links going out from this note to other notes.
     /// Differs from the length of the 'links' table by not counting broken links.
-    pub outlinks_global: usize,
+    outlinks_global: usize,
     /// The amount of links originating from this note that do not have a valid target anywhere.
-    pub broken_links: usize,
+    broken_links: usize,
 }
 
 impl NoteEnvStatistics {
@@ -34,6 +35,37 @@ impl NoteEnvStatistics {
             broken_links: 0,
         }
     }
+
+    /// Converts this note to a ratatui table row with its stats
+    fn to_row(&self, index: data::NoteIndexContainer) -> Option<Row> {
+        // generate the stats row for each element
+        index.borrow().get(&self.id).map(|note| {
+            Row::new(vec![
+                note.name.clone(),
+                format!("{:7}", note.words),
+                format!("{:7}", note.characters),
+                format!("{:7}", self.outlinks_global),
+                format!("{:7}", self.outlinks_local),
+                format!("{:7}", self.inlinks_global),
+                format!("{:7}", self.inlinks_local),
+            ])
+        })
+    }
+}
+
+/// Describes the current sorting mode of the displayed list.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum SortingMode {
+    #[default]
+    Name,
+    Words,
+    Chars,
+    GlobalOutLinks,
+    LocalOutLinks,
+    GlobalInLinks,
+    LocalInLinks,
+    Score,
+    Broken,
 }
 
 /// A data struct containing statistical information about a (subset of a) user's notes.
@@ -42,23 +74,23 @@ impl NoteEnvStatistics {
 pub struct EnvironmentStats {
     /// The total amount of words in the notes in this environment.
     /// What is a word and what not mirrors the definition from Note.words.
-    pub word_count_total: usize,
+    word_count_total: usize,
     /// The total amount of characters, including whitespace, in the notes of this environment.
-    pub char_count_total: usize,
+    char_count_total: usize,
     /// The total amount of notes in this environment.
-    pub note_count_total: usize,
+    note_count_total: usize,
     /// The total amount of _unique_ tags in this environment.
-    pub tag_count_total: usize,
+    tag_count_total: usize,
     /// Total amount of links from a note within the environment to another note within the environment.
-    pub local_local_links: usize,
+    local_local_links: usize,
     /// Total amount of links from a note within the environment to any note.
-    pub local_global_links: usize,
+    local_global_links: usize,
     /// Total amount of links from any note to a note within the environment.
-    pub global_local_links: usize,
+    global_local_links: usize,
     /// A vector of all notes within the environment.
-    pub filtered_stats: Vec<NoteEnvStatistics>,
+    filtered_stats: Vec<NoteEnvStatistics>,
     /// Counts how many links among notes within the environment do not have a valid target anywhere.
-    pub broken_links: usize,
+    broken_links: usize,
 }
 
 impl EnvironmentStats {
@@ -168,6 +200,190 @@ impl EnvironmentStats {
                 fs
             },
         }
+    }
+
+    /// Returns the nth element of the underlying sorted vector
+    pub fn get_selected(&self, index: usize) -> Option<&NoteEnvStatistics> {
+        self.filtered_stats.get(index)
+    }
+
+    /// Sorts the underlying vec
+    pub fn sort(&mut self, index: data::NoteIndexContainer, mode: SortingMode, ascending: bool) {
+        // Always sort by name first
+        self.filtered_stats
+            .sort_by_cached_key(|env_stats| env_stats.id.clone());
+
+        // If the sorting mode is not name, now sort by the actual sorting mode.
+        if mode != SortingMode::Name {
+            // If sorting in reverse is desired, pre-reverse this, so when reversing again later, the list will still be sub-sorted by name ascendingly.
+            if !ascending {
+                self.filtered_stats.reverse();
+            }
+            // all others are usize and can be done in one thing
+            self.filtered_stats.sort_by_cached_key(|env_stats| {
+                if let Some(note) = index.borrow().get(&env_stats.id) {
+                    match mode {
+                        // This should not appear
+                        SortingMode::Name => 0,
+                        // These should appear
+                        SortingMode::Words => note.words,
+                        SortingMode::Chars => note.characters,
+                        SortingMode::GlobalOutLinks => env_stats.outlinks_global,
+                        SortingMode::LocalOutLinks => env_stats.outlinks_local,
+                        SortingMode::GlobalInLinks => env_stats.inlinks_global,
+                        SortingMode::LocalInLinks => env_stats.inlinks_local,
+                        SortingMode::Score => env_stats.match_score as usize,
+                        SortingMode::Broken => env_stats.broken_links,
+                    }
+                } else {
+                    0
+                }
+            })
+        }
+
+        // Potentially reverse sorting
+        if !ascending {
+            self.filtered_stats.reverse();
+        }
+    }
+
+    /// Returns the amount of notes in this environment.
+    pub fn len(&self) -> usize {
+        self.filtered_stats.len()
+    }
+
+    /// Converts this environemnt to a table of rows with the (sorted) notes contained in it.
+    pub fn to_note_table(&self, index: data::NoteIndexContainer) -> Table {
+        // Calculate widths
+        let notes_table_widths = [
+            Constraint::Min(25),
+            Constraint::Length(8),
+            Constraint::Length(8),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
+        ];
+
+        // Construct rows
+        let notes_rows = self
+            .filtered_stats
+            .iter()
+            .flat_map(|note_env| note_env.to_row(index.clone()))
+            .collect::<Vec<Row>>();
+
+        Table::new(notes_rows, notes_table_widths).column_spacing(1)
+    }
+
+    /// Converts this environment statistics struct to a ratatui table with the basic, global stats.
+    pub fn to_global_stats_table(&self) -> Table {
+        // Horizontal layout
+        let stats_widths = [
+            Constraint::Length(20),
+            Constraint::Length(16),
+            Constraint::Length(20),
+            Constraint::Length(16),
+            Constraint::Min(0),
+        ];
+
+        //  === Global stats ===
+
+        let global_stats_rows = [
+            Row::new(vec![
+                Cell::from("Total notes:"),
+                Cell::from(format!("{:7}", self.note_count_total)),
+                Cell::from("Total words:"),
+                Cell::from(format!("{:7}", self.word_count_total)),
+            ]),
+            Row::new(vec![
+                Cell::from("Total unique tags:"),
+                Cell::from(format!("{:7}", self.tag_count_total)),
+                Cell::from("Total characters:"),
+                Cell::from(format!("{:7}", self.char_count_total)),
+            ]),
+            Row::new(vec![
+                Cell::from("Total links:"),
+                Cell::from(format!("{:7}", self.local_local_links)),
+                Cell::from("Broken links:"),
+                Cell::from(format!("{:7}", self.broken_links)),
+            ]),
+        ];
+
+        Table::new(global_stats_rows, stats_widths).column_spacing(1)
+    }
+
+    /// Converts this environment statistics struct to a ratatui table with the full, local stats.
+    pub fn to_local_stats_table(&self, global: &Self) -> Table {
+        // Horizontal layout
+        let stats_widths = [
+            Constraint::Length(20),
+            Constraint::Length(16),
+            Constraint::Length(20),
+            Constraint::Length(16),
+            Constraint::Min(0),
+        ];
+
+        //  === Local stats ===
+        let local_stats_rows = [
+            Row::new(vec![
+                Cell::from("Total notes:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.note_count_total,
+                    self.note_count_total * 100 / global.note_count_total.max(1)
+                )),
+                Cell::from("Total words:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.word_count_total,
+                    self.word_count_total * 100 / global.word_count_total.max(1)
+                )),
+            ]),
+            Row::new(vec![
+                Cell::from("Total unique tags:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.tag_count_total,
+                    self.tag_count_total * 100 / global.tag_count_total.max(1)
+                )),
+                Cell::from("Total characters:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.char_count_total,
+                    self.char_count_total * 100 / global.char_count_total.max(1)
+                )),
+            ]),
+            Row::new(vec![
+                Cell::from("Incoming links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.global_local_links,
+                    self.global_local_links * 100 / global.local_local_links.max(1),
+                )),
+                Cell::from("Outgoing links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_global_links,
+                    self.local_global_links * 100 / global.local_local_links.max(1),
+                )),
+            ]),
+            Row::new(vec![
+                Cell::from("Internal links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.local_local_links,
+                    self.local_local_links * 100 / global.local_local_links.max(1),
+                )),
+                Cell::from("Broken links:"),
+                Cell::from(format!(
+                    "{:7} ({:3}%)",
+                    self.broken_links,
+                    self.broken_links * 100 / global.broken_links.max(1)
+                )),
+            ]),
+        ];
+
+        Table::new(local_stats_rows, stats_widths).column_spacing(1)
     }
 }
 

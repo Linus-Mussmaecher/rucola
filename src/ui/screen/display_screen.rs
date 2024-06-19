@@ -362,7 +362,7 @@ impl super::Screen for DisplayScreen {
                 KeyCode::Enter => {
                     self.mode = DisplayMode::Display;
                     self.manager.rename_note_file(
-                        &mut self.index,
+                        self.index.clone(),
                         &data::name_to_id(&self.note.name),
                         super::extract_string_and_clear(&mut self.name_area).ok_or_else(|| {
                             error::RucolaError::Input("New name is empty.".to_string())
@@ -381,7 +381,7 @@ impl super::Screen for DisplayScreen {
                 KeyCode::Enter => {
                     self.mode = DisplayMode::Display;
                     self.manager.move_note_file(
-                        &mut self.index,
+                        self.index.clone(),
                         &data::name_to_id(&self.note.name),
                         super::extract_string_and_clear(&mut self.name_area).ok_or_else(|| {
                             error::RucolaError::Input("Move location is empty.".to_string())
@@ -396,7 +396,8 @@ impl super::Screen for DisplayScreen {
             DisplayMode::Delete => match key.code {
                 KeyCode::Enter => {
                     // delete it from index & filesystem
-                    self.manager.delete_note_file(self.note.path.as_path())?;
+                    self.manager
+                        .delete_note_file(self.index.clone(), &data::name_to_id(&self.note.name))?;
                     return Ok(ui::Message::DisplayStackPop);
                 }
                 _ => {
