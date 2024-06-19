@@ -471,12 +471,12 @@ impl super::Screen for SelectScreen {
                                     .map(|note| note.name.clone())
                             });
 
-                        self.set_name_area("Enter new name...", name);
+                        self.set_name_area("Enter new name of note...", name);
                     }
                     // M: Move note
                     KeyCode::Char('m' | 'M') => {
                         self.mode = SelectMode::Move;
-                        self.set_name_area("Enter new location relativ to vault...", None);
+                        self.set_name_area("Enter new location relative to vault...", None);
                     }
                     // Open view mode
                     KeyCode::Char('v' | 'V') => {

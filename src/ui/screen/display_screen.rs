@@ -340,12 +340,12 @@ impl super::Screen for DisplayScreen {
                 // R: Rename note
                 KeyCode::Char('r' | 'R') => {
                     self.mode = DisplayMode::Rename;
-                    self.set_name_area("Enter new name...", Some(self.note.name.clone()));
+                    self.set_name_area("Enter new name of note...", Some(self.note.name.clone()));
                 }
                 // M: Move note
                 KeyCode::Char('m' | 'M') => {
                     self.mode = DisplayMode::Move;
-                    self.set_name_area("Enter new location...", None);
+                    self.set_name_area("Enter new location relative to vault...", None);
                 }
                 // D: Move note
                 KeyCode::Char('d' | 'D') => {
