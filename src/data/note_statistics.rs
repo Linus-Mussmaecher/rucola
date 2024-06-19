@@ -1,4 +1,4 @@
-use crate::data;
+use crate::{data, ui};
 use ratatui::{prelude::*, widgets::*};
 use std::collections::HashMap;
 
@@ -37,7 +37,7 @@ impl NoteEnvStatistics {
     }
 
     /// Converts this note to a ratatui table row with its stats
-    fn to_row(&self, index: data::NoteIndexContainer) -> Option<Row> {
+    fn to_row(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Option<Row> {
         // generate the stats row for each element
         index.borrow().get(&self.id).map(|note| {
             Row::new(vec![
@@ -49,6 +49,7 @@ impl NoteEnvStatistics {
                 format!("{:7}", self.inlinks_global),
                 format!("{:7}", self.inlinks_local),
             ])
+            .style(styles.text_style)
         })
     }
 }
@@ -253,7 +254,7 @@ impl EnvironmentStats {
     }
 
     /// Converts this environemnt to a table of rows with the (sorted) notes contained in it.
-    pub fn to_note_table(&self, index: data::NoteIndexContainer) -> Table {
+    pub fn to_note_table(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Table {
         // Calculate widths
         let notes_table_widths = [
             Constraint::Min(25),
@@ -269,14 +270,14 @@ impl EnvironmentStats {
         let notes_rows = self
             .filtered_stats
             .iter()
-            .flat_map(|note_env| note_env.to_row(index.clone()))
+            .flat_map(|note_env| note_env.to_row(index.clone(), styles))
             .collect::<Vec<Row>>();
 
         Table::new(notes_rows, notes_table_widths).column_spacing(1)
     }
 
     /// Converts this environment statistics struct to a ratatui table with the basic, global stats.
-    pub fn to_global_stats_table(&self) -> Table {
+    pub fn to_global_stats_table(&self, styles: &ui::UiStyles) -> Table {
         // Horizontal layout
         let stats_widths = [
             Constraint::Length(20),
@@ -290,22 +291,22 @@ impl EnvironmentStats {
 
         let global_stats_rows = [
             Row::new(vec![
-                Cell::from("Total notes:"),
-                Cell::from(format!("{:7}", self.note_count_total)),
-                Cell::from("Total words:"),
-                Cell::from(format!("{:7}", self.word_count_total)),
+                Cell::from("Total notes:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.note_count_total)).style(styles.text_style),
+                Cell::from("Total words:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.word_count_total)).style(styles.text_style),
             ]),
             Row::new(vec![
-                Cell::from("Total unique tags:"),
-                Cell::from(format!("{:7}", self.tag_count_total)),
-                Cell::from("Total characters:"),
-                Cell::from(format!("{:7}", self.char_count_total)),
+                Cell::from("Total unique tags:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.tag_count_total)).style(styles.text_style),
+                Cell::from("Total characters:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.char_count_total)).style(styles.text_style),
             ]),
             Row::new(vec![
-                Cell::from("Total links:"),
-                Cell::from(format!("{:7}", self.local_local_links)),
-                Cell::from("Broken links:"),
-                Cell::from(format!("{:7}", self.broken_links)),
+                Cell::from("Total links:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.local_local_links)).style(styles.text_style),
+                Cell::from("Broken links:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.broken_links)).style(styles.text_style),
             ]),
         ];
 
@@ -313,7 +314,7 @@ impl EnvironmentStats {
     }
 
     /// Converts this environment statistics struct to a ratatui table with the full, local stats.
-    pub fn to_local_stats_table(&self, global: &Self) -> Table {
+    pub fn to_local_stats_table(&self, global: &Self, styles: &ui::UiStyles) -> Table {
         // Horizontal layout
         let stats_widths = [
             Constraint::Length(20),
@@ -326,60 +327,68 @@ impl EnvironmentStats {
         //  === Local stats ===
         let local_stats_rows = [
             Row::new(vec![
-                Cell::from("Total notes:"),
+                Cell::from("Total notes:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.note_count_total,
                     self.note_count_total * 100 / global.note_count_total.max(1)
-                )),
-                Cell::from("Total words:"),
+                ))
+                .style(styles.text_style),
+                Cell::from("Total words:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.word_count_total,
                     self.word_count_total * 100 / global.word_count_total.max(1)
-                )),
+                ))
+                .style(styles.text_style),
             ]),
             Row::new(vec![
-                Cell::from("Total unique tags:"),
+                Cell::from("Total unique tags:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.tag_count_total,
                     self.tag_count_total * 100 / global.tag_count_total.max(1)
-                )),
-                Cell::from("Total characters:"),
+                ))
+                .style(styles.text_style),
+                Cell::from("Total characters:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.char_count_total,
                     self.char_count_total * 100 / global.char_count_total.max(1)
-                )),
+                ))
+                .style(styles.text_style),
             ]),
             Row::new(vec![
-                Cell::from("Incoming links:"),
+                Cell::from("Incoming links:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.global_local_links,
                     self.global_local_links * 100 / global.local_local_links.max(1),
-                )),
-                Cell::from("Outgoing links:"),
+                ))
+                .style(styles.text_style),
+                Cell::from("Outgoing links:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.local_global_links,
                     self.local_global_links * 100 / global.local_local_links.max(1),
-                )),
+                ))
+                .style(styles.text_style),
             ]),
             Row::new(vec![
-                Cell::from("Internal links:"),
+                Cell::from("Internal links:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.local_local_links,
                     self.local_local_links * 100 / global.local_local_links.max(1),
-                )),
-                Cell::from("Broken links:"),
+                ))
+                .style(styles.text_style),
+                Cell::from("Broken links:").style(styles.text_style),
                 Cell::from(format!(
                     "{:7} ({:3}%)",
                     self.broken_links,
                     self.broken_links * 100 / global.broken_links.max(1)
-                )),
+                ))
+                .style(styles.text_style),
             ]),
         ];
 
