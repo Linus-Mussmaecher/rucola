@@ -24,7 +24,7 @@ impl Filter {
         let mut title = String::new();
 
         let (filters, full_text) = filter_string
-            .split_once("|")
+            .split_once('|')
             .map(|(filters, rest)| (filters, Some(rest.to_lowercase())))
             .unwrap_or((&filter_string, None));
 

@@ -43,7 +43,7 @@ impl FileManager {
     /// Then moves the old file to the new location and updates the index.
     pub fn rename_note_file(
         &self,
-        index: &mut data::NoteIndexContainer,
+        index: data::NoteIndexContainer,
         id: &str,
         new_name: String,
     ) -> error::Result<()> {
@@ -141,7 +141,7 @@ impl FileManager {
 
     pub fn move_note_file(
         &self,
-        index: &mut data::NoteIndexContainer,
+        index: data::NoteIndexContainer,
         id: &str,
         new_path_buf: String,
     ) -> error::Result<()> {
@@ -173,10 +173,10 @@ impl FileManager {
     }
 
     /// Follows a notes path and deletes it in the file system.
-    pub fn delete_note_file(&self, path: &path::Path) -> error::Result<()> {
-        if path.starts_with(&self.vault_path) {
+    pub fn delete_note_file(&self, index: data::NoteIndexContainer, id: &str) -> error::Result<()> {
+        if let Some(note) = index.borrow().get(id) {
             // Follow its path and delete it
-            fs::remove_file(path)?;
+            fs::remove_file(&note.path)?;
         }
         Ok(())
     }
@@ -235,7 +235,7 @@ impl FileManager {
                     for arg in iter {
                         if arg == "%p" {
                             // special argument for the user to indicate where to put the path
-                            cmd.arg(&path);
+                            cmd.arg(path);
                         } else {
                             // all other arguments are appended in order
                             cmd.arg(arg);
@@ -332,7 +332,8 @@ mod tests {
     fn test_delete() {
         let tmp = testdir::testdir!();
 
-        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+        let config = crate::Config::default();
+        let fm = super::FileManager::new(&config, tmp.clone());
 
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -345,11 +346,16 @@ mod tests {
         assert!(lg_path.exists());
         assert!(at_path.exists());
 
-        fm.delete_note_file(&lg_path).unwrap();
+        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+        let index = crate::data::NoteIndex::new(tracker, builder).0;
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        fm.delete_note_file(index_con.clone(), "lie-group").unwrap();
         assert!(!lg_path.exists());
         assert!(at_path.exists());
 
-        fm.delete_note_file(&at_path).unwrap();
+        fm.delete_note_file(index_con.clone(), "atlas").unwrap();
         assert!(!lg_path.exists());
         assert!(!at_path.exists());
     }
@@ -382,14 +388,14 @@ mod tests {
         assert!(index.get("atlas").is_some());
         assert!(index.get("lie-group").is_some());
 
-        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(lg_path.exists());
         assert!(at_path.exists());
 
-        fm.rename_note_file(&mut index_con, "lie-group", String::from("Lie Soup"))
+        fm.rename_note_file(index_con.clone(), "lie-group", String::from("Lie Soup"))
             .unwrap();
-        fm.rename_note_file(&mut index_con, "atlas", String::from("Atlantis"))
+        fm.rename_note_file(index_con.clone(), "atlas", String::from("Atlantis"))
             .unwrap();
 
         assert!(lg_path_after.exists());
@@ -431,7 +437,7 @@ mod tests {
         let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
         let index = crate::data::NoteIndex::new(tracker, builder).0;
 
-        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(at_path.exists());
         assert!(ma_path.exists());
@@ -444,11 +450,11 @@ mod tests {
         assert!(ma_content.contains("[[Topology|topological space]]"));
         assert!(!ma_content.contains("[[Anthology|topological space]]"));
 
-        fm.rename_note_file(&mut index_con, "topology", String::from("Anthology"))
+        fm.rename_note_file(index_con.clone(), "topology", String::from("Anthology"))
             .unwrap();
 
         // since we are not updating the index in between, topology must be done before atlas
-        fm.rename_note_file(&mut index_con, "atlas", String::from("Atlantis"))
+        fm.rename_note_file(index_con.clone(), "atlas", String::from("Atlantis"))
             .unwrap();
 
         let ma_content = std::fs::read_to_string(&ma_path).unwrap();
@@ -486,15 +492,19 @@ mod tests {
         let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
         let index = crate::data::NoteIndex::new(tracker, builder).0;
 
-        let mut index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(lg_path.exists());
         assert!(at_path.exists());
 
-        fm.move_note_file(&mut index_con, "lie-group", String::from("Topology/"))
+        fm.move_note_file(index_con.clone(), "lie-group", String::from("Topology/"))
             .unwrap();
-        fm.move_note_file(&mut index_con, "atlas", String::from("Topology/Atlantis"))
-            .unwrap();
+        fm.move_note_file(
+            index_con.clone(),
+            "atlas",
+            String::from("Topology/Atlantis"),
+        )
+        .unwrap();
 
         assert!(lg_path_after.exists());
         assert!(!lg_path.exists());

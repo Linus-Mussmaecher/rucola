@@ -26,20 +26,6 @@ enum SelectMode {
     Move,
 }
 
-/// Describes the current sorting mode of the displayed list.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-enum SortingMode {
-    #[default]
-    Name,
-    Words,
-    Chars,
-    GlobalOutLinks,
-    LocalOutLinks,
-    GlobalInLinks,
-    LocalInLinks,
-    Score,
-    Broken,
-}
 /// Describes when to show a which stats area.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub enum StatsShow {
@@ -87,7 +73,7 @@ pub struct SelectScreen {
     /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
     any_conditions: bool,
     /// Ui mode for the chosen sorting variant
-    sorting: SortingMode,
+    sorting: data::SortingMode,
     /// Sort ascedingly.
     sorting_asc: bool,
     /// How to display the two stats blocks.
@@ -106,7 +92,7 @@ impl SelectScreen {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
             global_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
-            index,
+            index: index.clone(),
             styles,
             builder,
             manager,
@@ -114,13 +100,13 @@ impl SelectScreen {
             name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
-            sorting: SortingMode::Name,
+            sorting: data::SortingMode::Name,
             sorting_asc: true,
             selected: 0,
             stats_show,
         };
 
-        res.sort();
+        res.local_stats.sort(index, data::SortingMode::Name, true);
 
         res.style_text_area();
 
@@ -233,8 +219,9 @@ impl SelectScreen {
         self.local_stats = data::EnvironmentStats::new_with_filter(&self.index, filter);
         // reset sorting
         self.sorting_asc = false;
-        self.sorting = SortingMode::Score;
-        self.sort();
+        self.sorting = data::SortingMode::Score;
+        self.local_stats
+            .sort(self.index.clone(), self.sorting, self.sorting_asc);
         // on a new filter, select the first element
         self.selected = 0;
     }
@@ -250,67 +237,25 @@ impl SelectScreen {
             data::EnvironmentStats::new_with_filter(&self.index, self.filter_from_input());
 
         // Refresh sorting
-        self.sort();
+        self.local_stats
+            .sort(self.index.clone(), self.sorting, self.sorting_asc);
     }
 
     /// Sets a new sorting mode and direction.
     /// If it did not match the old one, triggers a resort.
-    fn set_mode_and_maybe_sort(&mut self, new_mode: impl Into<Option<SortingMode>>, new_asc: bool) {
-        // if the sorting mode has changed, resort and select the first element
-        if let Some(new_mode) = new_mode.into() {
-            if new_mode != self.sorting {
-                self.sorting = new_mode;
-                self.sort();
-                self.selected = 0;
-            }
-        }
-        // if the asc has changed, reverse
-        if new_asc != self.sorting_asc {
+    fn set_mode_and_maybe_sort(
+        &mut self,
+        new_mode: impl Into<Option<data::SortingMode>>,
+        new_asc: bool,
+    ) {
+        // if the sorting mode or ascending option has changed, resort and select the first element
+        let new_mode = new_mode.into().unwrap_or(self.sorting);
+        if new_mode != self.sorting || new_asc != self.sorting_asc {
+            self.sorting = new_mode;
             self.sorting_asc = new_asc;
-            self.local_stats.filtered_stats.reverse();
-        }
-    }
-
-    /// Sorts the note display according to the current sorting mode.
-    fn sort(&mut self) {
-        // Always sort by name first
-        self.local_stats
-            .filtered_stats
-            .sort_by_cached_key(|env_stats| env_stats.id.clone());
-
-        // If the sorting mode is not name, now sort by the actual sorting mode.
-        if self.sorting != SortingMode::Name {
-            // If sorting in reverse is desired, pre-reverse this, so when reversing again later, the list will still be sub-sorted by name ascendingly.
-            if !self.sorting_asc {
-                self.local_stats.filtered_stats.reverse();
-            }
-            // all others are usize and can be done in one thing
             self.local_stats
-                .filtered_stats
-                .sort_by_cached_key(|env_stats| {
-                    if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                        match self.sorting {
-                            // This should not appear
-                            SortingMode::Name => 0,
-                            // These should appear
-                            SortingMode::Words => note.words,
-                            SortingMode::Chars => note.characters,
-                            SortingMode::GlobalOutLinks => env_stats.outlinks_global,
-                            SortingMode::LocalOutLinks => env_stats.outlinks_local,
-                            SortingMode::GlobalInLinks => env_stats.inlinks_global,
-                            SortingMode::LocalInLinks => env_stats.inlinks_local,
-                            SortingMode::Score => env_stats.match_score as usize,
-                            SortingMode::Broken => env_stats.broken_links,
-                        }
-                    } else {
-                        0
-                    }
-                })
-        }
-
-        // Potentially reverse sorting
-        if !self.sorting_asc {
-            self.local_stats.filtered_stats.reverse();
+                .sort(self.index.clone(), self.sorting, self.sorting_asc);
+            self.selected = 0;
         }
     }
 }
@@ -353,10 +298,9 @@ impl super::Screen for SelectScreen {
                 // Selection
                 // Down
                 KeyCode::Char('j' | 'J') | KeyCode::Down => {
-                    self.selected = self
-                        .selected
-                        .saturating_add(1)
-                        .min(self.local_stats.filtered_stats.len().saturating_sub(1));
+                    self.selected = self.selected.saturating_add(1).min(5)
+                    // .min(self.local_stats.filtered_stats.len().saturating_sub(1));
+                    // TODO
                 }
                 // Up
                 KeyCode::Char('k' | 'K') | KeyCode::Up => {
@@ -368,7 +312,7 @@ impl super::Screen for SelectScreen {
                 }
                 // Open selected item in display view
                 KeyCode::Enter | KeyCode::Char('l' | 'L') | KeyCode::Right => {
-                    if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected) {
+                    if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
                         return Ok(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
                 }
@@ -405,22 +349,14 @@ impl super::Screen for SelectScreen {
                 match key.code {
                     // D: Delete note
                     KeyCode::Char('d' | 'D') => {
-                        if let Some(path) = self
+                        if let Some(env_stats) = self
                             // get the selected item in the list for the id
                             .local_stats
-                            .filtered_stats
-                            .get(self.selected)
-                            // use this id in the index to get the note
-                            .and_then(|env_stats| {
-                                // use the id to get the path
-                                self.index
-                                    .borrow()
-                                    .get(&env_stats.id)
-                                    .map(|note| note.path.clone())
-                            })
+                            .get_selected(self.selected)
                         {
                             // delete it from index & filesystem
-                            self.manager.delete_note_file(path.as_path())?;
+                            self.manager
+                                .delete_note_file(self.index.clone(), &env_stats.id)?;
                             // if successfull, refresh the ui
                             self.refresh_env_stats();
                         }
@@ -432,8 +368,7 @@ impl super::Screen for SelectScreen {
                         if let Some(res) = self
                             // get the selected item in the list for the id
                             .local_stats
-                            .filtered_stats
-                            .get(self.selected)
+                            .get_selected(self.selected)
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
                                 // use the id to get the path
@@ -460,8 +395,7 @@ impl super::Screen for SelectScreen {
                         let name = self
                             // get the selected item in the list for the id
                             .local_stats
-                            .filtered_stats
-                            .get(self.selected)
+                            .get_selected(self.selected)
                             // use this id in the index to get the note
                             .and_then(|env_stats| {
                                 // use the id to get the name
@@ -481,8 +415,7 @@ impl super::Screen for SelectScreen {
                     // Open view mode
                     KeyCode::Char('v' | 'V') => {
                         self.mode = SelectMode::Select;
-                        if let Some(env_stats) = self.local_stats.filtered_stats.get(self.selected)
-                        {
+                        if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
                             if let Some(note) = self.index.borrow().get(&env_stats.id) {
                                 self.builder.create_html(note, true)?;
                                 return Ok(ui::Message::OpenExternalCommand(
@@ -528,10 +461,10 @@ impl super::Screen for SelectScreen {
                             SelectMode::Rename => {
                                 // Get the id of currently selected, then delegate to note_file::rename.
                                 if let Some(env_stats) =
-                                    self.local_stats.filtered_stats.get(self.selected)
+                                    self.local_stats.get_selected(self.selected)
                                 {
                                     self.manager.rename_note_file(
-                                        &mut self.index,
+                                        self.index.clone(),
                                         &env_stats.id,
                                         super::extract_string_and_clear(&mut self.name_area)
                                             .ok_or_else(|| {
@@ -547,10 +480,10 @@ impl super::Screen for SelectScreen {
                             SelectMode::Move => {
                                 // Get the id of currently selected, then delegate to note_file::move.
                                 if let Some(env_stats) =
-                                    self.local_stats.filtered_stats.get(self.selected)
+                                    self.local_stats.get_selected(self.selected)
                                 {
                                     self.manager.move_note_file(
-                                        &mut self.index,
+                                        self.index.clone(),
                                         &env_stats.id,
                                         super::extract_string_and_clear(&mut self.name_area)
                                             .ok_or_else(|| {
@@ -578,35 +511,35 @@ impl super::Screen for SelectScreen {
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
                 KeyCode::Char('a' | 'A') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Name, true);
+                    self.set_mode_and_maybe_sort(data::SortingMode::Name, true);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('w' | 'W') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Words, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::Words, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('c' | 'C') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Chars, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::Chars, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('o' | 'O') => {
-                    self.set_mode_and_maybe_sort(SortingMode::GlobalOutLinks, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::GlobalOutLinks, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('u' | 'U') => {
-                    self.set_mode_and_maybe_sort(SortingMode::LocalOutLinks, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::LocalOutLinks, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('i' | 'I') => {
-                    self.set_mode_and_maybe_sort(SortingMode::GlobalInLinks, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::GlobalInLinks, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('n' | 'N') => {
-                    self.set_mode_and_maybe_sort(SortingMode::LocalInLinks, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::LocalInLinks, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('b' | 'B') => {
-                    self.set_mode_and_maybe_sort(SortingMode::Broken, false);
+                    self.set_mode_and_maybe_sort(data::SortingMode::Broken, false);
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('r' | 'R') => {
@@ -637,114 +570,15 @@ impl super::Screen for SelectScreen {
         // Generate areas
         let [global_stats_area, local_stats_area, filter_area, table_area] = vertical.areas(area);
 
-        // Horizontal layout of upper boxes
-        let stats_widths = [
-            Constraint::Length(20),
-            Constraint::Length(16),
-            Constraint::Length(20),
-            Constraint::Length(16),
-            Constraint::Min(0),
-        ];
-
-        //  === Global stats ===
-
-        let global_stats_rows = [
-            Row::new(vec![
-                Cell::from("Total notes:"),
-                Cell::from(format!("{:7}", self.global_stats.note_count_total)),
-                Cell::from("Total words:"),
-                Cell::from(format!("{:7}", self.global_stats.word_count_total)),
-            ]),
-            Row::new(vec![
-                Cell::from("Total unique tags:"),
-                Cell::from(format!("{:7}", self.global_stats.tag_count_total)),
-                Cell::from("Total characters:"),
-                Cell::from(format!("{:7}", self.global_stats.char_count_total)),
-            ]),
-            Row::new(vec![
-                Cell::from("Total links:"),
-                Cell::from(format!("{:7}", self.global_stats.local_local_links)),
-                Cell::from("Broken links:"),
-                Cell::from(format!("{:7}", self.global_stats.broken_links)),
-            ]),
-        ];
-
-        // Finalize global table from the row data and the widths
-        let global_stats = Table::new(global_stats_rows, stats_widths)
-            .column_spacing(1)
+        // Generate stats areas
+        let global_stats = self
+            .global_stats
+            .to_global_stats_table()
             .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
 
-        //  === Local stats ===
-
-        let local_stats_rows = [
-            Row::new(vec![
-                Cell::from("Total notes:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.note_count_total,
-                    self.local_stats.note_count_total * 100
-                        / self.global_stats.note_count_total.max(1)
-                )),
-                Cell::from("Total words:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.word_count_total,
-                    self.local_stats.word_count_total * 100
-                        / self.global_stats.word_count_total.max(1)
-                )),
-            ]),
-            Row::new(vec![
-                Cell::from("Total unique tags:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.tag_count_total,
-                    self.local_stats.tag_count_total * 100
-                        / self.global_stats.tag_count_total.max(1)
-                )),
-                Cell::from("Total characters:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.char_count_total,
-                    self.local_stats.char_count_total * 100
-                        / self.global_stats.char_count_total.max(1)
-                )),
-            ]),
-            Row::new(vec![
-                Cell::from("Incoming links:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.global_local_links,
-                    self.local_stats.global_local_links * 100
-                        / self.global_stats.local_local_links.max(1),
-                )),
-                Cell::from("Outgoing links:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.local_global_links,
-                    self.local_stats.local_global_links * 100
-                        / self.global_stats.local_local_links.max(1),
-                )),
-            ]),
-            Row::new(vec![
-                Cell::from("Internal links:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.local_local_links,
-                    self.local_stats.local_local_links * 100
-                        / self.global_stats.local_local_links.max(1),
-                )),
-                Cell::from("Broken links:"),
-                Cell::from(format!(
-                    "{:7} ({:3}%)",
-                    self.local_stats.broken_links,
-                    self.local_stats.broken_links * 100 / self.global_stats.broken_links.max(1)
-                )),
-            ]),
-        ];
-
-        // Finalize local table
-        let local_stats = Table::new(local_stats_rows, stats_widths)
-            .column_spacing(1)
+        let local_stats = self
+            .local_stats
+            .to_local_stats_table(&self.global_stats)
             .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
         // === Filter area ===
@@ -753,17 +587,6 @@ impl super::Screen for SelectScreen {
         let filter_input = self.filter_area.widget();
 
         // === Table Area ===
-
-        // Calculate widths
-        let notes_table_widths = [
-            Constraint::Min(25),
-            Constraint::Length(8),
-            Constraint::Length(8),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
-        ];
 
         // Generate state from selected element
         let mut state = TableState::new()
@@ -774,7 +597,6 @@ impl super::Screen for SelectScreen {
                     .min(
                         // but when reaching the end of the list, still scroll down
                         self.local_stats
-                            .filtered_stats
                             .len()
                             // correct for table edges
                             .saturating_add(3)
@@ -790,27 +612,6 @@ impl super::Screen for SelectScreen {
                 | SelectMode::SubmenuSorting => Some(self.selected),
                 SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
             });
-
-        // Generate row data
-        let notes_rows = self
-            .local_stats
-            .filtered_stats
-            .iter()
-            .flat_map(|env_stats| {
-                // generate the stats row for each element
-                self.index.borrow().get(&env_stats.id).map(|note| {
-                    Row::new(vec![
-                        note.name.clone(),
-                        format!("{:7}", note.words),
-                        format!("{:7}", note.characters),
-                        format!("{:7}", env_stats.outlinks_global),
-                        format!("{:7}", env_stats.outlinks_local),
-                        format!("{:7}", env_stats.inlinks_global),
-                        format!("{:7}", env_stats.inlinks_local),
-                    ])
-                })
-            })
-            .collect::<Vec<Row>>();
 
         // Instructions at the bottom of the page
         let instructions_bot_left = block::Title::from(Line::from(vec![
@@ -850,8 +651,9 @@ impl super::Screen for SelectScreen {
         };
 
         // Finally generate the table from the generated row and width data
-        let table = Table::new(notes_rows, notes_table_widths)
-            .column_spacing(1)
+        let table = self
+            .local_stats
+            .to_note_table(self.index.clone())
             // Add Headers
             .header(Row::new(vec![
                 Line::from(vec![
@@ -907,7 +709,7 @@ impl super::Screen for SelectScreen {
 
         StatefulWidget::render(table, table_area, buf, &mut state);
 
-        // Render eventual pop-ups
+        // Render possible pop-ups
         match self.mode {
             SelectMode::SubmenuFile | SelectMode::SubmenuSorting => {
                 let contents = if self.mode == SelectMode::SubmenuFile {
