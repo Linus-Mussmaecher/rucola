@@ -1,8 +1,9 @@
+use ratatui::{prelude::*, widgets::*};
 use std::{fmt::Debug, fs, path};
 
 use itertools::Itertools;
 
-use crate::error;
+use crate::{error, ui};
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
 #[derive(Clone, Debug, Default)]
@@ -76,6 +77,47 @@ impl Note {
             // Characters: Simply use the length of the string.
             characters: content.len(),
         })
+    }
+
+    /// Converts this note to a small ratatui table displaying its most vital stats.
+    pub fn to_stats_table(&self, styles: &ui::UiStyles) -> Table {
+        let stats_widths = [
+            Constraint::Length(8),
+            Constraint::Length(12),
+            Constraint::Length(8),
+            Constraint::Min(20),
+        ];
+
+        // Display the note's tags
+        let tags = self
+            .tags
+            .iter()
+            .enumerate()
+            .flat_map(|(index, s)| {
+                [
+                    Span::styled(if index == 0 { "" } else { ", " }, styles.text_style),
+                    Span::styled(s.as_str(), styles.subtitle_style),
+                ]
+            })
+            .collect_vec();
+
+        // Stats Area
+        let stats_rows = [
+            Row::new(vec![
+                Cell::from("Words:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.words)).style(styles.text_style),
+                Cell::from("Tags:").style(styles.text_style),
+                Cell::from(Line::from(tags)).style(styles.text_style),
+            ]),
+            Row::new(vec![
+                Cell::from("Chars:").style(styles.text_style),
+                Cell::from(format!("{:7}", self.characters)).style(styles.text_style),
+                Cell::from("Path:").style(styles.text_style),
+                Cell::from(self.path.to_str().unwrap_or_default()).style(styles.text_style),
+            ]),
+        ];
+
+        Table::new(stats_rows, stats_widths).column_spacing(1)
     }
 }
 
