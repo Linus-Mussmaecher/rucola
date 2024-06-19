@@ -438,7 +438,9 @@ impl DisplayScreen {
             .get(index)
             .map(|list| {
                 list.iter()
-                    .map(|(_id, name)| Row::new(vec![Span::from(name)]))
+                    .map(|(_id, name)| {
+                        Row::new(vec![Span::from(name).style(self.styles.text_style)])
+                    })
                     .collect_vec()
             })
             .unwrap_or_default();

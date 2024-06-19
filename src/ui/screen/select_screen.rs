@@ -298,9 +298,10 @@ impl super::Screen for SelectScreen {
                 // Selection
                 // Down
                 KeyCode::Char('j' | 'J') | KeyCode::Down => {
-                    self.selected = self.selected.saturating_add(1).min(5)
-                    // .min(self.local_stats.filtered_stats.len().saturating_sub(1));
-                    // TODO
+                    self.selected = self
+                        .selected
+                        .saturating_add(1)
+                        .min(self.local_stats.len().saturating_sub(1));
                 }
                 // Up
                 KeyCode::Char('k' | 'K') | KeyCode::Up => {
@@ -573,12 +574,12 @@ impl super::Screen for SelectScreen {
         // Generate stats areas
         let global_stats = self
             .global_stats
-            .to_global_stats_table()
+            .to_global_stats_table(&self.styles)
             .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
 
         let local_stats = self
             .local_stats
-            .to_local_stats_table(&self.global_stats)
+            .to_local_stats_table(&self.global_stats, &self.styles)
             .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
 
         // === Filter area ===
@@ -653,7 +654,7 @@ impl super::Screen for SelectScreen {
         // Finally generate the table from the generated row and width data
         let table = self
             .local_stats
-            .to_note_table(self.index.clone())
+            .to_note_table(self.index.clone(), &self.styles)
             // Add Headers
             .header(Row::new(vec![
                 Line::from(vec![
