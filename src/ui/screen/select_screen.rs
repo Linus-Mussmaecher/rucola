@@ -572,15 +572,21 @@ impl super::Screen for SelectScreen {
         let [global_stats_area, local_stats_area, filter_area, table_area] = vertical.areas(area);
 
         // Generate stats areas
-        let global_stats = self
-            .global_stats
-            .to_global_stats_table(&self.styles)
-            .block(Block::bordered().title("Global Statistics".set_style(self.styles.title_style)));
+        let global_stats =
+            self.global_stats
+                .to_global_stats_table(&self.styles)
+                .block(Block::bordered().title(style::Styled::set_style(
+                    "Global Statistics",
+                    self.styles.title_style,
+                )));
 
         let local_stats = self
             .local_stats
             .to_local_stats_table(&self.global_stats, &self.styles)
-            .block(Block::bordered().title("Local Statistics".set_style(self.styles.title_style)));
+            .block(Block::bordered().title(style::Styled::set_style(
+                "Local Statistics",
+                self.styles.title_style,
+            )));
 
         // === Filter area ===
 
@@ -696,7 +702,7 @@ impl super::Screen for SelectScreen {
             // Add Instructions and a title
             .block(
                 Block::bordered()
-                    .title("Notes".set_style(self.styles.title_style))
+                    .title(style::Styled::set_style("Notes", self.styles.title_style))
                     .title(instructions_bot_left)
                     .title(instructions_bot_right),
             );
@@ -844,7 +850,10 @@ impl super::Screen for SelectScreen {
 
                 let help_table = Table::new(help_rows, help_widths).column_spacing(1).block(
                     Block::bordered()
-                        .title("Filter Syntax".set_style(self.styles.title_style))
+                        .title(style::Styled::set_style(
+                            "Filter Syntax",
+                            self.styles.title_style,
+                        ))
                         .title(
                             block::Title::from(Line::from(vec![
                                 Span::styled("C", self.styles.hotkey_style),

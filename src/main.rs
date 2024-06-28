@@ -182,7 +182,7 @@ You should have received a copy of the GNU General Public License along with thi
 /// Temporary screen while the programm is indexing.
 fn draw_loading_screen(
     terminal: &mut Terminal<impl ratatui::backend::Backend>,
-) -> Result<CompletedFrame, std::io::Error> {
+) -> Result<ratatui::CompletedFrame, std::io::Error> {
     // Draw 'loading' screen
     terminal.draw(|frame| {
         frame.render_widget(
