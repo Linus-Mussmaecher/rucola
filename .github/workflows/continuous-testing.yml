@@ -16,26 +16,32 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - run: rustup update stable && rustup default stable
-      - run: cargo update --verbose
-      - run: cargo build --verbose
+      - name: Update rust
+        run: rustup update stable && rustup default stable
+      - name: Update cargo
+        run: cargo update --verbose
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
   build_and_test:
     name: Rust Project Build and Test
   
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --locked --verbose
+      run: cargo build --verbose
     - name: Run tests
-      run: cargo test --locked --verbose
+      run: cargo test --verbose
   clippy_lint:
     name: Rust Project Clippy
   
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Clippy
-      run: cargo clippy --locked --verbose
+      run: cargo clippy --verbose
