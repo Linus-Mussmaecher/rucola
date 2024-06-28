@@ -31,7 +31,17 @@ Terminal-based note manager and information aggregator for markdown note taking.
  - Optionally compile notes to HTML-documents, including LaTeX compilation and code highlighting, on the fly and show them in an external viewer.
  - Provide all of this functionality from within a terminal user interface.
 
-### Target Audience & Comparisons to Similar Programs
+### Images
+
+In the select & overview screen:
+
+![select-screen](readme-images/readme-image-select.png)
+
+Viewing a single note:
+
+![display-screen](readme-images/readme-image-display.png)
+
+## Target Audience & Comparisons to Similar Programs
 Rucolas is made for users of a [zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) note system of interlinked markdown notes that want to do most of their note taking directly from within the terminal.
 
 Compared to UI-note taking tools such as **Obsidian**, **Evernote** or **Notion** ...
