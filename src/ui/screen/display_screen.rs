@@ -168,7 +168,10 @@ impl super::Screen for DisplayScreen {
 
         let stats = self.note.to_stats_table(&self.styles).block(
             Block::bordered()
-                .title("Statistics".set_style(self.styles.title_style))
+                .title(style::Styled::set_style(
+                    "Statistics",
+                    self.styles.title_style,
+                ))
                 .title(instructions_bot_right),
         );
 
