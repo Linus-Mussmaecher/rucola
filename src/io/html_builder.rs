@@ -95,6 +95,7 @@ impl HtmlBuilder {
         );
 
         let mut contains_math = false;
+        let mut contains_code = false;
 
         for node in root.descendants() {
             // correct id urls for wiki links
@@ -115,6 +116,9 @@ impl HtmlBuilder {
                     }
                     *x = self.perform_replacements(x.clone());
                 }
+                comrak::nodes::NodeValue::CodeBlock(ref _code) => {
+                    contains_code = true;
+                }
                 _ => {}
             }
         }
@@ -133,7 +137,7 @@ impl HtmlBuilder {
 
         writeln!(tar_file, "<!DOCTYPE html>")?;
         writeln!(tar_file, "<title>{}</title>", note.name)?;
-        self.add_preamble(&mut tar_file, contains_math)?;
+        self.add_preamble(&mut tar_file, contains_math, contains_code)?;
 
         comrak::format_html(
             root,
@@ -162,6 +166,7 @@ impl HtmlBuilder {
         &self,
         html: &mut impl std::io::Write,
         contains_math: bool,
+        contains_code: bool,
     ) -> error::Result<()> {
         // Prepend css location
         if let Some(css) = &self.css_path {
@@ -200,6 +205,23 @@ impl HtmlBuilder {
 </script>"##
             )?;
         }
+
+        if contains_code {
+            writeln!(
+                html,
+                r##"<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">"##
+            )?;
+            writeln!(
+                html,
+                r##"<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>"##
+            )?;
+            writeln!(
+                html,
+                r##"<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>"##
+            )?;
+            writeln!(html, r##"<script>hljs.highlightAll();</script>"##)?;
+        }
+
         // Prepend all other manual configured prefixes
         if let Some(prep) = &self.html_prepend {
             html.write_all(prep.as_bytes())?;
