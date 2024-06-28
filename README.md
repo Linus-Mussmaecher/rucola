@@ -53,7 +53,7 @@ Compared to UI-note taking tools such as **Obsidian**, **Evernote** or **Notion*
 
 Compared to using only a terminal text editor (such as **vim**, **emacs** or **helix**) to manage markdown notes ...
  - rucola allows more note-specific interaction with your file system, such as following wiki links.
- - rucola provides note-specific statistics about your files, such as tags and links statistics.
+ - rucola provides note-specific statistics about your files, such as tags, nested tags and links statistics.
  - rucola facilitates more note-specific filtering and searching options based on links, tags, full text or titles.
  - rucola automatically renames wiki links on file rename, which the marksman language server currently does not support, making such a feature unavailable in helix and any other editor relying on LSP for markdown editing.
  - rucola allows you to view nicer-to-read HTML versions of your documents, complete with automatic background conversion (when enabled), which is especially useful for code that is difficult to read in the raw format. In particular, rucola compiles LaTeX and highlights code blocks.
@@ -90,6 +90,8 @@ Note that HTML conversions needs to be manually disabled in the configuration fi
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/). Markdown parsing is done via [comrak](https://github.com/kivikakk/comrak).
+
+LaTeX compilation is facilitated by [KaTeX](https://katex.org/) while code highlighting is done with [highlight.js](https://highlightjs.org/).
 
 ## License
 Rucola is released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
