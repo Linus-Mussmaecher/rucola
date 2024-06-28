@@ -26,7 +26,7 @@ impl Filter {
         let (filters, full_text) = filter_string
             .split_once('|')
             .map(|(filters, rest)| (filters, Some(rest.to_lowercase())))
-            .unwrap_or((&filter_string, None));
+            .unwrap_or((filter_string, None));
 
         // Go through words
         for word in filters.split_whitespace() {
