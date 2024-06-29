@@ -18,7 +18,7 @@ Terminal-based note manager and information aggregator for markdown note taking.
  - [Target Audience & Comparisons to Similar Programs](#target-audience-comparisons-to-similar-programs)
  - [Future Features](#future-features)
  - [Installation](#installation)
- - [Usage & Configuration](#usage-configuration)
+   - [Usage](#usage)
  - [Technology](#technology)
  - [License](#license)
 
@@ -35,11 +35,11 @@ Terminal-based note manager and information aggregator for markdown note taking.
 
 In the select & overview screen:
 
-![select-screen](github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-select.png)
+![select-screen](readme-images/readme-image-select.png)
 
 Viewing a single note:
 
-![display-screen](github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-display.png)
+![display-screen](readme-images/readme-image-display.png)
 
 A default light theme is also included.
 Default themes will adjust to your terminal colors, but you can fully customize all colors.
@@ -83,13 +83,12 @@ and install it via
  cargo install --path .
 ```
 
-### Usage & Configuration
+### Usage
 
 Rucola can be launched from your command line with the `rucola` command.
 By default, the current folder will be considered your 'vault' folder and the root of your note structure, but a different vault can be set in the configuration file or passed as a positional argument such as `rucola ~/Documents/notes`.
 
-For more information on possible configuration options, see the [wiki entry](todo).
-Note that HTML conversions needs to be manually disabled in the configuration file.
+For more information on possible configuration options, features and usage tips, see the [GitHub Wiki](github.com/Linus-Mussmaecher/rucola/wiki). 
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/). Markdown parsing is done via [comrak](https://github.com/kivikakk/comrak).

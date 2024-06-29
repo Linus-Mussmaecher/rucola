@@ -10,38 +10,26 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  latest_deps:
-    name: Latest Dependencies
+  build_test:
+    name: Build & Test
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Update rust
         run: rustup update stable && rustup default stable
-      - name: Update cargo
+      - name: Update cargo to latest dependencies
         run: cargo update --verbose
       - name: Build
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --verbose
-
-  build_and_test:
-    name: Rust Project Build and Test
-  
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
   clippy_lint:
-    name: Rust Project Clippy
+    name: Clippy
   
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Clippy
+    - name: Run clippy
       run: cargo clippy --verbose
