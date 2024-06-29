@@ -35,11 +35,14 @@ Terminal-based note manager and information aggregator for markdown note taking.
 
 In the select & overview screen:
 
-![select-screen](readme-images/readme-image-select.png)
+![select-screen](github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-select.png)
 
 Viewing a single note:
 
-![display-screen](readme-images/readme-image-display.png)
+![display-screen](github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-display.png)
+
+A default light theme is also included.
+Default themes will adjust to your terminal colors, but you can fully customize all colors.
 
 ## Target Audience & Comparisons to Similar Programs
 Rucolas is made for users of a [zettelkasten-style](https://en.wikipedia.org/wiki/Zettelkasten) note system of interlinked markdown notes that want to do most of their note taking directly from within the terminal.

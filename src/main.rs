@@ -93,6 +93,8 @@ fn main() -> error::Result<()> {
                 None => area,
             };
 
+            Widget::render(ratatui::widgets::Clear, app_area, buf);
+
             // Draw the actual application
             app.draw(app_area, buf);
         })?;

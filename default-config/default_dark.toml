@@ -1,0 +1,28 @@
+[title_style]
+fg = "LightBlue"
+add_modifier = "BOLD"
+sub_modifier = ""
+
+[subtitle_style]
+fg = "LightBlue"
+add_modifier = "ITALIC"
+sub_modifier = ""
+
+[hotkey_style]
+fg = "Cyan"
+add_modifier = "BOLD | UNDERLINED"
+sub_modifier = ""
+
+[text_style]
+fg = "White"
+add_modifier = ""
+sub_modifier = ""
+
+[selected_style]
+bg = "Blue"
+add_modifier = "BOLD"
+sub_modifier = ""
+
+[input_style]
+add_modifier = "ITALIC"
+sub_modifier = ""

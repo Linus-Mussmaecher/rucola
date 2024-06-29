@@ -24,15 +24,17 @@ impl Default for UiStyles {
     fn default() -> Self {
         Self {
             title_style: Style::new()
-                .fg(ratatui::style::Color::Blue)
+                .fg(ratatui::style::Color::LightBlue)
                 .add_modifier(Modifier::BOLD),
-            subtitle_style: Style::new().fg(ratatui::style::Color::LightCyan),
+            subtitle_style: Style::new()
+                .fg(ratatui::style::Color::LightBlue)
+                .add_modifier(Modifier::ITALIC),
             hotkey_style: Style::new()
                 .fg(ratatui::style::Color::Cyan)
                 .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
-            text_style: Style::new(),
+            text_style: Style::new().fg(Color::White),
             selected_style: Style::new()
-                .bg(ratatui::style::Color::LightBlue)
+                .bg(ratatui::style::Color::Blue)
                 .add_modifier(Modifier::BOLD),
             input_style: Style::new().add_modifier(Modifier::ITALIC),
         }
