@@ -39,7 +39,7 @@ impl Default for Config {
             enable_html: true,
             katex: true,
             vault_path: None,
-            theme: "default_light_theme".to_string(),
+            theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             editor: None,
             file_types: vec![String::from("markdown")],
