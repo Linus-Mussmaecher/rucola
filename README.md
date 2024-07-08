@@ -96,7 +96,7 @@ Rucola can be launched from your command line with the `rucola` command.
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/). Markdown parsing is done via [comrak](https://github.com/kivikakk/comrak).
 
-LaTeX compilation is facilitated by [KaTeX](https://katex.org/) while code highlighting is done with [highlight.js](https://highlightjs.org/).
+LaTeX compilation & macro system is facilitated by [KaTeX](https://katex.org/) while code highlighting is done with [highlight.js](https://highlightjs.org/).
 
 ## License
 Rucola is released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
