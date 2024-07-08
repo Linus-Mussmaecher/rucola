@@ -9,9 +9,6 @@
 
 Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
 
-> [!NOTE]
-> This is currently a one-person hobby project, but still fully usable.
-
 ## Contents
  - [Features](#features)
  - [Target Audience and Similar Programs](#target-audience-and-similar-programs)
