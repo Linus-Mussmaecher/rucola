@@ -1,4 +1,4 @@
-use std::{fs, io::Write, path, process};
+use std::{collections::HashMap, fs, io::Write, path, process};
 
 use crate::{data, error};
 
@@ -16,7 +16,7 @@ pub struct HtmlBuilder {
     /// Wether or not to insert a MathJax preamble in notes containing math code.
     katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
-    math_replacements: Vec<(String, String)>,
+    math_replacements: HashMap<String, String>,
     /// Viewer to open html files with
     viewer: Option<Vec<String>>,
 }
@@ -114,7 +114,6 @@ impl HtmlBuilder {
                         x.insert(0, '$');
                         x.push('$');
                     }
-                    *x = self.perform_replacements(x.clone());
                 }
                 comrak::nodes::NodeValue::CodeBlock(ref _code) => {
                     contains_code = true;
@@ -154,13 +153,7 @@ impl HtmlBuilder {
 
         Ok(())
     }
-    // Performs all string replacements as specified in the config file in the given string.
-    pub fn perform_replacements(&self, mut initial_string: String) -> String {
-        for (old, new) in self.math_replacements.iter() {
-            initial_string = initial_string.replace(old, new);
-        }
-        initial_string
-    }
+
     /// Prepends relevant data to a generated html file
     pub fn add_preamble(
         &self,
@@ -199,10 +192,12 @@ impl HtmlBuilder {
               {{left: '$$', right: '$$', display: true}},
               {{left: '$', right: '$', display: false}},
           ],
+          macros: {},
           throwOnError : false
         }});
     }});
-</script>"##
+</script>"##,
+                serde_json::to_string(&self.math_replacements).unwrap()
             )?;
         }
 
@@ -366,35 +361,5 @@ mod tests {
         hb.create_html(&liegroup, true).unwrap();
 
         assert!(lg_path.exists());
-    }
-
-    #[test]
-    fn test_replacements() {
-        let config = crate::Config::default();
-        let mut hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
-
-        let field = "\\field{R} \neq \\field{C}".to_string();
-        let topology = "\\topology{O} = \\topology{P}(X)".to_string();
-
-        assert_eq!(
-            hb.perform_replacements(field.clone()),
-            "\\mathbb{R} \neq \\mathbb{C}"
-        );
-        assert_eq!(
-            hb.perform_replacements(topology.clone()),
-            "\\topology{O} = \\topology{P}(X)"
-        );
-
-        hb.math_replacements
-            .push(("\\topology".to_string(), "\\mathcal".to_string()));
-
-        assert_eq!(
-            hb.perform_replacements(field.clone()),
-            "\\mathbb{R} \neq \\mathbb{C}"
-        );
-        assert_eq!(
-            hb.perform_replacements(topology.clone()),
-            "\\mathcal{O} = \\mathcal{P}(X)"
-        );
     }
 }

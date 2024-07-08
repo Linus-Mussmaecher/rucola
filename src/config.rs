@@ -1,4 +1,4 @@
-use std::path;
+use std::{collections::HashMap, path};
 
 use crate::{error, ui};
 
@@ -30,7 +30,7 @@ pub struct Config {
     /// Wether or not to insert a MathJax preamble in notes containing math code.
     pub(crate) katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
-    pub(crate) math_replacements: Vec<(String, String)>,
+    pub(crate) math_replacements: HashMap<String, String>,
 }
 
 impl Default for Config {
@@ -47,10 +47,10 @@ impl Default for Config {
             html_prepend: None,
             css: None,
             viewer: None,
-            math_replacements: vec![
+            math_replacements: HashMap::from_iter(vec![
                 ("\\field".to_string(), "\\mathbb".to_string()),
                 ("\\liealg".to_string(), "\\mathfrak".to_string()),
-            ],
+            ]),
         }
     }
 }
