@@ -36,17 +36,17 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            enable_html: true,
-            katex: true,
             vault_path: None,
+            file_types: vec![String::from("markdown")],
+            default_extension: String::from("md"),
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             editor: None,
-            file_types: vec![String::from("markdown")],
-            default_extension: String::from("md"),
+            viewer: Some(vec![String::from("firefox"), String::from("%p")]),
+            enable_html: true,
+            css: Some("default_dark".to_string()),
             html_prepend: None,
-            css: None,
-            viewer: None,
+            katex: true,
             math_replacements: HashMap::from_iter(vec![
                 ("\\field".to_string(), "\\mathbb".to_string()),
                 ("\\liealg".to_string(), "\\mathfrak".to_string()),

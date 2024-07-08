@@ -1,6 +1,6 @@
 # The default root path of your notes to open on launch
 # Can be overwritten by an explicit positional argument.
-vault_path="~/Coppermind"
+# vault_path="~/MyNotes"
 # The file types to consider as 'notes'.
 # See https://docs.rs/ignore/latest/src/ignore/default_types.rs.html for a complete list of possible types.
 # Note that your files still need to contain valid markdown or at least plaintext to be parsed, even with a differing extension.
@@ -22,17 +22,15 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 # The default editor to use for editing notes.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note when calling this command.
-# Comment out / leave unset to always use your system's default editor.
+# Comment out / leave unset to always use your system's default editor or $EDITOR environment variable.
 # Example: Opening the note in helix.
 # editor=["helix", "%p"]
 
 # The default viewer to use for viewing HTML files of notes.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note's HTML when calling this command.
-# Leaving this unset will cause rucola to try to find your system's default application for opening HTML files.
-# Example: Opening HTML in firefox with a special 'Notes' profile (that I configured to be as minimal as possible).
-
-# viewer=["firefox", "-P", "Notes", "%p"]
+# Default: Firefox Browser
+viewer = ["firefox", "%p"]
 
 # When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
 enable_html=true
