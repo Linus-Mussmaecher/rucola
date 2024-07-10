@@ -276,7 +276,7 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('s' | 'S') => {
                     self.mode = SelectMode::SubmenuSorting;
                 }
-                // F or /: Go to filter mode
+                // F: or /: Go to filter mode
                 KeyCode::Char('f' | 'F' | '/') => {
                     self.mode = SelectMode::Filter;
                 }
@@ -294,6 +294,40 @@ impl super::Screen for SelectScreen {
                     self.any_conditions = !self.any_conditions;
                     self.filter(self.filter_from_input());
                     self.style_text_area();
+                }
+                // Open selected item in editor
+                KeyCode::Char('e' | 'E') => {
+                    self.mode = SelectMode::Select;
+                    if let Some(res) = self
+                        // get the selected item in the list for the id
+                        .local_stats
+                        .get_selected(self.selected)
+                        // use this id in the index to get the note
+                        .and_then(|env_stats| {
+                            // use the id to get the path
+                            self.index
+                                .borrow()
+                                .get(&env_stats.id)
+                                .map(|note| note.path.clone())
+                        })
+                    {
+                        // use the config to create a valid opening command
+                        return Ok(ui::Message::OpenExternalCommand(
+                            self.manager.create_edit_command(&res)?,
+                        ));
+                    }
+                }
+                // Open view mode
+                KeyCode::Char('v' | 'V') => {
+                    self.mode = SelectMode::Select;
+                    if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
+                        if let Some(note) = self.index.borrow().get(&env_stats.id) {
+                            self.builder.create_html(note, true)?;
+                            return Ok(ui::Message::OpenExternalCommand(
+                                self.builder.create_view_command(note)?,
+                            ));
+                        }
+                    }
                 }
                 // Selection
                 // Down
@@ -363,28 +397,6 @@ impl super::Screen for SelectScreen {
                         }
                         self.mode = SelectMode::Select;
                     }
-                    // Open selected item in editor
-                    KeyCode::Char('e' | 'E') => {
-                        self.mode = SelectMode::Select;
-                        if let Some(res) = self
-                            // get the selected item in the list for the id
-                            .local_stats
-                            .get_selected(self.selected)
-                            // use this id in the index to get the note
-                            .and_then(|env_stats| {
-                                // use the id to get the path
-                                self.index
-                                    .borrow()
-                                    .get(&env_stats.id)
-                                    .map(|note| note.path.clone())
-                            })
-                        {
-                            // use the config to create a valid opening command
-                            return Ok(ui::Message::OpenExternalCommand(
-                                self.manager.create_edit_command(&res)?,
-                            ));
-                        }
-                    }
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
                         self.mode = SelectMode::Create;
@@ -412,18 +424,6 @@ impl super::Screen for SelectScreen {
                     KeyCode::Char('m' | 'M') => {
                         self.mode = SelectMode::Move;
                         self.set_name_area("Enter new location relative to vault...", None);
-                    }
-                    // Open view mode
-                    KeyCode::Char('v' | 'V') => {
-                        self.mode = SelectMode::Select;
-                        if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
-                            if let Some(note) = self.index.borrow().get(&env_stats.id) {
-                                self.builder.create_html(note, true)?;
-                                return Ok(ui::Message::OpenExternalCommand(
-                                    self.builder.create_view_command(note)?,
-                                ));
-                            }
-                        }
                     }
                     // Back to select mode
                     KeyCode::Esc => {
@@ -641,6 +641,10 @@ impl super::Screen for SelectScreen {
         .position(block::Position::Bottom);
 
         let instructions_bot_right = block::Title::from(Line::from(vec![
+            Span::styled("E", self.styles.hotkey_style),
+            Span::styled("dit──", self.styles.text_style),
+            Span::styled("V", self.styles.hotkey_style),
+            Span::styled("iew──", self.styles.text_style),
             Span::styled("M", self.styles.hotkey_style),
             Span::styled("anage Files──", self.styles.text_style),
             Span::styled("S", self.styles.hotkey_style),
@@ -722,11 +726,9 @@ impl super::Screen for SelectScreen {
                 let contents = if self.mode == SelectMode::SubmenuFile {
                     vec![
                         ("N", "New note"),
-                        ("E", "Edit selected note"),
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
-                        ("V", "Open HTML in external viewer"),
                     ]
                 } else {
                     vec![
