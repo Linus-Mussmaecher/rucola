@@ -74,7 +74,9 @@ Future plans include:
    This is dependent on the progress on ratatui-markdown.
 
 ## Installation
-Currently, the only way to use this program is to clone this repository with
+For installation instructions, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
+
+Alternatively, you can clone the repository with
 ```
  git clone https://github.com/Linus-Mussmaecher/rucola
 ```
