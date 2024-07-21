@@ -31,11 +31,11 @@ Terminal-based markdown note manager to view statistics, explore connections and
 
 In the select & overview screen:
 
-![select-screen](readme-images/readme-image-select.png)
+![select-screen](https://github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-select.png)
 
 Viewing a single note:
 
-![display-screen](readme-images/readme-image-display.png)
+![display-screen](https://github.com/Linus-Mussmaecher/rucola/blob/main/readme-images/readme-image-display.png)
 
 A default light theme is also included.
 > [!TIP]
