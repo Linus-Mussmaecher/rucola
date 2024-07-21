@@ -16,7 +16,7 @@ pub struct FileTracker {
     /// Watcher that checks for file changes in the vault directory and needs to be kept alive with this index.
     /// Can be unused because it is just here for RAII.
     #[allow(unused)]
-    watcher: notify::INotifyWatcher,
+    watcher: notify::RecommendedWatcher,
     /// Channel from which file change events in the vault directory are deposited by the watcher and can be requested.
     file_change_channel: mpsc::Receiver<Result<notify::Event, notify::Error>>,
 }
