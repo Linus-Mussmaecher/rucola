@@ -60,7 +60,7 @@
 
     <Product
         Id='*'
-        Name='rucola'
+        Name='rucola-notes'
         UpgradeCode='0581E782-1C3D-4B56-96EA-AC0AD9AB83A5'
         Manufacturer='linus.mussmaecher@gmail.com'
         Language='1033'
@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='rucola Installation'/>
+        <Property Id='DiskPrompt' Value='rucola-notes Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='rucola'>
+                <Directory Id='APPLICATIONFOLDER' Name='rucola-notes'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
