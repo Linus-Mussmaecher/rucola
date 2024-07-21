@@ -77,7 +77,7 @@ Future plans include:
 For installation instructions, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist).
 
-Alternatively, you can install using `cargo` from `crates.io`:
+Alternatively, you can install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
  cargo install rucola-notes
 ```
@@ -85,9 +85,7 @@ Alternatively, you can install using `cargo` from `crates.io`:
 Lastly, you can clone the repository with
 ```
  git clone https://github.com/Linus-Mussmaecher/rucola
-```
-and install it via
-```
+ cd rucola
  cargo install --path .
 ```
 
