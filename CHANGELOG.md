@@ -1,7 +1,9 @@
+# Version 0.3.2 - Fixing Release
+Removed homebrew installer, added a release to `crates.io`.
+
 # Version 0.3.1 - Platforms
  - Updated the usage of the `notify` dependency to be platform-independent, allowing compilation on windows and mac.
  - Added conditional compilation to the usage of the `expanduser` dependency to allow compilation on windows.
-
 
 # Version 0.3.0 - Initial Release
 This version marks the initial binary release for rucola.
