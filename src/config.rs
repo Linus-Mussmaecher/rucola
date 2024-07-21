@@ -62,12 +62,36 @@ impl Config {
         let mut config: Config = confy::load("rucola", "config")?;
 
         // === Step 2: Fix vault path ===
-        // get current dir
-        let pwd = std::env::current_dir()?;
 
-        // Extract vault path. Expanduser expands `~` to the correct user home directory and similar.
-        let mut full_vault_path = args
-            .target_folder
+        // Get current dir & extract vault path.
+        let mut full_vault_path = Self::vault_path(std::env::current_dir()?, args, &mut config);
+
+        // make sure path is absolute
+        if !full_vault_path.is_absolute() {
+            full_vault_path = std::env::current_dir()?.join(full_vault_path);
+        }
+
+        Ok((config, full_vault_path))
+    }
+
+    /// Not expansion on windows
+    #[cfg(not(target_family = "unix"))]
+    fn vault_path(
+        pwd: path::PathBuf,
+        _args: crate::Arguments,
+        config: &mut Config,
+    ) -> path::PathBuf {
+        pwd
+    }
+
+    /// Expanduser expands `~` to the correct user home directory and similar, on unix systems.
+    #[cfg(target_family = "unix")]
+    fn vault_path(
+        pwd: path::PathBuf,
+        args: crate::Arguments,
+        config: &mut Config,
+    ) -> path::PathBuf {
+        args.target_folder
             // first attempt to extend the command line given path if one was passed
             .and_then(|arg_string| expanduser::expanduser(arg_string).ok())
             // if none was given, expand the path given from the config file
@@ -76,13 +100,6 @@ impl Config {
                     expanduser::expanduser(conf_path_buf.to_string_lossy()).ok()
                 })
             })
-            .unwrap_or_else(|| pwd.clone());
-
-        // make sure path is absolute
-        if !full_vault_path.is_absolute() {
-            full_vault_path = pwd.join(full_vault_path);
-        }
-
-        Ok((config, full_vault_path))
+            .unwrap_or_else(|| pwd.clone())
     }
 }
