@@ -1,5 +1,5 @@
 [package]
-name = "rucola"
+name = "rucola-notes"
 version = "0.3.1"
 authors = ["linus.mussmaecher@gmail.com"]
 edition = "2021"
@@ -49,6 +49,7 @@ testdir = "^0.9"
 
 [[bin]]
 name = "rucola"
+path = "src/main.rs"
 test = true
 
 [profile.release]
@@ -68,7 +69,7 @@ cargo-dist-version = "0.16.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = ["shell", "powershell", "homebrew", "msi"]
+installers = ["shell", "powershell", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "Linus-Mussmaecher/rucola"
 # Target platforms to build apps for (Rust target-triple syntax)
