@@ -79,7 +79,7 @@ impl Config {
     fn vault_path(
         pwd: path::PathBuf,
         _args: crate::Arguments,
-        config: &mut Config,
+        _config: &mut Config,
     ) -> path::PathBuf {
         pwd
     }
