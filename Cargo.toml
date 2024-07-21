@@ -7,7 +7,7 @@ description = "Terminal-based markdown note manager."
 readme = "README.md"
 homepage = "https://github.com/Linus-Mussmaecher/rucola"
 repository = "https://github.com/Linus-Mussmaecher/rucola"
-keywords = ["markdown", "note", "notes", "note-taking", "zettelkasten", "tui", "terminal", ]
+keywords = ["markdown", "notes", "zettelkasten", "tui", "terminal", ]
 categories = ["command-line-interface"]
 license = "GPL-3.0-only"
 
