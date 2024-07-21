@@ -63,7 +63,7 @@ Compared to using only a terminal text editor (such as **vim**, **emacs** or **h
 > Most text editors or terminal emulators provide some way to open a file in an already running instance - open rucola and your favourite editor next to one another and use rucola like a more note-specific file picker. 
 
 ## Future Features
-The current version is 1.0, as it supports all features I envisioned before embarking on this project and integrates seamlessly into my current workflow.
+The current version supports all features originally envisioned for this project and has been tested in daily use for some months.
 This does not mean that development is finished.
 Future plans include:
  - Frequent & quick bugfixes and similar non-breaking changes.
@@ -84,6 +84,8 @@ and install it via
 ```
  cargo install --path .
 ```
+
+A release on `crates.io` is currently not supported, as the project name is sadly already taken.
 
 ### Usage
 
