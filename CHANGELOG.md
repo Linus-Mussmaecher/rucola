@@ -1,3 +1,6 @@
+# Version 0.3.3 - Fixing Release
+Fixed problems with `cargo dist`, fully removed homebrew.
+
 # Version 0.3.2 - Fixing Release
 Removed homebrew installer, added a release to `crates.io`.
 
