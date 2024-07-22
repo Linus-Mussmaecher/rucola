@@ -80,11 +80,11 @@ For installation instructions via shell script, `.msi` or tarball, see the [late
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
 
 #### AUR
-Install `rucola` from the Arch User Repository via
+Install `rucola` from the Arch User Repository:
 ```
  pacman -S rucola-notes
 ```
-or an AUR helper such as
+Install with an AUR helper such as `yay`:
 ```
  yay rucola
 ```
@@ -95,7 +95,7 @@ Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
 
 #### Manual Build
-If you want to build the latest commit of rucola by yourself, you can clone the repository with
+If you want to build the latest commit of rucola by yourself, you can clone the repository, build & install: 
 ```
  git clone https://github.com/Linus-Mussmaecher/rucola
  cd rucola
