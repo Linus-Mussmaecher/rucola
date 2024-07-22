@@ -74,15 +74,28 @@ Future plans include:
    This is dependent on the progress on ratatui-markdown.
 
 ## Installation
-For installation instructions, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
-These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist).
 
-Alternatively, you can install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
+#### Installation Scripts & Tarballs
+For installation instructions via shell script, `.msi` or tarball, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
+These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
+
+#### AUR
+Install `rucola` from the Arch User Repository via
+```
+ pacman -S rucola-notes
+```
+or an AUR helper such as
+```
+ yay rucola
+```
+#### Crates.io
+Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
  cargo install rucola-notes
 ```
 
-Lastly, you can clone the repository with
+#### Manual Build
+If you want to build the latest commit of rucola by yourself, you can clone the repository with
 ```
  git clone https://github.com/Linus-Mussmaecher/rucola
  cd rucola
