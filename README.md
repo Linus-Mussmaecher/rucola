@@ -75,8 +75,10 @@ Future plans include:
 
 ## Installation
 
+Rucola has no requirements, but a [Nerd font](https://www.nerdfonts.com) may be required on your machine to display some of the icons properly.
+
 #### Installation Scripts & Tarballs
-For installation instructions via shell script, `.msi` or tarball, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
+For installation instructions via shell script, `.msi`, homebrew or tarball, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
 
 #### AUR
