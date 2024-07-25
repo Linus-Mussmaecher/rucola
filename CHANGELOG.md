@@ -1,3 +1,9 @@
+# Version 0.3.3 - Operating System Support
+ - Rucola can now be installed via homebrew
+ - Added a title to the select screen
+ - Added the current rucola version to both screens
+ - Added a build script that copies the 5 default configuration files in the configuration folder on install.
+
 # Version 0.3.3 - Fixing Release
 Fixed problems with `cargo dist`, fully removed homebrew.
 
