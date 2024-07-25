@@ -47,6 +47,9 @@ expanduser = "^1.2"
 [dev-dependencies]
 testdir = "^0.9"
 
+[build-dependencies]
+confy = "^0.6"
+
 [[bin]]
 name = "rucola"
 path = "src/main.rs"

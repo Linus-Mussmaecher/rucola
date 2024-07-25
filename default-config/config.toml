@@ -1,12 +1,15 @@
 # The default root path of your notes to open on launch
 # Can be overwritten by an explicit positional argument.
 # vault_path="~/MyNotes"
+
 # The file types to consider as 'notes'.
 # See https://docs.rs/ignore/latest/src/ignore/default_types.rs.html for a complete list of possible types.
 # Note that your files still need to contain valid markdown or at least plaintext to be parsed, even with a differing extension.
 file_types = ["markdown"]
+
 # The default extension to append to newly created files.
 default_extension = "md"
+
 
 # The default look of the application.
 # Two default themes (for light and dark terminal setups) are provided.
@@ -19,6 +22,7 @@ theme="default_dark"
 # stats_show = "Local"    # Always show only local stats.
 stats_show = "Relevant"   # Show global stats if there is no filter applied and local if there is.
 
+
 # The default editor to use for editing notes.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note when calling this command.
@@ -26,21 +30,27 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 # Example: Opening the note in helix.
 # editor=["helix", "%p"]
 
+
 # The default viewer to use for viewing HTML files of notes.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note's HTML when calling this command.
 # Default: Firefox Browser
 viewer = ["firefox", "%p"]
 
+
 # When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
 enable_html=true
+
 # The name of the css file to use when creating HTML files. Must be located in your rucola config folder.
 css="default_dark"
+
 # Any further HTML to prepend to created HTML files, for example special Javascript that you want included.
 html_prepend="""
 """
+
 # Wether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
 katex=true
+
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]
 '\field' = '\mathbb'
