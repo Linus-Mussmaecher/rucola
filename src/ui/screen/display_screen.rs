@@ -151,6 +151,12 @@ impl super::Screen for DisplayScreen {
         )])
         .alignment(Alignment::Center);
 
+        let version = Line::from(vec![Span::styled(
+            format!("rucola v{}", env!("CARGO_PKG_VERSION")),
+            self.styles.subtitle_style,
+        )])
+        .alignment(Alignment::Right);
+
         let instructions_bot_right = block::Title::from(Line::from(vec![
             Span::styled("V", self.styles.hotkey_style),
             Span::styled("iew──", self.styles.text_style),
@@ -183,6 +189,7 @@ impl super::Screen for DisplayScreen {
         let [blinks2, links2] = horizontal.areas(links2_area);
 
         Widget::render(title, title_area, buf);
+        Widget::render(version, title_area, buf);
         Widget::render(stats, stats_area, buf);
 
         self.draw_link_table(0, "Backlinks", blinks1, buf);

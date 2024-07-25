@@ -29,6 +29,18 @@ impl FileManager {
         }
     }
 
+    /// Returns the title of the managed vault
+    pub fn get_vault_title(&self) -> String {
+        format!(
+            "Notes in {}",
+            self.vault_path
+                .as_path()
+                .file_name()
+                .and_then(|folder| folder.to_str())
+                .unwrap_or("Unknown Folder")
+        )
+    }
+
     /// Takes in a PathBuf and, if the current file extension is not set, append the default one.
     pub fn ensure_file_extension(&self, path: &mut path::PathBuf) {
         if path.extension().is_none() {

@@ -562,6 +562,7 @@ impl super::Screen for SelectScreen {
         let (global_size, local_size) = self.stats_heights(self.filter_area.lines().last());
         // Vertical layout
         let vertical = Layout::vertical([
+            Constraint::Length(1),
             Constraint::Length(global_size),
             Constraint::Length(local_size),
             Constraint::Length(3),
@@ -569,7 +570,21 @@ impl super::Screen for SelectScreen {
         ]);
 
         // Generate areas
-        let [global_stats_area, local_stats_area, filter_area, table_area] = vertical.areas(area);
+        let [title_area, global_stats_area, local_stats_area, filter_area, table_area] =
+            vertical.areas(area);
+
+        // Title
+        let title = Line::from(vec![Span::styled(
+            self.manager.get_vault_title(),
+            self.styles.title_style,
+        )])
+        .alignment(Alignment::Center);
+
+        let version = Line::from(vec![Span::styled(
+            format!("rucola v{}", env!("CARGO_PKG_VERSION")),
+            self.styles.subtitle_style,
+        )])
+        .alignment(Alignment::Right);
 
         // Generate stats areas
         let global_stats =
@@ -712,6 +727,8 @@ impl super::Screen for SelectScreen {
             );
 
         // === Rendering ===
+        Widget::render(title, title_area, buf);
+        Widget::render(version, title_area, buf);
 
         Widget::render(filter_input, filter_area, buf);
 
