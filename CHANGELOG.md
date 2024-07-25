@@ -1,4 +1,4 @@
-# Version 0.3.3 - Operating System Support
+# Version 0.3.4 - Operating System Support
  - Rucola can now be installed via homebrew
  - Added a title to the select screen
  - Added the current rucola version to both screens
