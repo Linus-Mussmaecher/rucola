@@ -47,10 +47,10 @@ impl Default for Config {
             css: Some("default_dark".to_string()),
             html_prepend: None,
             katex: true,
-            math_replacements: HashMap::from_iter(vec![
-                ("\\field".to_string(), "\\mathbb".to_string()),
-                ("\\liealg".to_string(), "\\mathfrak".to_string()),
-            ]),
+            math_replacements: HashMap::from_iter(vec![(
+                "\\field".to_string(),
+                "\\mathbb".to_string(),
+            )]),
         }
     }
 }

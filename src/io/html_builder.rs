@@ -268,6 +268,58 @@ impl HtmlBuilder {
     }
 }
 
+pub const DEFAULT_CSS: &str = r##"        
+body{
+  max-width: 60%;
+  margin: auto;
+  background: #112c37;
+}
+
+p{
+  font-size: 14px;
+  color: #e2e8f3;
+}
+li{
+  font-size: 14px;
+  color: #e2e8f3;
+}
+
+h1{
+  color: #6b84bd;
+  font-size: 30px;
+  font-family: "Times New Roman";
+  font-style: italic;
+}
+
+h2{
+  color: #6b84bd;
+  font-size: 20px;
+  font-family: "Times New Roman";
+}
+
+h3{
+  color: #405b8c;
+  font-size: 18px;
+  font-family: "Times New Roman";
+}
+
+h4{
+  color: #9bcfc8;
+  font-size: 16px;
+  font-family: "Times New Roman";
+  font-style: italic;
+}
+
+a{  
+  color: #6b84bd;
+  text-decoration: none;
+}
+
+a:hover{
+  color: #9bcfc8;
+  text-decoration: underline;
+}"##;
+
 #[cfg(test)]
 mod tests {
 
@@ -371,55 +423,3 @@ mod tests {
         assert!(lg_path.exists());
     }
 }
-
-const DEFAULT_CSS: &str = r##"        
-body{
-  max-width: 60%;
-  margin: auto;
-  background: #112c37;
-}
-
-p{
-  font-size: 14px;
-  color: #e2e8f3;
-}
-li{
-  font-size: 14px;
-  color: #e2e8f3;
-}
-
-h1{
-  color: #6b84bd;
-  font-size: 30px;
-  font-family: "Times New Roman";
-  font-style: italic;
-}
-
-h2{
-  color: #6b84bd;
-  font-size: 20px;
-  font-family: "Times New Roman";
-}
-
-h3{
-  color: #405b8c;
-  font-size: 18px;
-  font-family: "Times New Roman";
-}
-
-h4{
-  color: #9bcfc8;
-  font-size: 16px;
-  font-family: "Times New Roman";
-  font-style: italic;
-}
-
-a{  
-  color: #6b84bd;
-  text-decoration: none;
-}
-
-a:hover{
-  color: #9bcfc8;
-  text-decoration: underline;
-}"##;
