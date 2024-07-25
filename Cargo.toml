@@ -69,12 +69,16 @@ cargo-dist-version = "0.16.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = ["shell", "powershell", "msi"]
-# A GitHub repo to push Homebrew formulas to
-tap = "Linus-Mussmaecher/rucola"
+installers = ["shell", "powershell", "homebrew", "msi"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 # Publish jobs to run in CI
 pr-run-mode = "plan"
 # Whether to install an updater program
 install-updater = false
+# A GitHub repo to push Homebrew formulas to
+tap = "Linus-Mussmaecher/homebrew-tap"
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Name for the homebrew formula
+formula = "rucola"
