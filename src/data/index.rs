@@ -1,5 +1,7 @@
 use std::{borrow::BorrowMut, collections::HashMap};
 
+use itertools::Itertools;
+
 use crate::{error, io};
 
 use super::Note;
@@ -228,6 +230,8 @@ impl NoteIndex {
                             .map(|note| note.name.clone())
                             .map(|name| (link_id.to_owned(), name))
                     })
+                    .unique()
+                    .sorted_by(|(id1, _), (id2, _)| id1.cmp(id2))
                     .collect()
             })
             .unwrap_or_default()
@@ -240,6 +244,8 @@ impl NoteIndex {
             .iter()
             .filter(|(_other_id, note)| note.links.contains(&id_copy))
             .map(|(id, note)| (id.to_owned(), note.name.to_owned()))
+            .unique()
+            .sorted_by(|(id1, _), (id2, _)| id1.cmp(id2))
             .collect()
     }
 }
@@ -290,9 +296,14 @@ mod tests {
                 ("topology".to_string(), "Topology".to_string()),
             ]
         );
+
         assert_eq!(
-            index.blinks_vec("lie-group"),
-            vec![("manifold".to_string(), "Manifold".to_string()),]
+            index.links_vec("atlas"),
+            vec![
+                ("chart".to_string(), "Chart".to_string()),
+                ("manifold".to_string(), "Manifold".to_string()),
+                ("topology".to_string(), "Topology".to_string()),
+            ]
         );
     }
 
@@ -306,16 +317,18 @@ mod tests {
         assert_eq!(index.inner.len(), 11);
 
         assert_eq!(
-            index.links_vec("lie-group"),
-            vec![
-                ("manifold".to_string(), "Manifold".to_string()),
-                ("smooth-map".to_string(), "Smooth Map".to_string()),
-                ("topology".to_string(), "Topology".to_string()),
-            ]
-        );
-        assert_eq!(
             index.blinks_vec("lie-group"),
-            vec![("manifold".to_string(), "Manifold".to_string()),]
+            vec![("manifold".to_string(), "Manifold".to_string())]
+        );
+
+        assert_eq!(
+            index.blinks_vec("manifold"),
+            vec![
+                ("atlas".to_string(), "Atlas".to_string()),
+                ("chart".to_string(), "Chart".to_string()),
+                ("lie-group".to_string(), "Lie Group".to_string()),
+                ("smooth-map".to_string(), "Smooth Map".to_string()),
+            ]
         );
     }
 }
