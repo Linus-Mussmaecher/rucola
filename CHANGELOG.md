@@ -3,6 +3,7 @@
  - Added a title to the select screen
  - Added the current rucola version to both screens
  - Added a build script that copies the 5 default configuration files in the configuration folder on install.
+ - The display screen now only shows unique links and backlinks. The select screen continues to count links (not linking notes), so linking note A twice from note B will count as two outlinks for A, two inlinks for B, but now B will only show up once in the backlinks list of A and A will only show up once in the links list of B.
 
 # Version 0.3.3 - Fixing Release
 Fixed problems with `cargo dist`, fully removed homebrew.

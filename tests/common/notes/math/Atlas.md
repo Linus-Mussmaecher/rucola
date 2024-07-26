@@ -13,4 +13,4 @@ The union of all atlases in such an equivalence calls is called a *maximal atlas
 A map $(U,x)$ is called *compatible* to an atlas $A$ if  $A \cup \{(U,x)\}$ is still an atlas.
 
 ## Properties
-The domains of maps of a maximal atlas induce a [[Topology]] on $M$.
+The domains of maps of a maximal atlas induce a [[Topology]] on the [[manifold]] $M$.

@@ -430,9 +430,9 @@ mod tests {
 
         assert_eq!(env1.note_count_total, 5);
         assert_eq!(env1.tag_count_total, 3);
-        assert_eq!(env1.local_local_links, 9);
-        assert_eq!(env1.local_global_links, 10);
-        assert_eq!(env1.global_local_links, 12);
+        assert_eq!(env1.local_local_links, 10);
+        assert_eq!(env1.local_global_links, 11);
+        assert_eq!(env1.global_local_links, 13);
         assert_eq!(env1.broken_links, 1);
     }
 
@@ -465,14 +465,14 @@ mod tests {
         assert_eq!(env2.tag_count_total, 2);
         assert_eq!(env2.local_local_links, 1);
         assert_eq!(env2.local_global_links, 5);
-        assert_eq!(env2.global_local_links, 5);
+        assert_eq!(env2.global_local_links, 6);
         assert_eq!(env2.broken_links, 1);
 
         env2.filtered_stats
             .iter()
             .filter(|env_stats| env_stats.id == "manifold")
             .for_each(|ma| {
-                assert_eq!(ma.inlinks_global, 4);
+                assert_eq!(ma.inlinks_global, 5);
                 assert_eq!(ma.inlinks_local, 1);
                 assert_eq!(ma.outlinks_local, 0);
                 assert_eq!(ma.outlinks_global, 4);
@@ -538,7 +538,7 @@ mod tests {
         assert_eq!(env4.tag_count_total, 2);
         assert_eq!(env4.local_local_links, 2);
         assert_eq!(env4.local_global_links, 5);
-        assert_eq!(env4.global_local_links, 8);
+        assert_eq!(env4.global_local_links, 9);
         assert_eq!(env4.broken_links, 1);
     }
 
@@ -569,7 +569,7 @@ mod tests {
         assert_eq!(env5.tag_count_total, 3);
         assert_eq!(env5.local_local_links, 5);
         assert_eq!(env5.local_global_links, 8);
-        assert_eq!(env5.global_local_links, 9);
+        assert_eq!(env5.global_local_links, 10);
         assert_eq!(env5.broken_links, 1);
     }
 }

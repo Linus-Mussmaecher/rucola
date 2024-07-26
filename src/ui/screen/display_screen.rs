@@ -74,6 +74,7 @@ impl DisplayScreen {
         let l2links = l1links
             .iter()
             .flat_map(|(id, _name)| index_b.links_vec(id))
+            .unique()
             .collect_vec();
 
         // Get level 1 backlinks
@@ -82,6 +83,7 @@ impl DisplayScreen {
         let l2blinks = l1blinks
             .iter()
             .flat_map(|(id, _name)| index_b.blinks_vec(id))
+            .unique()
             .collect();
 
         // Create input area and style it
