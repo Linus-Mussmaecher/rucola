@@ -59,8 +59,14 @@ impl FileTracker {
     /// Start watching the vault path.
     /// This action is delayed until now so the watcher is not active while the initial indexing creates a ton of HTML files, which would trigger a ton of file events and a significant hangup.
     pub fn initialize_watching(&mut self) -> Result<(), notify::Error> {
-        self.watcher
-            .watch(&self.vault_path, notify::RecursiveMode::Recursive)
+        self.watcher.watch(
+            self.vault_path
+                .canonicalize()
+                .as_ref()
+                .unwrap_or(&self.vault_path)
+                .as_path(),
+            notify::RecursiveMode::Recursive,
+        )
     }
 
     /// Returns a file walker that iterates over all notes to index.

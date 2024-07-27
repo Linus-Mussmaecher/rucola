@@ -247,7 +247,7 @@ impl HtmlBuilder {
                     for arg in iter {
                         if arg == "%p" {
                             // special argument for the user to indicate where to put the path
-                            cmd.arg(&path);
+                            cmd.arg(path.canonicalize().as_ref().unwrap_or(&path));
                         } else {
                             // all other arguments are appended in order
                             cmd.arg(arg);
