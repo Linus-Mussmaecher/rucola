@@ -242,26 +242,13 @@ mod tests {
             .unwrap();
 
         let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
-        id_changes.sort_unstable_by(|(a1, _b1), (a2, _b2)| a1.cmp(a2));
+        id_changes.sort_unstable();
 
         assert!(modifications);
-        if cfg!(target_family = "unix") {
-            assert_eq!(
-                id_changes,
-                vec![
-                    (String::from("atlas"), Some(String::from("atlantis"))),
-                    (String::from("lie-group"), Some(String::from("lie-soup"))),
-                ]
-            );
-        } else {
-            assert_eq!(
-                id_changes,
-                vec![
-                    (String::from("atlas"), None),
-                    (String::from("lie-group"), None),
-                ]
-            );
-        }
+        assert_eq!(
+            id_changes,
+            vec![String::from("atlas"), String::from("lie-group"),]
+        );
 
         assert!(index_con.borrow().get("atlas").is_none());
         assert!(index_con.borrow().get("lie-group").is_none());

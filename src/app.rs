@@ -117,20 +117,10 @@ impl App {
         drop(index);
 
         // synchronize display stack with id changes from file events
-        'changes: for (old_id, maybe_new_id) in id_changes {
-            // if an id was changed, update all displays referring to it
-            if let Some(new_id) = maybe_new_id {
-                for display_id in self.display_stack.iter_mut() {
-                    if *display_id == old_id {
-                        *display_id = new_id;
-                        continue 'changes;
-                    }
-                }
-            } else {
-                // if an id was deleted, remove all such displays from the stack
-                self.display_stack
-                    .retain(|display_id| *display_id != old_id);
-            }
+        for changed_id in id_changes {
+            // if an id was deleted or modified, remove all such displays from the stack
+            self.display_stack
+                .retain(|display_id| *display_id != changed_id);
         }
 
         // remove 'empty' ids, indicating that
