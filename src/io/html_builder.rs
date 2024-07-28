@@ -170,7 +170,7 @@ impl HtmlBuilder {
         if let Some(css) = &self.css_path {
             writeln!(
                 html,
-                "<link rel=\"stylesheet\" href=\"{}\">",
+                "<link rel=\"stylesheet\" href=\"file://{}\">",
                 css.to_string_lossy()
             )?;
         }
