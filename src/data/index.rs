@@ -108,7 +108,14 @@ impl NoteIndex {
                 // also trigger on the target of a rename (new location)
                 | notify::EventKind::Modify(notify::event::ModifyKind::Name(
                     notify::event::RenameMode::To,
-                )) => {
+                ))
+                     => {
+                    // on unix, skip this if its a rename event
+                    if let notify::EventKind::Modify(_) = event.kind {
+                        if cfg!(target_family="unix"){
+                            continue;
+                        }
+                    }
                     // Creations:
                     // - Check if a file was created (we don't care about folders)
                     // - Check for each path if we are interested in it (gitignore + extensions from config)
@@ -132,6 +139,12 @@ impl NoteIndex {
                     notify::event::RenameMode::From,
                 ))
                 => {
+                    // on unix, skip this if its a rename event
+                    if let notify::EventKind::Modify(_) = event.kind {
+                        if cfg!(target_family="unix"){
+                            continue;
+                        }
+                    }
                     let deleted_path = event
                         .paths
                         .first()
