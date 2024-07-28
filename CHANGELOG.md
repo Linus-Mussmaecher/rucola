@@ -1,10 +1,17 @@
 # Version 0.3.4 - Operating System Support
+
+## Features
  - Rucola can now be installed via homebrew
  - Added a title to the select screen
  - Added the current rucola version to both screens
  - Added a build script that copies the 5 default configuration files in the configuration folder on install.
  - The display screen now only shows unique links and backlinks. The select screen continues to count links (not linking notes), so linking note A twice from note B will count as two outlinks for A, two inlinks for B, but now B will only show up once in the backlinks list of A and A will only show up once in the links list of B.
+
+ ## Bugfixes
  - Pathes are now canonicalized before being sent to external commands or used to create a file watcher, solving some issues previously appearing on Windows where mixing forward and backwards slashes would cause problems.
+ - Windows now correctly uses the path from command line arguments and the config file
+ - Slightly altered CSS integration to work around a firefox/windows issue requiring `file://` before an absolute CSS path.
+
 
 # Version 0.3.3 - Fixing Release
 Fixed problems with `cargo dist`, fully removed homebrew.

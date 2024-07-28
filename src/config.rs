@@ -78,10 +78,13 @@ impl Config {
     #[cfg(not(target_family = "unix"))]
     fn vault_path(
         pwd: path::PathBuf,
-        _args: crate::Arguments,
-        _config: &mut Config,
+        args: crate::Arguments,
+        config: &mut Config,
     ) -> path::PathBuf {
-        pwd
+        args.target_folder
+            .map(|folder_string| path::PathBuf::from(folder_string))
+            .or(config.vault_path.take())
+            .unwrap_or_else(|| pwd.clone())
     }
 
     /// Expanduser expands `~` to the correct user home directory and similar, on unix systems.
