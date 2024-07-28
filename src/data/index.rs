@@ -104,23 +104,47 @@ impl NoteIndex {
         let mut id_changes = vec![];
         for event in self.tracker.try_events_iter().flatten() {
             match event.kind {
-                notify::EventKind::Create(kind) => {
+                notify::EventKind::Create(_)
+                // also trigger on the target of a rename (new location)
+                | notify::EventKind::Modify(notify::event::ModifyKind::Name(
+                    notify::event::RenameMode::To,
+                )) => {
                     // Creations:
                     // - Check if a file was created (we don't care about folders)
                     // - Check for each path if we are interested in it (gitignore + extensions from config)
                     // - Try to load the note and index it
-                    if kind == notify::event::CreateKind::File {
-                        for path in event.paths {
-                            if self.tracker.is_tracked(&path) {
-                                if let Ok(note) = super::Note::from_path(&path) {
-                                    // create html on creation
-                                    self.builder.create_html(&note, false)?;
-                                    // insert the note
-                                    self.inner.insert(super::name_to_id(&note.name), note);
-                                    modifications = true;
-                                }
+                    for path in event.paths {
+                        if self.tracker.is_tracked(&path) && path.is_file() {
+                            if let Ok(note) = super::Note::from_path(&path) {
+                                // create html on creation
+                                self.builder.create_html(&note, false)?;
+                                // insert the note
+                                self.inner.insert(super::name_to_id(&note.name), note);
+                                modifications = true;
                             }
                         }
+                    }
+                }
+                // Remove events: Keep only those notes whose path was not removed
+                notify::EventKind::Remove(_) 
+                // also trigger on the source of a renamed file (former location)
+                | notify::EventKind::Modify(notify::event::ModifyKind::Name(
+                    notify::event::RenameMode::From,
+                ))
+                => {
+                    let deleted_path = event
+                        .paths
+                        .first()
+                        .ok_or_else(|| error::RucolaError::NotifyEventError(event.clone()))?;
+                    if let Some(old_id) = self
+                        .inner
+                        .iter()
+                        .find(|(_id, note)| note.path.to_path_buf() == *deleted_path)
+                        .map(|(id, _n)| id.to_owned())
+                    {
+                        self.inner.remove(&old_id);
+                        modifications = true;
+                        id_changes.push((old_id, None));
                     }
                 }
                 notify::EventKind::Modify(kind) => {
@@ -130,8 +154,8 @@ impl NoteIndex {
                     match kind {
                         // Renames and moves
                         notify::event::ModifyKind::Name(mode) => match mode {
-                            notify::event::RenameMode::From => {}
-                            notify::event::RenameMode::To => {}
+                            notify::event::RenameMode::From => {} // neccesary on windows, handled in delete
+                            notify::event::RenameMode::To => {} // neccesary on windows, handled in create
                             notify::event::RenameMode::Both => {
                                 let from = event.paths.first().ok_or_else(|| {
                                     error::RucolaError::NotifyEventError(event.clone())
@@ -169,7 +193,9 @@ impl NoteIndex {
                         },
                         // General edits
                         notify::event::ModifyKind::Data(_)
-                        | notify::event::ModifyKind::Metadata(_) => {
+                        | notify::event::ModifyKind::Metadata(_)
+                        | notify::event::ModifyKind::Any
+                        | notify::event::ModifyKind::Other => {
                             for (_id, note) in self.inner.borrow_mut().iter_mut() {
                                 if event.paths.contains(&note.path) {
                                     if let Ok(new_note) = Note::from_path(&note.path) {
@@ -181,27 +207,6 @@ impl NoteIndex {
                                     }
                                 }
                             }
-                        }
-                        notify::event::ModifyKind::Any => {}
-                        notify::event::ModifyKind::Other => {}
-                    }
-                }
-                // Remove events: Keep only those notes whose path was not removed
-                notify::EventKind::Remove(kind) => {
-                    if kind == notify::event::RemoveKind::File {
-                        let deleted_path = event
-                            .paths
-                            .first()
-                            .ok_or_else(|| error::RucolaError::NotifyEventError(event.clone()))?;
-                        if let Some(old_id) = self
-                            .inner
-                            .iter()
-                            .find(|(_id, note)| note.path.to_path_buf() == *deleted_path)
-                            .map(|(id, _n)| id.to_owned())
-                        {
-                            self.inner.remove(&old_id);
-                            modifications = true;
-                            id_changes.push((old_id, None));
                         }
                     }
                 }

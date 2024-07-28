@@ -8,9 +8,10 @@
  - The display screen now only shows unique links and backlinks. The select screen continues to count links (not linking notes), so linking note A twice from note B will count as two outlinks for A, two inlinks for B, but now B will only show up once in the backlinks list of A and A will only show up once in the links list of B.
 
  ## Bugfixes
- - Pathes are now canonicalized before being sent to external commands or used to create a file watcher, solving some issues previously appearing on Windows where mixing forward and backwards slashes would cause problems.
- - Windows now correctly uses the path from command line arguments and the config file
- - Slightly altered CSS integration to work around a firefox/windows issue requiring `file://` before an absolute CSS path.
+ - Fixed a bug where paths sent to external applications would contain a mix of `\` and `/` and thus sometimes not work correctly.
+ - Fixed a bug where non-unix systems would not use vault path from command line argument or config file.
+ - Fixed a bug where CSS would not display correctly when using Firefox and Windows.
+ - Fixed a bug where FileEvents send by Windows would not be recognized.
 
 
 # Version 0.3.3 - Fixing Release
