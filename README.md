@@ -6,8 +6,8 @@
 
 [<img alt="commit status" src="https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?labelColor=555555&color=66c2a5&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/commits/main)
 [<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
-[<img alt="cratesio" src="https://img.shields.io/crates/v/rucola-notes.svg?labelColor=555555&color=417a5a&logo=linux-containers&style=for-the-badge">](https://crates.io/crates/serie)
-[<img alt="arch-user-repository" src="https://img.shields.io/aur/version/rucola-notes.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://crates.io/crates/serie)
+[<img alt="cratesio" src="https://img.shields.io/crates/v/rucola-notes.svg?labelColor=555555&color=417a5a&logo=linux-containers&style=for-the-badge">](https://crates.io/crates/rucola-notes)
+[<img alt="arch-user-repository" src="https://img.shields.io/aur/version/rucola-notes.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://aur.archlinux.org/packages/rucola-notes)
 
 Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
 
