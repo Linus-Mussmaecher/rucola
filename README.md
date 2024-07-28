@@ -2,10 +2,13 @@
 
 [<img alt="github" src="https://img.shields.io/badge/github-Linus--Mussmaecher/rucola-8da0cb?style=for-the-badge&labelColor=555555&color=8da0cb&logo=github">](https://github.com/Linus-Mussmaecher/rucola)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?labelColor=555555&style=for-the-badge&logo=gnu)](https://www.gnu.org/licenses/gpl-3.0)
-[<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
-[<img alt="commit status" src="https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?style=for-the-badge&labelColor=555555&color=66c2a5">](https://github.com/Linus-Mussmaecher/rucola/commits/main)
 [<img alt="rust" src="https://img.shields.io/badge/Rust-2021_Edition-ed9974?labelColor=555555&logo=rust&style=for-the-badge">](https://www.rust-lang.org/)
 [<img alt="ratatui" src="https://img.shields.io/badge/Ratatui-0.26-7fa4f5?labelColor=555555&logo=gnome-terminal&style=for-the-badge">](https://www.ratatui.rs/)
+
+[<img alt="commit status" src="https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?labelColor=555555&color=66c2a5&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/commits/main)
+[<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
+[<img alt="cratesio" src="https://img.shields.io/crates/v/rucola-notes.svg?labelColor=555555&color=417a5a&logo=linux-containers&style=for-the-badge">](https://crates.io/crates/serie)
+[<img alt="arch-user-repository" src="https://img.shields.io/aur/version/rucola-notes.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://crates.io/crates/serie)
 
 Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
 
