@@ -79,10 +79,12 @@ impl FileTracker {
     /// Wether the given path is supposed to be tracked by rucola or not.
     /// Checks for file endings and gitignore
     pub fn is_tracked(&self, path: &path::PathBuf) -> bool {
-        self.get_walker()
-            .flatten()
-            .map(|dir_entry| dir_entry.path().to_path_buf())
-            .contains(path)
+        path.canonicalize().map_or(false, |canon_path| {
+            self.get_walker()
+                .flatten()
+                .flat_map(|dir_entry| dir_entry.path().to_path_buf().canonicalize())
+                .contains(&canon_path)
+        })
     }
 
     /// Returns an iterator over all events found by this tracker since the last check.

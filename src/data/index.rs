@@ -114,7 +114,7 @@ impl NoteIndex {
                     // - Check for each path if we are interested in it (gitignore + extensions from config)
                     // - Try to load the note and index it
                     for path in event.paths {
-                        if self.tracker.is_tracked(&path) && path.is_file() {
+                        if self.tracker.is_tracked(&path) {
                             if let Ok(note) = super::Note::from_path(&path) {
                                 // create html on creation
                                 self.builder.create_html(&note, false)?;
