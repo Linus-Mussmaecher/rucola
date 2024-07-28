@@ -50,7 +50,7 @@ impl Note {
                 .map(|os| os.to_string_lossy().to_string())
                 .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
             // Path: Already given - convert to owned version.
-            path: path.to_path_buf(),
+            path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
             tags: root
                 .descendants()
@@ -151,6 +151,8 @@ mod tests {
         assert_eq!(
             note.path,
             PathBuf::from("./tests/common/notes/math/Chart.md")
+                .canonicalize()
+                .unwrap()
         );
     }
 }
