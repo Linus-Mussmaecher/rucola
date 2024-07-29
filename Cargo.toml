@@ -1,6 +1,6 @@
 [package]
 name = "rucola-notes"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["linus.mussmaecher@gmail.com"]
 edition = "2021"
 description = "Terminal-based markdown note manager."
@@ -68,7 +68,7 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.16.0"
+cargo-dist-version = "0.19.1"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -83,5 +83,7 @@ install-updater = false
 tap = "Linus-Mussmaecher/homebrew-tap"
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
-# Name for the homebrew formula
+# Customize the Homebrew formula name
 formula = "rucola"
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
