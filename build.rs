@@ -5,7 +5,7 @@ fn main() {
     // Step 1: Get the supposed location for the config file
     if let Ok(target) = confy::get_configuration_file_path("rucola", "config") {
         // create it if not present and fill it with the default from the repo
-        copy_with_create_if_not_present(
+        let _ = copy_with_create_if_not_present(
             std::path::PathBuf::from_str("./default-config/config.toml").unwrap(),
             target,
         );
@@ -21,12 +21,12 @@ fn main() {
         };
 
         // create both if not present
-        copy_with_create_if_not_present(
+        let _ = copy_with_create_if_not_present(
             std::path::PathBuf::from_str("./default-config/default_dark.toml").unwrap(),
             target,
         );
 
-        copy_with_create_if_not_present(
+        let _ = copy_with_create_if_not_present(
             std::path::PathBuf::from_str("./default-config/default_dark.css").unwrap(),
             css_target,
         );
@@ -42,12 +42,12 @@ fn main() {
         };
 
         // create both if not present
-        copy_with_create_if_not_present(
+        let _ = copy_with_create_if_not_present(
             std::path::PathBuf::from_str("./default-config/default_light.toml").unwrap(),
             target,
         );
 
-        copy_with_create_if_not_present(
+        let _ = copy_with_create_if_not_present(
             std::path::PathBuf::from_str("./default-config/default_light.css").unwrap(),
             css_target,
         );
@@ -58,12 +58,15 @@ fn main() {
 /// If not, creates it.
 /// Then checks if the file at `target` itself is present.
 /// If not, creates it and copies the contents from `source` into it.
-fn copy_with_create_if_not_present(source: std::path::PathBuf, target: std::path::PathBuf) {
+fn copy_with_create_if_not_present(
+    source: std::path::PathBuf,
+    target: std::path::PathBuf,
+) -> std::io::Result<()> {
     // check if parent exists
     if let Some(parent) = target.parent() {
         if !parent.exists() {
             // if not, create it
-            std::fs::create_dir(parent).unwrap();
+            std::fs::create_dir(parent)?;
         }
     }
 
@@ -73,7 +76,9 @@ fn copy_with_create_if_not_present(source: std::path::PathBuf, target: std::path
         let target_file = std::fs::File::create(&target);
         if target_file.is_ok() {
             // and copy a default
-            std::fs::copy(&source, &target).unwrap();
+            std::fs::copy(&source, &target)?;
         }
     }
+
+    Ok(())
 }
