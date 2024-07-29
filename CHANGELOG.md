@@ -1,3 +1,6 @@
+# Version 0.3.5 - Build Script Fixes
+ - Fixed the build script to fail without panicking.
+
 # Version 0.3.4 - Operating System Support
 
 ## Features
