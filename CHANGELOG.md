@@ -1,3 +1,6 @@
+# Version 0.3.6 - Cargo Dist fixes
+ - Fixed the automatic release creation.
+
 # Version 0.3.5 - Build Script Fixes
  - Fixed the build script to fail without panicking.
 
