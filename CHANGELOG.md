@@ -4,7 +4,7 @@
  - Rucola can now be installed via homebrew
  - Added a title to the select screen
  - Added the current rucola version to both screens
- - Added a build script that copies the 5 default configuration files in the configuration folder on install.
+ - Added a build script that copies the 5 default configuration files in the configuration folder on install, if possible and not yet present.
  - The display screen now only shows unique links and backlinks. The select screen continues to count links, not linking notes.
  - Paths shows in the display screen are now always canonicalized and absolute.
 
