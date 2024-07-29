@@ -84,11 +84,15 @@ For installation instructions via shell script, `.msi`, homebrew or tarball, see
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
 
 #### AUR
-Install `rucola` from the Arch User Repository:
+Install `rucola` from the Arch User Repository either by building from source:
 ```
  pacman -S rucola-notes
 ```
-Install with an AUR helper such as `yay`:
+or by installing a prepackaged binary:
+```
+ pacman -S rucola-notes-bin
+```
+Or install with an AUR helper such as `yay` as pick your install method:
 ```
  yay rucola
 ```
