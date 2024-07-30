@@ -83,19 +83,14 @@ Rucola has no requirements, but a [Nerd font](https://www.nerdfonts.com) may be 
 For installation instructions via shell script, `.msi`, homebrew or tarball, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
 
-#### AUR
-Install `rucola` from the Arch User Repository either by building from source:
+#### Arch Linux
+
+You can install `rucola` from the [official repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
+
 ```
- pacman -S rucola-notes
+pacman -S rucola
 ```
-or by installing a prepackaged binary:
-```
- pacman -S rucola-notes-bin
-```
-Or install with an AUR helper such as `yay` as pick your install method:
-```
- yay rucola
-```
+
 #### Crates.io
 Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
