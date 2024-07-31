@@ -7,7 +7,7 @@
 [<img alt="commit status" src="https://img.shields.io/github/commit-activity/m/Linus-Mussmaecher/rucola?labelColor=555555&color=66c2a5&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/commits/main)
 [<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
 [<img alt="cratesio" src="https://img.shields.io/crates/v/rucola-notes.svg?labelColor=555555&color=417a5a&logo=linux-containers&style=for-the-badge">](https://crates.io/crates/rucola-notes)
-[<img alt="arch-user-repository" src="https://img.shields.io/aur/version/rucola-notes.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://aur.archlinux.org/packages/rucola-notes)
+[<img alt="arch-user-repository" src="https://img.shields.io/archlinux/v/extra/x86_64/rucola.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://archlinux.org/packages/extra/x86_64/rucola/)
 
 Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
 
@@ -17,6 +17,7 @@ Terminal-based markdown note manager to view statistics, explore connections and
  - [Future Features](#future-features)
  - [Installation](#installation)
    - [Usage](#usage)
+   - [Configuration](#configuration)
  - [Technology](#technology)
  - [License](#license)
 
@@ -110,7 +111,17 @@ If you want to build the latest commit of rucola by yourself, you can clone the 
 Rucola can be launched from your command line with the `rucola` command.
 
 > [!TIP]
-> For more information on possible configuration options, features and usage tips, see the [GitHub Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki). 
+> For more information on possible configuration options, features and usage tips, see the [GitHub Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki).
+
+### Configuration
+Rucola requires three configuation files:
+ - `config.toml`: The main TOML configuration file. See [the Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki/Configuration) for its entries.
+ - `<style>.toml`: A TOML style file to customize the appearance of rucola itself. The exact name is given in `config.toml`. See [the Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki/Style) for its entries.
+ - `<cssstyle>.css`: A CSS style file to customize the appearance of the HTML files created when converting markdown notes.
+
+One default config file, 2 TOML style files (light & dark theme) and 2 CSS style files (light & dark theme) can be found in this repository's [`default_config`](https://github.com/Linus-Mussmaecher/rucola/tree/main/default-config) folder. 
+These files should be installed on your system by any install method into rucola's default config folder.
+See [the Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki/Configuration) for that folders expected location.
 
 ## Technology
 Rucola is implemented using the [ratatui](https://ratatui.rs) framework in [Rust](https://www.rust-lang.org/). Markdown parsing is done via [comrak](https://github.com/kivikakk/comrak).
