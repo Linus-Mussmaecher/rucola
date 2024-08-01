@@ -1223,6 +1223,7 @@ dependencies = [
  "comrak",
  "confy",
  "crossterm",
+ "directories",
  "expanduser",
  "fuzzy-matcher",
  "ignore",

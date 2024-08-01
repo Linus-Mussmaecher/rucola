@@ -54,11 +54,10 @@ fn main() -> error::Result<()> {
     init_hooks()?;
     let mut terminal = init_terminal()?;
 
-    // draw loading screen
-    draw_loading_screen(&mut terminal)?;
-
+    // create a call back for the loading screen
     // Create the app state
-    let (mut app, errors) = app::App::new(args);
+    let (mut app, errors) =
+        app::App::new(args, |message| draw_loading_screen(&mut terminal, message));
 
     // Displayed error
     let mut current_error: Option<error::RucolaError> = errors.into_iter().last();
@@ -184,17 +183,19 @@ You should have received a copy of the GNU General Public License along with thi
 /// Temporary screen while the programm is indexing.
 fn draw_loading_screen(
     terminal: &mut Terminal<impl ratatui::backend::Backend>,
-) -> Result<ratatui::CompletedFrame, std::io::Error> {
+    message: &str,
+) -> error::Result<()> {
     // Draw 'loading' screen
     terminal.draw(|frame| {
         frame.render_widget(
-            ratatui::widgets::Paragraph::new("Indexing...").alignment(Alignment::Center),
+            ratatui::widgets::Paragraph::new(message).alignment(Alignment::Center),
             Layout::vertical([
                 Constraint::Fill(1),
-                Constraint::Length(3),
+                Constraint::Length(5),
                 Constraint::Fill(1),
             ])
             .split(frame.size())[1],
         );
-    })
+    })?;
+    Ok(())
 }
