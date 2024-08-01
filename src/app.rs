@@ -31,9 +31,19 @@ impl App {
     ///  - Indexing notes from the given path
     ///  - Creating an initial select screen and empty display stack
     /// Also returns all errors that happened during creation that did not prevent the creation.
-    pub fn new(args: crate::Arguments) -> (Self, Vec<error::RucolaError>) {
+    pub fn new<F: FnMut(&str) -> error::Result<()>>(
+        args: crate::Arguments,
+        mut loading_screen_callback: F,
+    ) -> (Self, Vec<error::RucolaError>) {
         // Gather errors
-        let mut errors = vec![];
+        let mut errors = Vec::new();
+
+        // Load configuration
+        errors.extend(
+            loading_screen_callback("Loading configuration...")
+                .err()
+                .into_iter(),
+        );
 
         let (config, vault_path) = match crate::Config::load(args) {
             Ok(config_data) => config_data,
@@ -43,6 +53,13 @@ impl App {
             }
         };
 
+        // Load the style file specified in the configuration
+        errors.extend(
+            loading_screen_callback("Loading styles...")
+                .err()
+                .into_iter(),
+        );
+
         let styles = match ui::UiStyles::load(&config) {
             Ok(config) => config,
             Err(e) => {
@@ -51,23 +68,52 @@ impl App {
             }
         };
 
+        // Use the config file to create managers & trackers
+        errors.extend(
+            loading_screen_callback("Creating managers & trackers...")
+                .err()
+                .into_iter(),
+        );
+
         let builder = io::HtmlBuilder::new(&config, vault_path.clone());
 
         let manager = io::FileManager::new(&config, vault_path.clone());
 
-        let tracker = match io::FileTracker::new(&config, vault_path) {
-            Ok(config) => config,
+        let tracker = match io::FileTracker::new(&config, vault_path.clone()) {
+            Ok(tracker) => tracker,
             Err(e) => {
                 errors.push(e);
                 Default::default()
             }
         };
 
+        // Print error message based on current directory
+        let mut msg = "Indexing...";
+        if let Some(user_dirs) = directories::UserDirs::new() {
+            if vault_path == directories::UserDirs::home_dir(&user_dirs) {
+                msg = "Indexing...\n\nYou are running rucola in your home directory. This might take a while.\nConsider running in your notes directory instead.";
+            }
+        }
+
+        errors.extend(
+            loading_screen_callback(msg)
+                .err()
+                .into_iter()
+                .map(|e| e.into()),
+        );
+
         // Index all files in path
         let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone());
         errors.extend(index_errors);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        // Use the config file to create managers & trackers
+        errors.extend(
+            loading_screen_callback("Initiliazing app state...")
+                .err()
+                .into_iter(),
+        );
 
         // Initialize app state
         (

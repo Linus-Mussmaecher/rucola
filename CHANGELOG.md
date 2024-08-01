@@ -1,3 +1,7 @@
+# Version 0.3.7 - Cargo Dist fixes
+ - The loading screen now displays the different stages of the initialization process.
+ - The loading screen now shows a warning if rucola is run from the home directory.
+
 # Version 0.3.6 - Cargo Dist fixes
  - Fixed the automatic release creation.
 
