@@ -108,6 +108,11 @@ impl HtmlBuilder {
                 comrak::nodes::NodeValue::WikiLink(ref mut link) => {
                     link.url = format!("{}.html", data::name_to_id(&link.url));
                 }
+                comrak::nodes::NodeValue::Link(ref mut link) => {
+                    if !link.url.contains("/") && !link.url.contains(".") {
+                        link.url = format!("{}.html", data::name_to_id(&link.url));
+                    }
+                }
                 comrak::nodes::NodeValue::Math(ref mut math) => {
                     contains_math = true;
                     let x = &mut math.literal;

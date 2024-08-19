@@ -1,7 +1,7 @@
 #lietheo #diffgeo
 
 ## Definition
-A set $\{(U_\alpha, x_\alpha)\}_{\alpha \in I}$ of [[Chart]]s on a [[Manifold]] $M$ is called *atlas* if
+A set $\{(U_\alpha, x_\alpha)\}_{\alpha \in I}$ of [[Chart]]s on a [Smooth Manifold](Manifold) $M$ is called *atlas* if
  - $\bigcup_{\alpha \in I} U_\alpha = M$ (covering)
  - All maps in the atlas are $C^r$-related.
 
