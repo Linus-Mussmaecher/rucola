@@ -603,11 +603,6 @@ impl super::Screen for SelectScreen {
                 self.styles.title_style,
             )));
 
-        // === Filter area ===
-
-        // Mostly styled on creation
-        let filter_input = self.filter_area.widget();
-
         // === Table Area ===
 
         // Generate state from selected element
@@ -730,7 +725,7 @@ impl super::Screen for SelectScreen {
         Widget::render(title, title_area, buf);
         Widget::render(version, title_area, buf);
 
-        Widget::render(filter_input, filter_area, buf);
+        Widget::render(&self.filter_area, filter_area, buf);
 
         Widget::render(global_stats, global_stats_area, buf);
         Widget::render(local_stats, local_stats_area, buf);
@@ -804,8 +799,6 @@ impl super::Screen for SelectScreen {
             }
             SelectMode::Filter | SelectMode::Select => {}
             SelectMode::Create | SelectMode::Rename | SelectMode::Move => {
-                let create_input = self.name_area.widget();
-
                 let popup_areas = Layout::vertical([
                     Constraint::Fill(1),
                     Constraint::Length(3),
@@ -822,7 +815,7 @@ impl super::Screen for SelectScreen {
 
                 // Clear the area and then render the widget on top.
                 Widget::render(Clear, center_area, buf);
-                Widget::render(create_input, center_area, buf);
+                Widget::render(&self.name_area, center_area, buf);
             }
             SelectMode::FilterHelp => {
                 let help_widths = [Constraint::Length(9), Constraint::Min(0)];

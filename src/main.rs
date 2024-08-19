@@ -66,7 +66,7 @@ fn main() -> error::Result<()> {
     'main: loop {
         // Draw the current screen.
         terminal.draw(|frame: &mut Frame| {
-            let area = frame.size();
+            let area = frame.area();
             let buf = frame.buffer_mut();
 
             // Make sure area is large enough or show error
@@ -194,7 +194,7 @@ fn draw_loading_screen(
                 Constraint::Length(5),
                 Constraint::Fill(1),
             ])
-            .split(frame.size())[1],
+            .split(frame.area())[1],
         );
     })?;
     Ok(())

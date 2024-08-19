@@ -76,7 +76,7 @@ fn copy_with_create_if_not_present(
         let target_file = std::fs::File::create(&target);
         if target_file.is_ok() {
             // and copy a default
-            std::fs::copy(&source, &target)?;
+            std::fs::copy(source, &target)?;
         }
     }
 

@@ -109,7 +109,7 @@ impl HtmlBuilder {
                     link.url = format!("{}.html", data::name_to_id(&link.url));
                 }
                 comrak::nodes::NodeValue::Link(ref mut link) => {
-                    if !link.url.contains("/") && !link.url.contains(".") {
+                    if !link.url.contains('/') && !link.url.contains('.') {
                         link.url = format!("{}.html", data::name_to_id(&link.url));
                     }
                 }

@@ -239,8 +239,7 @@ impl super::Screen for DisplayScreen {
 
                 Widget::render(del, center_area, buf);
             } else {
-                let name_input = self.name_area.widget();
-                Widget::render(name_input, center_area, buf);
+                Widget::render(&self.name_area, center_area, buf);
             }
         }
     }
