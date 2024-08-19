@@ -95,7 +95,7 @@ pacman -S rucola
 #### Crates.io
 Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
- cargo install rucola-notes
+ cargo install --locked rucola-notes
 ```
 
 #### Manual Build
@@ -103,7 +103,7 @@ If you want to build the latest commit of rucola by yourself, you can clone the 
 ```
  git clone https://github.com/Linus-Mussmaecher/rucola
  cd rucola
- cargo install --path .
+ cargo install --locked --path .
 ```
 
 ### Usage
