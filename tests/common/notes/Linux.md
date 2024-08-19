@@ -5,7 +5,7 @@ Linux is great!
 ## Distributions
 
 Some of my favourite distributions are
- - EndeavourOS
+ - [EndeavourOS](https://endeavouros.com/)
  - Arch Linux
  - Linux Mint
  - ZorinOS

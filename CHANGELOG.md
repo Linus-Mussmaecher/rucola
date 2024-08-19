@@ -1,6 +1,8 @@
-# Version 0.3.7 - Cargo Dist fixes
+# Version 0.4.0 - Feature Update
+This update implements features requested in GitHub Issues since the first release.
  - The loading screen now displays the different stages of the initialization process.
  - The loading screen now shows a warning if rucola is run from the home directory.
+ - Rucola now accepts links in the format `[Text](linked-note)`.
 
 # Version 0.3.6 - Cargo Dist fixes
  - Fixed the automatic release creation.
