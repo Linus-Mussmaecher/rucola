@@ -69,7 +69,7 @@ impl Note {
                 .flat_map(|node| match &node.data.borrow().value {
                     comrak::nodes::NodeValue::WikiLink(link) => Some(super::name_to_id(&link.url)),
                     comrak::nodes::NodeValue::Link(link) => {
-                        if !link.url.contains("/") && !link.url.contains(".") {
+                        if !link.url.contains('/') && !link.url.contains('.') {
                             Some(super::name_to_id(&link.url))
                         } else {
                             None

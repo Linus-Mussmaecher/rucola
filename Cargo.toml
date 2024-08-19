@@ -19,9 +19,9 @@ eula = false
 
 [dependencies]
 # General TUI
-crossterm = "0.27.0"
-ratatui = {version = "^0.27", features = ["serde"]}
-tui-textarea = "^0.4"
+crossterm = "0.28.0"
+ratatui = {version = "^0.28", features = ["serde"]}
+tui-textarea = "^0.6"
 # Command line parsing
 clap = {version = "^4.5", features = ["derive"]}
 # Opening

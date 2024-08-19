@@ -3,6 +3,8 @@ This update implements features requested in GitHub Issues since the first relea
  - The loading screen now displays the different stages of the initialization process.
  - The loading screen now shows a warning if rucola is run from the home directory.
  - Rucola now accepts links in the format `[Text](linked-note)`.
+ - Updated versions of `crossterm`, `ratatui` and `tui-textarea` to latest releases.
+ - Numerous small refactoring changes.
 
 # Version 0.3.6 - Cargo Dist fixes
  - Fixed the automatic release creation.

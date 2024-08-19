@@ -39,11 +39,7 @@ impl App {
         let mut errors = Vec::new();
 
         // Load configuration
-        errors.extend(
-            loading_screen_callback("Loading configuration...")
-                .err()
-                .into_iter(),
-        );
+        errors.extend(loading_screen_callback("Loading configuration...").err());
 
         let (config, vault_path) = match crate::Config::load(args) {
             Ok(config_data) => config_data,
@@ -54,11 +50,7 @@ impl App {
         };
 
         // Load the style file specified in the configuration
-        errors.extend(
-            loading_screen_callback("Loading styles...")
-                .err()
-                .into_iter(),
-        );
+        errors.extend(loading_screen_callback("Loading styles...").err());
 
         let styles = match ui::UiStyles::load(&config) {
             Ok(config) => config,
@@ -69,11 +61,7 @@ impl App {
         };
 
         // Use the config file to create managers & trackers
-        errors.extend(
-            loading_screen_callback("Creating managers & trackers...")
-                .err()
-                .into_iter(),
-        );
+        errors.extend(loading_screen_callback("Creating managers & trackers...").err());
 
         let builder = io::HtmlBuilder::new(&config, vault_path.clone());
 
@@ -95,12 +83,7 @@ impl App {
             }
         }
 
-        errors.extend(
-            loading_screen_callback(msg)
-                .err()
-                .into_iter()
-                .map(|e| e.into()),
-        );
+        errors.extend(loading_screen_callback(msg).err());
 
         // Index all files in path
         let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone());
@@ -109,11 +92,7 @@ impl App {
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // Use the config file to create managers & trackers
-        errors.extend(
-            loading_screen_callback("Initiliazing app state...")
-                .err()
-                .into_iter(),
-        );
+        errors.extend(loading_screen_callback("Initiliazing app state...").err());
 
         // Initialize app state
         (
