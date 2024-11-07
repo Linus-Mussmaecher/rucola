@@ -30,6 +30,7 @@ impl App {
     ///  - Loading a config file
     ///  - Indexing notes from the given path
     ///  - Creating an initial select screen and empty display stack
+    ///
     /// Also returns all errors that happened during creation that did not prevent the creation.
     pub fn new<F: FnMut(&str) -> error::Result<()>>(
         args: crate::Arguments,
