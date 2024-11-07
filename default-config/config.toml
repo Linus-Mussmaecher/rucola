@@ -27,7 +27,8 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note when calling this command.
 # Comment out / leave unset to always use your system's default editor or $EDITOR environment variable.
-# Example: Opening the note in helix.
+# Example: Opening the note in helix. Depending on your installation, the executable for helix will be called 'hx' or 'helix'.
+# editor=["hx", "%p"]
 # editor=["helix", "%p"]
 
 
