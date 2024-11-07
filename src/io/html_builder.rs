@@ -148,6 +148,9 @@ impl HtmlBuilder {
         writeln!(tar_file, "<title>{}</title>", note.name)?;
         self.add_preamble(&mut tar_file, contains_math, contains_code)?;
 
+        // Create a buffered writer to speed up the file writing process
+        let mut tar_file_buffer = std::io::BufWriter::new(&mut tar_file);
+
         comrak::format_html(
             root,
             &comrak::Options {
@@ -158,7 +161,7 @@ impl HtmlBuilder {
                     .map_err(|_e| error::RucolaError::ComrakError)?,
                 ..Default::default()
             },
-            &mut tar_file,
+            &mut tar_file_buffer,
         )?;
 
         Ok(())
@@ -238,6 +241,7 @@ impl HtmlBuilder {
     /// Checks:
     ///  - The config file
     ///  - the systems default programms
+    ///
     /// for an applicable program.
     pub fn create_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
         let path = self.name_to_html_path(&note.name);
