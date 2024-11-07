@@ -231,6 +231,7 @@ impl FileManager {
     ///  - The config file
     ///  - The $EDITOR environment variable
     ///  - the systems default programms
+    ///
     /// for an applicable program.
     pub fn create_edit_command(
         &self,
