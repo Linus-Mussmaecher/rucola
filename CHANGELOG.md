@@ -1,3 +1,6 @@
+# Version 0.4.1 - Bug Fix
+ - Fixed a major issue that would cause rucola to freeze for a long time when notes were edited while html conversion was enabled.
+
 # Version 0.4.0 - Feature Update
 This update implements features requested in GitHub Issues since the first release.
  - The loading screen now displays the different stages of the initialization process.
