@@ -19,7 +19,9 @@ pub struct Config {
     pub(crate) stats_show: ui::screen::StatsShow,
     /// The editor to use for notes
     pub(crate) editor: Option<Vec<String>>,
-    /// Viewer to open html files with
+    /// Should viewer open in raw markdown or html  
+    pub(crate) view_raw: Option<bool>,
+    /// Viewer to open html/markdown files with
     pub(crate) viewer: Option<Vec<String>>,
     /// When set to true, HTML files are mass-created on start and continuously kept up to date with file changes instead of being created on-demand.
     pub(crate) enable_html: bool,
@@ -42,6 +44,7 @@ impl Default for Config {
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             editor: None,
+            view_raw: Some(false),
             viewer: Some(vec![String::from("firefox"), String::from("%p")]),
             enable_html: true,
             css: Some("default_dark".to_string()),

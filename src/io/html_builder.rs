@@ -17,7 +17,9 @@ pub struct HtmlBuilder {
     katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     math_replacements: HashMap<String, String>,
-    /// Viewer to open html files with
+    /// Should viewer open in raw markdown or html  
+    view_raw: bool,
+    /// Viewer to open html/markdown files with
     viewer: Option<Vec<String>>,
 }
 
@@ -60,6 +62,7 @@ impl HtmlBuilder {
             html_prepend: config.html_prepend.clone(),
             katex: config.katex,
             math_replacements: config.math_replacements.clone(),
+            view_raw: config.view_raw.unwrap_or(false),
             viewer: config.viewer.clone(),
         }
     }
@@ -244,7 +247,11 @@ impl HtmlBuilder {
     ///
     /// for an applicable program.
     pub fn create_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
-        let path = self.name_to_html_path(&note.name);
+        let path = if self.view_raw {
+            note.path.clone()
+        } else {
+            self.name_to_html_path(&note.name)
+        };
         // take the editor from the config file
         self.viewer
             .as_ref()
