@@ -14,6 +14,7 @@ pub(crate) enum ViewerType {
 
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Config {
     /// Path to the vault to index.
     pub(crate) vault_path: Option<path::PathBuf>,
