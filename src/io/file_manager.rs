@@ -1,4 +1,4 @@
-use crate::{data, error};
+use crate::{config, data, error};
 use std::{fs, io::Write, path, process};
 
 /// Saves configurations to manipulate the file system the notes are stored in.
@@ -10,8 +10,14 @@ pub struct FileManager {
     default_extension: String,
     /// The editor to use for notes
     editor: Option<Vec<String>>,
-    /// The primary viewer to use for notes
-    primary_viewer: Option<Vec<String>>,
+    /// Main viewer to inspect rendered notes.
+    pub(crate) primary_viewer: Option<Vec<String>>,
+    /// Preferred file type of the main viewer.
+    pub(crate) primary_viewer_type: Option<config::ViewerType>,
+    /// Alternative viewer to inspect rendered notes.
+    pub(crate) secondary_viewer: Option<Vec<String>>,
+    /// Preferred file type of the alternative viewer.
+    pub(crate) secondary_viewer_type: Option<config::ViewerType>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -29,6 +35,9 @@ impl FileManager {
             default_extension: config.default_extension.clone(),
             editor: config.editor.clone(),
             primary_viewer: config.primary_viewer.clone(),
+            primary_viewer_type: config.primary_viewer_type,
+            secondary_viewer: config.secondary_viewer.clone(),
+            secondary_viewer_type: config.secondary_viewer_type,
         }
     }
 
@@ -281,11 +290,38 @@ impl FileManager {
     ///  - the systems default programms
     ///
     /// for an applicable program.
-    pub fn primary_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
-        let path = super::html_builder::name_to_html_path(&note.name, &self.vault_path);
-        // take the viewer from the config file
-        self.primary_viewer
-            .as_ref()
+    ///
+    /// The boolean flag changes between the primary and secondary viewers.
+    pub fn create_view_command(
+        &self,
+        note: &data::Note,
+        primary: bool,
+    ) -> error::Result<std::process::Command> {
+        // take the correct type (or a default)
+        let vtype = if primary {
+            self.primary_viewer_type
+        } else {
+            self.secondary_viewer_type
+        }
+        .unwrap_or_default();
+
+        // generate the appropriate path
+        let path = match vtype {
+            config::ViewerType::Html => {
+                super::html_builder::name_to_html_path(&note.name, &self.vault_path)
+            }
+            config::ViewerType::Markdown => note.path.clone(),
+        };
+        eprintln!("{:?}", path);
+
+        // take the viewer
+        let viewer = if primary {
+            self.primary_viewer.as_ref()
+        } else {
+            self.secondary_viewer.as_ref()
+        };
+
+        viewer
             // create a command from it
             .and_then(|viewer_arg_list| {
                 let mut iter = viewer_arg_list.iter();
@@ -337,7 +373,8 @@ mod tests {
         let note =
             crate::data::Note::from_path(path::Path::new("./tests/common/notes/Books.md")).unwrap();
 
-        fm.primary_view_command(&note).unwrap();
+        fm.create_view_command(&note, true).unwrap();
+        fm.create_view_command(&note, false).unwrap();
     }
 
     #[test]
