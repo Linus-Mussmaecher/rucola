@@ -268,7 +268,7 @@ impl FileManager {
             // if it was not there, take the default command
             .or_else(|| open::commands(path).pop())
             // if it was also not there, throw an error
-            .ok_or_else(|| error::RucolaError::ApplicationMissing)
+            .ok_or(error::RucolaError::ApplicationMissing)
     }
 }
 #[cfg(test)]
