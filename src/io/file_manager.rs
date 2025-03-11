@@ -10,6 +10,8 @@ pub struct FileManager {
     default_extension: String,
     /// The editor to use for notes
     editor: Option<Vec<String>>,
+    /// The primary viewer to use for notes
+    primary_viewer: Option<Vec<String>>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -26,6 +28,7 @@ impl FileManager {
             vault_path,
             default_extension: config.default_extension.clone(),
             editor: config.editor.clone(),
+            primary_viewer: config.primary_viewer.clone(),
         }
     }
 
@@ -270,6 +273,43 @@ impl FileManager {
             // if it was also not there, throw an error
             .ok_or(error::RucolaError::ApplicationMissing)
     }
+
+    /// Attempts to create a command to open the file at the given path to view it.
+    /// Target should be an html file.
+    /// Checks:
+    ///  - The config file
+    ///  - the systems default programms
+    ///
+    /// for an applicable program.
+    pub fn primary_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
+        let path = super::html_builder::name_to_html_path(&note.name, &self.vault_path);
+        // take the viewer from the config file
+        self.primary_viewer
+            .as_ref()
+            // create a command from it
+            .and_then(|viewer_arg_list| {
+                let mut iter = viewer_arg_list.iter();
+                if let Some(programm) = iter.next() {
+                    let mut cmd = process::Command::new(programm);
+                    for arg in iter {
+                        if arg == "%p" {
+                            // special argument for the user to indicate where to put the path
+                            cmd.arg(path.canonicalize().as_ref().unwrap_or(&path));
+                        } else {
+                            // all other arguments are appended in order
+                            cmd.arg(arg);
+                        }
+                    }
+                    Some(cmd)
+                } else {
+                    None
+                }
+            })
+            // if it was not there, take the default command
+            .or_else(|| open::commands(&path).pop())
+            // if it was also not there, throw an error
+            .ok_or(error::RucolaError::ApplicationMissing)
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -288,6 +328,16 @@ mod tests {
             // if we can unwrap the env variable, then we should be able to create a command
             fm.create_edit_command(&path.to_path_buf()).unwrap();
         }
+    }
+
+    #[test]
+    fn test_viewing() {
+        let config = crate::Config::default();
+        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
+        let note =
+            crate::data::Note::from_path(path::Path::new("./tests/common/notes/Books.md")).unwrap();
+
+        fm.primary_view_command(&note).unwrap();
     }
 
     #[test]

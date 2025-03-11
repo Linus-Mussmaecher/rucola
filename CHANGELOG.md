@@ -1,3 +1,6 @@
+# Version 0.5.0 - Markdown Viewing
+ - Users can now choose between viewing files as markdown or HTML.
+
 # Version 0.4.1 - Bug Fix
  - Fixed a major issue that would cause rucola to freeze for a long time when notes were edited while html conversion was enabled.
 
