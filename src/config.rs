@@ -2,6 +2,16 @@ use std::{collections::HashMap, path};
 
 use crate::{error, ui};
 
+/// The file format a viewer expects.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(crate) enum ViewerType {
+    /// A viewer that displays HTML files and thus needs to be given paths to an HTML file.
+    #[default]
+    Html,
+    /// A viewer that displays markdown files and thus needs to be given paths to an markdown file.
+    Markdown,
+}
+
 /// Groups data passed by the user in the config file.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -19,8 +29,14 @@ pub struct Config {
     pub(crate) stats_show: ui::screen::StatsShow,
     /// The editor to use for notes.
     pub(crate) editor: Option<Vec<String>>,
-    /// Main viewer to open html files.
+    /// Main viewer to inspect rendered notes.
     pub(crate) primary_viewer: Option<Vec<String>>,
+    /// Preferred file type of the main viewer.
+    pub(crate) primary_viewer_type: Option<ViewerType>,
+    /// Alternative viewer to inspect rendered notes.
+    pub(crate) secondary_viewer: Option<Vec<String>>,
+    /// Preferred file type of the alternative viewer.
+    pub(crate) secondary_viewer_type: Option<ViewerType>,
     /// When set to true, HTML files are mass-created on start and continuously kept up to date with file changes instead of being created on-demand.
     pub(crate) enable_html: bool,
     /// Path to .css file to style htmls with.
@@ -42,7 +58,10 @@ impl Default for Config {
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             editor: None,
+            primary_viewer_type: Some(ViewerType::Html),
             primary_viewer: Some(vec![String::from("firefox"), String::from("%p")]),
+            secondary_viewer_type: None,
+            secondary_viewer: None,
             enable_html: true,
             css: Some("default_dark".to_string()),
             html_prepend: None,
