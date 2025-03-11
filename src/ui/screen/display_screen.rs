@@ -306,7 +306,7 @@ impl super::Screen for DisplayScreen {
                 KeyCode::Char('v' | 'V') => {
                     self.builder.create_html(&self.note, true)?;
                     return Ok(ui::Message::OpenExternalCommand(
-                        self.builder.create_view_command(&self.note)?,
+                        self.manager.primary_view_command(&self.note)?,
                     ));
                 }
                 // R: Rename note

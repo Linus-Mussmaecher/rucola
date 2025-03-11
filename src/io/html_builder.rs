@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, io::Write, path, process};
+use std::{collections::HashMap, fs, io::Write, path};
 
 use crate::{data, error};
 
@@ -17,8 +17,6 @@ pub struct HtmlBuilder {
     katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     math_replacements: HashMap<String, String>,
-    /// Viewer to open html files with
-    viewer: Option<Vec<String>>,
 }
 
 impl Default for HtmlBuilder {
@@ -60,20 +58,7 @@ impl HtmlBuilder {
             html_prepend: config.html_prepend.clone(),
             katex: config.katex,
             math_replacements: config.math_replacements.clone(),
-            viewer: config.viewer.clone(),
         }
-    }
-
-    /// For a given note id, returns the path its HTML representation _would_ be stored at.
-    /// Makes no guarantees if that representation currently exists.
-    pub fn name_to_html_path(&self, name: &str) -> path::PathBuf {
-        // calculate target path
-        let mut tar_path = self.vault_path.clone();
-        tar_path.push(".html/");
-
-        tar_path.set_file_name(format!(".html/{}", &data::name_to_id(name)));
-        tar_path.set_extension("html");
-        tar_path
     }
 
     pub fn create_html(&self, note: &data::Note, force: bool) -> error::Result<()> {
@@ -132,7 +117,7 @@ impl HtmlBuilder {
             }
         }
 
-        let tar_path = self.name_to_html_path(&note.name);
+        let tar_path = name_to_html_path(&note.name, &self.vault_path);
 
         // ensure parent exists
         if let Some(parent) = tar_path.parent() {
@@ -236,58 +221,24 @@ impl HtmlBuilder {
         }
         Ok(())
     }
-    /// Attempts to create a command to open the file at the given path to view it.
-    /// Target should be an html file.
-    /// Checks:
-    ///  - The config file
-    ///  - the systems default programms
-    ///
-    /// for an applicable program.
-    pub fn create_view_command(&self, note: &data::Note) -> error::Result<std::process::Command> {
-        let path = self.name_to_html_path(&note.name);
-        // take the editor from the config file
-        self.viewer
-            .as_ref()
-            // create a command from it
-            .and_then(|viewer_arg_list| {
-                let mut iter = viewer_arg_list.iter();
-                if let Some(programm) = iter.next() {
-                    let mut cmd = process::Command::new(programm);
-                    for arg in iter {
-                        if arg == "%p" {
-                            // special argument for the user to indicate where to put the path
-                            cmd.arg(path.canonicalize().as_ref().unwrap_or(&path));
-                        } else {
-                            // all other arguments are appended in order
-                            cmd.arg(arg);
-                        }
-                    }
-                    Some(cmd)
-                } else {
-                    None
-                }
-            })
-            // if it was not there, take the default command
-            .or_else(|| open::commands(&path).pop())
-            // if it was also not there, throw an error
-            .ok_or(error::RucolaError::ApplicationMissing)
-    }
+}
+
+/// For a given note id, returns the path its HTML representation _would_ be stored at.
+/// Makes no guarantees if that representation currently exists.
+pub fn name_to_html_path(name: &str, vault_path: &path::Path) -> path::PathBuf {
+    // calculate target path
+    let mut tar_path = vault_path.to_path_buf();
+    tar_path.push(".html/");
+
+    tar_path.set_file_name(format!(".html/{}", &data::name_to_id(name)));
+    tar_path.set_extension("html");
+    tar_path
 }
 
 #[cfg(test)]
 mod tests {
 
     use std::path::{Path, PathBuf};
-
-    #[test]
-    fn test_viewing() {
-        let config = crate::Config::default();
-        let fm = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
-        let note =
-            crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
-
-        fm.create_view_command(&note).unwrap();
-    }
 
     #[test]
     fn test_create_html_no_panic() {
@@ -316,19 +267,19 @@ mod tests {
 
     #[test]
     fn test_name_to_html_path() {
-        let config = crate::Config::default();
-        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+        // let config = crate::Config::default();
+        let vault_path = PathBuf::from("./tests");
 
         assert_eq!(
-            hb.name_to_html_path("Lie Group"),
+            super::name_to_html_path("Lie Group", &vault_path),
             PathBuf::from("./tests/.html/lie-group.html")
         );
         assert_eq!(
-            hb.name_to_html_path("lie-group"),
+            super::name_to_html_path("lie-group", &vault_path),
             PathBuf::from("./tests/.html/lie-group.html")
         );
         assert_eq!(
-            hb.name_to_html_path("books"),
+            super::name_to_html_path("books", &vault_path),
             PathBuf::from("./tests/.html/books.html")
         );
     }
@@ -336,12 +287,12 @@ mod tests {
     #[test]
     fn test_create_html_creates_files() {
         let config = crate::Config::default();
-        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+        let vault_path = PathBuf::from("./tests");
+        let b_path = super::name_to_html_path("Books", &vault_path);
+        let hb = super::HtmlBuilder::new(&config, vault_path);
 
         let books =
             crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
-
-        let b_path = hb.name_to_html_path("Books");
 
         if b_path.exists() {
             std::fs::remove_file(&b_path).unwrap();
@@ -357,14 +308,14 @@ mod tests {
     #[test]
     fn test_create_html_creates_files_with_math() {
         let config = crate::Config::default();
-        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+        let vault_path = PathBuf::from("./tests");
+        let lg_path = super::name_to_html_path("Lie Group", &vault_path);
+        let hb = super::HtmlBuilder::new(&config, vault_path);
 
         // with math
         let liegroup =
             crate::data::Note::from_path(Path::new("./tests/common/notes/math/Lie Group.md"))
                 .unwrap();
-
-        let lg_path = hb.name_to_html_path("Lie Group");
 
         if Path::new(&lg_path).exists() {
             std::fs::remove_file(&lg_path).unwrap();
