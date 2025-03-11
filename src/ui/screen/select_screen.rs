@@ -324,7 +324,8 @@ impl super::Screen for SelectScreen {
                         if let Some(note) = self.index.borrow().get(&env_stats.id) {
                             self.builder.create_html(note, true)?;
                             return Ok(ui::Message::OpenExternalCommand(
-                                self.manager.create_view_command(note, true)?,
+                                self.manager
+                                    .create_view_command(note, key.code == KeyCode::Char('v'))?,
                             ));
                         }
                     }
