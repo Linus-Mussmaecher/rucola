@@ -228,7 +228,7 @@ impl FileManager {
         // Write an preliminary input, so the file isn't empty (messed with XDG for some reason).
         write!(
             file,
-            "#{}",
+            "# {}",
             path.file_stem()
                 .map(|fs| fs.to_string_lossy().to_string())
                 .unwrap_or_else(|| "note".to_owned())
