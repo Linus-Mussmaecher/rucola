@@ -35,6 +35,7 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 # Main viewer to inspect rendered notes.
 # The first element is the command, the others will be used as positional arguments.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
+# If none is given, defaults to system default for the file type specified below.
 # Default: Firefox Browser
 primary_viewer = ["firefox", "%p"]
 
@@ -45,11 +46,14 @@ primary_viewer = ["firefox", "%p"]
 # Alternative viewer to inspect rendered notes.
 # The first element is the command, the others will be used as positional arguments.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
+# If none is given, defaults to system default for the file type specified below.
 # Default: Firefox Browser
 # secondary_viewer = ["firefox", "%p"]
 
 # Preferred file type of the alternative viewer.
-# Possible values are "Html" and "Markdown", if none is given, "Html" is assumed.
+# Possible values are "Html" and "Markdown".
+# If now value is given, defaults to the value of primary_viewer_type.
+# If that is also not given, defaults to "Html".
 # secondary_viewer_type = "Html"
 
 
