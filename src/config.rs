@@ -30,9 +30,9 @@ pub struct Config {
     /// The editor to use for notes.
     pub(crate) editor: Option<Vec<String>>,
     /// Main viewer to inspect rendered notes.
-    pub(crate) primary_viewer: Option<Vec<String>>,
+    pub(crate) viewer: Option<Vec<String>>,
     /// Preferred file type of the main viewer.
-    pub(crate) primary_viewer_type: Option<ViewerType>,
+    pub(crate) viewer_type: Option<ViewerType>,
     /// Alternative viewer to inspect rendered notes.
     pub(crate) secondary_viewer: Option<Vec<String>>,
     /// Preferred file type of the alternative viewer.
@@ -58,8 +58,8 @@ impl Default for Config {
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             editor: None,
-            primary_viewer_type: Some(ViewerType::Html),
-            primary_viewer: Some(vec![String::from("firefox"), String::from("%p")]),
+            viewer_type: Some(ViewerType::Html),
+            viewer: Some(vec![String::from("firefox"), String::from("%p")]),
             secondary_viewer_type: None,
             secondary_viewer: None,
             enable_html: true,

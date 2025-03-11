@@ -34,8 +34,8 @@ impl FileManager {
             vault_path,
             default_extension: config.default_extension.clone(),
             editor: config.editor.clone(),
-            primary_viewer: config.primary_viewer.clone(),
-            primary_viewer_type: config.primary_viewer_type,
+            primary_viewer: config.viewer.clone(),
+            primary_viewer_type: config.viewer_type,
             secondary_viewer: config.secondary_viewer.clone(),
             secondary_viewer_type: config.secondary_viewer_type,
         }
