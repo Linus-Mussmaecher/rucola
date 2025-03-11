@@ -301,7 +301,7 @@ impl FileManager {
         let vtype = if primary {
             self.primary_viewer_type
         } else {
-            self.secondary_viewer_type
+            self.secondary_viewer_type.or(self.primary_viewer_type)
         }
         .unwrap_or_default();
 
