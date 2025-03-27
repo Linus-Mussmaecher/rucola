@@ -14,8 +14,8 @@ default_extension = "md"
 # The default look of the application.
 # Two default themes (for light and dark terminal setups) are provided.
 # You can create additional ones by creating a TOML file in your rucola config folder and linking it here by file name.
-theme="default_dark"
-# theme="default_light"
+theme = "default_dark"
+# theme = "default_light"
 
 # What sort of stats to show on the main select screen.
 # stats_show = "Both"     # Always show both local and global stats.
@@ -34,6 +34,7 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 
 # Main viewer to inspect rendered notes.
 # The first element is the command, the others will be used as positional arguments.
+# Splitting arguments like this is _not_ optional - `["firefox -P Notes", "%p"]` will not work while `["firefox", "-P", "Notes", "%p"]` will.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
 # If none is given, defaults to system default for the file type specified below.
 # Default: Firefox Browser
@@ -45,10 +46,11 @@ viewer = ["firefox", "%p"]
 
 # Alternative viewer to inspect rendered notes.
 # The first element is the command, the others will be used as positional arguments.
+# Splitting arguments like this is _not_ optional - `["glow --tui", "%p"]` will not work while `["glow", "--tui", "%p"]` will.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
 # If none is given, defaults to system default for the file type specified below.
 # Default: Firefox Browser
-# secondary_viewer = ["firefox", "%p"]
+# secondary_viewer = ["glow", "--tui", "%p"]
 
 # Preferred file type of the alternative viewer.
 # Possible values are "Html" and "Markdown".
@@ -58,13 +60,13 @@ viewer = ["firefox", "%p"]
 
 
 # When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
-enable_html=true
+enable_html = true
 
 # The name of the css file to use when creating HTML files. Must be located in your rucola config folder.
-css="default_dark"
+css = "default_dark"
 
 # Any further HTML to prepend to created HTML files, for example special Javascript that you want included.
-html_prepend="""
+html_prepend = """
 """
 
 # Wether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
