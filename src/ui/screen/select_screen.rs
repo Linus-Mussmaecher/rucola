@@ -823,6 +823,15 @@ impl super::Screen for SelectScreen {
 
                 let help_rows = [
                     Row::new(vec![
+                        Cell::from("/ or F").style(self.styles.subtitle_style),
+                        Cell::from("Enter the Filter text box.").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from("󰌑 or Esc").style(self.styles.subtitle_style),
+                        Cell::from("Exit the filter text box").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![Cell::from("").style(self.styles.subtitle_style)]),
+                    Row::new(vec![
                         Cell::from("#[tag]").style(self.styles.subtitle_style),
                         Cell::from("Show notes with tag [tag].").style(self.styles.text_style),
                     ]),
