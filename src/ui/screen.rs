@@ -15,7 +15,7 @@ pub trait Screen {
     fn draw(&self, area: layout::Rect, buf: &mut buffer::Buffer);
 
     /// Informs the screen of user messages and possibly modifies the content.
-    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message>;
+    fn update(&mut self, key: ratatui::crossterm::event::KeyEvent) -> error::Result<ui::Message>;
 }
 
 // Clears a text area and returns the contained string, if any.

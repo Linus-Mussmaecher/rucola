@@ -75,11 +75,10 @@ impl HtmlBuilder {
             &arena,
             &content,
             &comrak::Options {
-                extension: comrak::ExtensionOptionsBuilder::default()
+                extension: comrak::ExtensionOptions::builder()
                     .wikilinks_title_after_pipe(true)
                     .math_dollars(true)
-                    .build()
-                    .map_err(|_e| error::RucolaError::ComrakError)?,
+                    .build(),
                 ..Default::default()
             },
         );
@@ -139,11 +138,10 @@ impl HtmlBuilder {
         comrak::format_html(
             root,
             &comrak::Options {
-                extension: comrak::ExtensionOptionsBuilder::default()
+                extension: comrak::ExtensionOptions::builder()
                     .wikilinks_title_after_pipe(true)
                     .math_dollars(true)
-                    .build()
-                    .map_err(|_e| error::RucolaError::ComrakError)?,
+                    .build(),
                 ..Default::default()
             },
             &mut tar_file_buffer,

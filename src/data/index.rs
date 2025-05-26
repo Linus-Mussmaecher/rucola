@@ -63,10 +63,7 @@ impl NoteIndex {
             inner
                 .values()
                 .map(|note| builder.create_html(note, false))
-                .flat_map(|res| match res {
-                    Ok(_) => None,
-                    Err(e) => Some(e),
-                }),
+                .flat_map(Result::err),
         );
 
         // let the watcher start watching _after_ all htmls have been re-done
