@@ -135,7 +135,7 @@ impl App {
     // Updates the app with the given key.
     pub fn update(
         &mut self,
-        key: Option<crossterm::event::KeyEvent>,
+        key: Option<ratatui::crossterm::event::KeyEvent>,
     ) -> error::Result<ui::TerminalMessage> {
         // Check for file changes
         let mut index = self.index.borrow_mut();

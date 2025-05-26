@@ -12,7 +12,7 @@ pub enum Message {
     /// Pushes the given id to the top of the display stack.
     DisplayStackPush(String),
     /// Restore the terminal, execute the given command and re-enter
-    OpenExternalCommand(std::process::Command),
+    OpenExternalCommand(Box<std::process::Command>),
 }
 
 /// Messages sent from the application to the terminal.
@@ -23,7 +23,7 @@ pub enum TerminalMessage {
     /// Quit the application
     Quit,
     /// Restore the terminal, execute the given command and re-enter
-    OpenExternalCommand(std::process::Command),
+    OpenExternalCommand(Box<std::process::Command>),
 }
 
 impl From<Message> for TerminalMessage {

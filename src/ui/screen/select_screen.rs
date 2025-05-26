@@ -1,5 +1,5 @@
 use crate::{data, error, io, ui};
-use crossterm::event::KeyCode;
+use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
 use tui_textarea::TextArea;
@@ -118,20 +118,20 @@ impl SelectScreen {
         // === Filter ===
 
         // The actual title
-        let title_top = block::Title::from(Line::from(vec![
+        let title_top = Line::from(vec![
             Span::styled("F", self.styles.hotkey_style),
             Span::styled("ilter", self.styles.title_style),
-        ]));
+        ])
+        .left_aligned();
 
         // The hotkey instructions at the bottom.
-        let instructions = block::Title::from(Line::from(vec![
+        let instructions = Line::from(vec![
             Span::styled("C", self.styles.hotkey_style),
             Span::styled("lear filter", self.styles.text_style),
-        ]))
-        .alignment(Alignment::Right)
-        .position(block::Position::Top);
+        ])
+        .right_aligned();
 
-        let instructions_bot = block::Title::from(Line::from(vec![
+        let instructions_bot = Line::from(vec![
             Span::styled("A", self.styles.hotkey_style),
             Span::styled(
                 if self.any_conditions { "ny" } else { "ll" },
@@ -140,9 +140,8 @@ impl SelectScreen {
             Span::styled(" Conditions──", self.styles.text_style),
             Span::styled("H", self.styles.hotkey_style),
             Span::styled("elp", self.styles.text_style),
-        ]))
-        .alignment(Alignment::Right)
-        .position(block::Position::Bottom);
+        ])
+        .right_aligned();
 
         // Apply default self.styles to the filter area
 
@@ -152,9 +151,9 @@ impl SelectScreen {
 
         self.filter_area.set_block(
             Block::bordered()
-                .title(title_top)
-                .title(instructions)
-                .title(instructions_bot),
+                .title_top(title_top)
+                .title_top(instructions)
+                .title_bottom(instructions_bot),
         );
 
         // === Create ===
@@ -261,7 +260,8 @@ impl SelectScreen {
 }
 
 impl super::Screen for SelectScreen {
-    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message> {
+    fn update(&mut self, key: ratatui::crossterm::event::KeyEvent) -> error::Result<ui::Message> {
+        let key: ratatui::crossterm::event::KeyEvent = key;
         // Check for mode
         match self.mode {
             // Main mode: Switch to modes, general command
@@ -312,9 +312,9 @@ impl super::Screen for SelectScreen {
                         })
                     {
                         // use the config to create a valid opening command
-                        return Ok(ui::Message::OpenExternalCommand(
+                        return Ok(ui::Message::OpenExternalCommand(Box::new(
                             self.manager.create_edit_command(&res)?,
-                        ));
+                        )));
                     }
                 }
                 // Open view mode
@@ -323,10 +323,10 @@ impl super::Screen for SelectScreen {
                     if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
                         if let Some(note) = self.index.borrow().get(&env_stats.id) {
                             self.builder.create_html(note, true)?;
-                            return Ok(ui::Message::OpenExternalCommand(
+                            return Ok(ui::Message::OpenExternalCommand(Box::new(
                                 self.manager
                                     .create_view_command(note, key.code == KeyCode::Char('v'))?,
-                            ));
+                            )));
                         }
                     }
                 }
@@ -632,7 +632,7 @@ impl super::Screen for SelectScreen {
             });
 
         // Instructions at the bottom of the page
-        let instructions_bot_left = block::Title::from(Line::from(vec![
+        let instructions_bot_left = Line::from(vec![
             Span::styled("J", self.styles.hotkey_style),
             Span::styled("/", self.styles.text_style),
             Span::styled("", self.styles.hotkey_style),
@@ -647,11 +647,10 @@ impl super::Screen for SelectScreen {
             Span::styled("/", self.styles.text_style),
             Span::styled("󰌑", self.styles.hotkey_style),
             Span::styled(": Open──", self.styles.text_style),
-        ]))
-        .alignment(Alignment::Left)
-        .position(block::Position::Bottom);
+        ])
+        .left_aligned();
 
-        let instructions_bot_right = block::Title::from(Line::from(vec![
+        let instructions_bot_right = Line::from(vec![
             Span::styled("E", self.styles.hotkey_style),
             Span::styled("dit──", self.styles.text_style),
             Span::styled("V", self.styles.hotkey_style),
@@ -662,9 +661,8 @@ impl super::Screen for SelectScreen {
             Span::styled("orting──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
             Span::styled("uit", self.styles.text_style),
-        ]))
-        .alignment(Alignment::Right)
-        .position(block::Position::Bottom);
+        ])
+        .right_aligned();
 
         let table_heading_key_style = if self.mode == SelectMode::SubmenuSorting {
             self.styles.hotkey_style
@@ -713,13 +711,13 @@ impl super::Screen for SelectScreen {
                     Span::styled("n", table_heading_key_style),
                 ]),
             ]))
-            .highlight_style(self.styles.selected_style)
+            .row_highlight_style(self.styles.selected_style)
             // Add Instructions and a title
             .block(
                 Block::bordered()
-                    .title(style::Styled::set_style("Notes", self.styles.title_style))
-                    .title(instructions_bot_left)
-                    .title(instructions_bot_right),
+                    .title_top(style::Styled::set_style("Notes", self.styles.title_style))
+                    .title_bottom(instructions_bot_left)
+                    .title_bottom(instructions_bot_right),
             );
 
         // === Rendering ===
@@ -824,7 +822,7 @@ impl super::Screen for SelectScreen {
                 let help_rows = [
                     Row::new(vec![
                         Cell::from("/ or F").style(self.styles.subtitle_style),
-                        Cell::from("Enter the Filter text box.").style(self.styles.text_style),
+                        Cell::from("Enter the filter text box.").style(self.styles.text_style),
                     ]),
                     Row::new(vec![
                         Cell::from("󰌑 or Esc").style(self.styles.subtitle_style),
@@ -876,13 +874,12 @@ impl super::Screen for SelectScreen {
                             "Filter Syntax",
                             self.styles.title_style,
                         ))
-                        .title(
-                            block::Title::from(Line::from(vec![
+                        .title_bottom(
+                            Line::from(vec![
                                 Span::styled("C", self.styles.hotkey_style),
                                 Span::styled("lose", self.styles.text_style),
-                            ]))
-                            .position(block::Position::Bottom)
-                            .alignment(Alignment::Right),
+                            ])
+                            .right_aligned(),
                         ),
                 );
 

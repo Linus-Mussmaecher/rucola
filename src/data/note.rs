@@ -34,11 +34,9 @@ impl Note {
             &arena,
             &content,
             &comrak::Options {
-                extension: comrak::ExtensionOptionsBuilder::default()
+                extension: comrak::ExtensionOptions::builder()
                     .wikilinks_title_after_pipe(true)
-                    .build()
-                    // ExtensionOptionsBuilderError is sadly not public...
-                    .map_err(|_e| error::RucolaError::ComrakError)?,
+                    .build(),
                 ..Default::default()
             },
         );

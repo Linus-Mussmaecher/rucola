@@ -1,6 +1,6 @@
 // Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
 use clap::Parser;
-use crossterm::{event, terminal, ExecutableCommand};
+use ratatui::crossterm::{event, terminal, ExecutableCommand};
 use ratatui::prelude::*;
 use std::panic;
 
@@ -60,7 +60,7 @@ fn main() -> error::Result<()> {
         app::App::new(args, |message| draw_loading_screen(&mut terminal, message));
 
     // Displayed error
-    let mut current_error: Option<error::RucolaError> = errors.into_iter().last();
+    let mut current_error: Option<error::RucolaError> = errors.into_iter().next_back();
 
     // Main loop
     'main: loop {

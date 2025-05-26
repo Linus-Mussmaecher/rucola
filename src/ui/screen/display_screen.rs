@@ -1,7 +1,7 @@
 use crate::{data, error, io, ui};
 
-use crossterm::event::KeyCode;
 use itertools::Itertools;
+use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
 /// Describes the current mode of the UI.
@@ -159,7 +159,7 @@ impl super::Screen for DisplayScreen {
         )])
         .alignment(Alignment::Right);
 
-        let instructions_bot_right = block::Title::from(Line::from(vec![
+        let instructions_bot_right = Line::from(vec![
             Span::styled("V", self.styles.hotkey_style),
             Span::styled("iew──", self.styles.text_style),
             Span::styled("E", self.styles.hotkey_style),
@@ -170,9 +170,8 @@ impl super::Screen for DisplayScreen {
             Span::styled("ove──", self.styles.text_style),
             Span::styled("D", self.styles.hotkey_style),
             Span::styled("elete", self.styles.text_style),
-        ]))
-        .alignment(Alignment::Right)
-        .position(block::Position::Bottom);
+        ])
+        .right_aligned();
 
         let stats = self.note.to_stats_table(&self.styles).block(
             Block::bordered()
@@ -180,7 +179,7 @@ impl super::Screen for DisplayScreen {
                     "Statistics",
                     self.styles.title_style,
                 ))
-                .title(instructions_bot_right),
+                .title_bottom(instructions_bot_right),
         );
 
         // === All the links ===
@@ -221,21 +220,20 @@ impl super::Screen for DisplayScreen {
             Widget::render(Clear, center_area, buf);
 
             if self.mode == DisplayMode::Delete {
-                let keys = block::Title::from(Line::from(vec![
+                let keys = Line::from(vec![
                     Span::styled("󰌑", self.styles.hotkey_style),
                     Span::styled(": Delete─", self.styles.text_style),
                     Span::styled("Other", self.styles.hotkey_style),
                     Span::styled(": Abort", self.styles.text_style),
-                ]))
-                .alignment(Alignment::Center)
-                .position(block::Position::Bottom);
+                ])
+                .centered();
 
                 let del = Paragraph::new(Span::styled(
                     "Are you sure you want to delete?\n",
                     self.styles.text_style,
                 ))
                 .alignment(Alignment::Center)
-                .block(Block::bordered().title(keys));
+                .block(Block::bordered().title_bottom(keys));
 
                 Widget::render(del, center_area, buf);
             } else {
@@ -244,7 +242,7 @@ impl super::Screen for DisplayScreen {
         }
     }
 
-    fn update(&mut self, key: crossterm::event::KeyEvent) -> error::Result<ui::Message> {
+    fn update(&mut self, key: ratatui::crossterm::event::KeyEvent) -> error::Result<ui::Message> {
         match self.mode {
             DisplayMode::Display => match key.code {
                 // Quit with Q
@@ -298,17 +296,17 @@ impl super::Screen for DisplayScreen {
                 }
                 // Open selected item in editor
                 KeyCode::Char('e' | 'E') => {
-                    return Ok(ui::Message::OpenExternalCommand(
+                    return Ok(ui::Message::OpenExternalCommand(Box::new(
                         self.manager.create_edit_command(&self.note.path)?,
-                    ));
+                    )));
                 }
                 // Open selected item in viewer
                 KeyCode::Char('v' | 'V') => {
                     self.builder.create_html(&self.note, true)?;
-                    return Ok(ui::Message::OpenExternalCommand(
+                    return Ok(ui::Message::OpenExternalCommand(Box::new(
                         self.manager
                             .create_view_command(&self.note, key.code == KeyCode::Char('v'))?,
-                    ));
+                    )));
                 }
                 // R: Rename note
                 KeyCode::Char('r' | 'R') => {
@@ -386,12 +384,7 @@ impl super::Screen for DisplayScreen {
 impl DisplayScreen {
     fn draw_link_table(&self, index: usize, title: &str, area: Rect, buf: &mut Buffer) {
         // Title
-        let title = block::Title::from(Line::from(vec![Span::styled(
-            title,
-            self.styles.title_style,
-        )]))
-        .alignment(Alignment::Left)
-        .position(block::Position::Top);
+        let title = Line::from(vec![Span::styled(title, self.styles.title_style)]).left_aligned();
 
         let count = self
             .links
@@ -400,12 +393,11 @@ impl DisplayScreen {
             .unwrap_or_default();
 
         // Count
-        let count = block::Title::from(Line::from(vec![Span::styled(
+        let count = Line::from(vec![Span::styled(
             format!("{} Note{}", count, if count == 1 { "" } else { "s" }),
             self.styles.text_style,
-        )]))
-        .alignment(Alignment::Right)
-        .position(block::Position::Top);
+        )])
+        .right_aligned();
 
         // Instructions
 
@@ -458,12 +450,12 @@ impl DisplayScreen {
             .unwrap_or_default();
 
         // create default surrounding block
-        let block = Block::bordered().title(title).title(count);
+        let block = Block::bordered().title_top(title).title_bottom(count);
 
         // in some places, add instructions
         let block = match index {
-            2 => block.title(
-                block::Title::from(Line::from(vec![
+            2 => block.title_bottom(
+                Line::from(vec![
                     Span::styled("J", self.styles.hotkey_style),
                     Span::styled("/", self.styles.text_style),
                     Span::styled("", self.styles.hotkey_style),
@@ -484,26 +476,24 @@ impl DisplayScreen {
                     Span::styled(": Back──", self.styles.text_style),
                     Span::styled("F", self.styles.hotkey_style),
                     Span::styled(": Home", self.styles.text_style),
-                ]))
-                .alignment(Alignment::Left)
-                .position(block::Position::Bottom),
+                ])
+                .left_aligned(),
             ),
-            3 => block.title(
-                block::Title::from(Line::from(vec![
+            3 => block.title_bottom(
+                Line::from(vec![
                     Span::styled("Tab", self.styles.hotkey_style),
                     Span::styled(": Next Table──", self.styles.text_style),
                     Span::styled("Shift+Tab", self.styles.hotkey_style),
                     Span::styled(": Previous Table", self.styles.text_style),
-                ]))
-                .alignment(Alignment::Right)
-                .position(block::Position::Bottom),
+                ])
+                .right_aligned(),
             ),
             _ => block,
         };
 
         // Table
         let table = Table::new(rows, [Constraint::Min(20)])
-            .highlight_style(if index == self.foc_table {
+            .row_highlight_style(if index == self.foc_table {
                 self.styles.selected_style
             } else {
                 self.styles.text_style
