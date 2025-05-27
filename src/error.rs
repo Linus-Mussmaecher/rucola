@@ -29,6 +29,8 @@ pub enum RucolaError {
     NotifyEventError(notify::Event),
     #[error("Failed to create parse options.")]
     ComrakError,
+    #[error("Failed to parse YAML frontmatter.")]
+    YamlError(#[from] yaml_rust::ScanError),
 }
 
 impl RucolaError {

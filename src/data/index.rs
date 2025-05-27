@@ -219,7 +219,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         assert!(!index.inner.contains_key("booksold"));
 
@@ -243,7 +243,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         assert_eq!(
             index.links_vec("lie-group"),
@@ -271,7 +271,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         assert_eq!(
             index.blinks_vec("lie-group"),

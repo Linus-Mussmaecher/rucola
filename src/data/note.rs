@@ -28,6 +28,23 @@ impl Note {
         // Open the file.
         let content = fs::read_to_string(path)?;
 
+        // Create a regex to check for YAML front matter.
+        let regex = regex::Regex::new("---\n((.|\n)*)\n---\n((.|\n)*)")?;
+
+        // Extract both the YAML front matter, if present, and the main content.
+        let (yaml, content) = if let Some(matches) = regex.captures(&content) {
+            // If the regex matched, YAML front matter was present.
+            (
+                // The 1st capture group is the front matter.
+                matches.get(1).map(|m| m.as_str().to_owned()),
+                // The 3rd capture group is the actual content.
+                matches.get(3).unwrap().as_str().to_owned(),
+            )
+        } else {
+            // If the regex didn't match, then just use the content.
+            (None, content)
+        };
+
         // Parse markdown into AST
         let arena = comrak::Arena::new();
         let root = comrak::parse_document(
@@ -41,12 +58,24 @@ impl Note {
             },
         );
 
+        // Parse YAML.
+        let title = if let Some(yaml) = yaml {
+            let docs = yaml_rust::YamlLoader::load_from_str(&yaml)?;
+            let doc = &docs[0];
+
+            doc["title"].as_str().map(|s| s.to_owned())
+        } else {
+            None
+        };
+
         Ok(Self {
-            // Name: Remove file extension
-            name: path
-                .file_stem()
-                .map(|os| os.to_string_lossy().to_string())
-                .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
+            // Name: Check if there was one specified in the YAML fronmatter.
+            // If not, remove file extension.
+            name: title.unwrap_or(
+                path.file_stem()
+                    .map(|os| os.to_string_lossy().to_string())
+                    .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
+            ),
             // Path: Already given - convert to owned version.
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
@@ -156,6 +185,24 @@ mod tests {
         assert_eq!(
             note.path,
             PathBuf::from("./tests/common/notes/math/Chart.md")
+                .canonicalize()
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_yaml() {
+        let note =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/note25.md")).unwrap();
+
+        assert_eq!(note.name, String::from("YAML Format"));
+        // assert_eq!(
+        //     note.tags,
+        //     vec![String::from("#diffgeo"), String::from("#topology")]
+        // );
+        assert_eq!(
+            note.path,
+            PathBuf::from("./tests/common/notes/note25.md")
                 .canonicalize()
                 .unwrap()
         );
