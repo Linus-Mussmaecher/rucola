@@ -408,7 +408,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -443,7 +443,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
         // === Filter 2 ===
@@ -487,7 +487,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -518,7 +518,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -549,7 +549,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 

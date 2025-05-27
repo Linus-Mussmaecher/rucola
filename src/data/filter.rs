@@ -195,7 +195,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         let linux = index.inner.get("linux").unwrap();
         let win = index.inner.get("windows").unwrap();
@@ -224,7 +224,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
         let index = data::NoteIndex::new(tracker, builder).0;
 
-        assert_eq!(index.inner.len(), 11);
+        assert_eq!(index.inner.len(), 12);
 
         // === Filter 2 ===
 
