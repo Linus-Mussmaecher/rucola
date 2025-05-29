@@ -79,7 +79,7 @@ impl Note {
                     // Entries of sublists will appear as separated by ` - `, so split by that.
                     let parts = s.split(" - ").collect_vec();
 
-                    if parts.len() == 0 {
+                    if parts.is_empty() {
                         // This should not happen.
                         Vec::new()
                     } else if parts.len() == 1 {
@@ -127,7 +127,7 @@ impl Note {
                         .collect_vec(),
                     _ => vec![],
                 })
-                .chain(tags.into_iter())
+                .chain(tags)
                 .collect(),
             // Links: Go though all wikilinks in the syntax tree and map them
             links: root
