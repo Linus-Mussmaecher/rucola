@@ -1,3 +1,12 @@
+# Version 0.6.0 - YAML frontmatter
+ - Added support for YAML frontmatter.
+   - You can now specify a title in the frontmatter that will override the title inferred from the file name.
+   - You can now add tags in the frontmatter that will be added to the tags found in the text.
+   Tags added this way support up to one level of nesting.
+ - Updated dependency versions.
+ - Added additional information on how to enter and exit the filter box in the help menu.
+ - Updated default configuration to emphasize that the splitting of arguments for viewers and editors is mandatory.
+
 # Version 0.5.0 - Markdown Viewing
  - Users can now choose between viewing files as markdown or HTML.
  - Fixed a bug that caused an error on launch when configuration file did not agree with current internal configuration struct. Contribution by GitHub user Morsicus.
