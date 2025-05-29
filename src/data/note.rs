@@ -59,13 +59,50 @@ impl Note {
         );
 
         // Parse YAML.
-        let title = if let Some(yaml) = yaml {
+        let (title, tags) = if let Some(yaml) = yaml {
             let docs = yaml_rust::YamlLoader::load_from_str(&yaml)?;
             let doc = &docs[0];
 
-            doc["title"].as_str().map(|s| s.to_owned())
+            // Check if there was a title specified.
+            let title = doc["title"].as_str().map(|s| s.to_owned());
+
+            // Check if tags were specified.
+            let tags = doc["tags"]
+                // Convert the entry into a vec - if the entry isn't there, use an empty vec.
+                .as_vec()
+                .unwrap_or(&Vec::new())
+                .iter()
+                // Convert the individual entries into strs, as rust-yaml doesn't do nested lists.
+                .flat_map(|v| v.as_str())
+                // Convert those into Strings and prepend the #.
+                .flat_map(|s| {
+                    // Entries of sublists will appear as separated by ` - `, so split by that.
+                    let parts = s.split(" - ").collect_vec();
+
+                    if parts.len() == 0 {
+                        // This should not happen.
+                        Vec::new()
+                    } else if parts.len() == 1 {
+                        // Only one parts => There were not subtags. Simply prepend a `#`.
+                        vec![format!("#{}", s)]
+                    } else {
+                        // More than 1 part => There were subtags.
+                        let mut res = Vec::new();
+
+                        // Iterate through all of the substrings except for the first, which is the supertag.
+                        for subtag in parts.iter().skip(1) {
+                            res.push(format!("#{}/{}", parts[0], subtag));
+                        }
+
+                        res
+                    }
+                })
+                // Collect all tags in a vec.
+                .collect_vec();
+
+            (title, tags)
         } else {
-            None
+            (None, Vec::new())
         };
 
         Ok(Self {
@@ -79,6 +116,7 @@ impl Note {
             // Path: Already given - convert to owned version.
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
+            // Finally, append tags specified in the YAML frontmatter.
             tags: root
                 .descendants()
                 .flat_map(|node| match &node.data.borrow().value {
@@ -89,6 +127,7 @@ impl Note {
                         .collect_vec(),
                     _ => vec![],
                 })
+                .chain(tags.into_iter())
                 .collect(),
             // Links: Go though all wikilinks in the syntax tree and map them
             links: root
@@ -191,20 +230,33 @@ mod tests {
     }
 
     #[test]
-    fn test_yaml() {
+    fn test_yaml_name() {
         let note =
             crate::data::Note::from_path(Path::new("./tests/common/notes/note25.md")).unwrap();
 
         assert_eq!(note.name, String::from("YAML Format"));
-        // assert_eq!(
-        //     note.tags,
-        //     vec![String::from("#diffgeo"), String::from("#topology")]
-        // );
+
         assert_eq!(
             note.path,
             PathBuf::from("./tests/common/notes/note25.md")
                 .canonicalize()
                 .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_yaml_tags() {
+        let note =
+            crate::data::Note::from_path(Path::new("./tests/common/notes/note25.md")).unwrap();
+
+        assert_eq!(
+            note.tags,
+            vec![
+                String::from("#test"),
+                String::from("#files/yaml"),
+                String::from("#files/markdown"),
+                String::from("#abbreviations")
+            ]
         );
     }
 }
