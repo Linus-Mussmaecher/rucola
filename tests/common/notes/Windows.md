@@ -6,3 +6,6 @@ Windows is an #os/win (inline tag!) from Microsoft Cooperation.
 ## Another Heading
 
 ### Another Heading
+
+Files on Windows can be in the [[note25|YAML format]].
+Note that links to files whose display name is determined by YAML frontmatter still need to be linked to by their file name.

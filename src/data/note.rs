@@ -9,6 +9,8 @@ use crate::{error, ui};
 #[derive(Clone, Debug, Default)]
 pub struct Note {
     /// The title of the note.
+    pub display_name: String,
+    /// The name of the file the note is saved in.
     pub name: String,
     /// All tags contained at any part of the note.
     pub tags: Vec<String>,
@@ -108,11 +110,16 @@ impl Note {
         Ok(Self {
             // Name: Check if there was one specified in the YAML fronmatter.
             // If not, remove file extension.
-            name: title.unwrap_or(
+            display_name: title.unwrap_or(
                 path.file_stem()
                     .map(|os| os.to_string_lossy().to_string())
                     .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
             ),
+            // File name: Remove file extension.
+            name: path
+                .file_stem()
+                .map(|os| os.to_string_lossy().to_string())
+                .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
             // Path: Already given - convert to owned version.
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
@@ -234,7 +241,8 @@ mod tests {
         let note =
             crate::data::Note::from_path(Path::new("./tests/common/notes/note25.md")).unwrap();
 
-        assert_eq!(note.name, String::from("YAML Format"));
+        assert_eq!(note.display_name, String::from("YAML Format"));
+        assert_eq!(note.name, String::from("note25"));
 
         assert_eq!(
             note.path,

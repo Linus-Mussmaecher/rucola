@@ -41,7 +41,7 @@ impl NoteEnvStatistics {
         // generate the stats row for each element
         index.borrow().get(&self.id).map(|note| {
             Row::new(vec![
-                note.name.clone(),
+                note.display_name.clone(),
                 format!("{:7}", note.words),
                 format!("{:7}", note.characters),
                 format!("{:7}", self.outlinks_global),

@@ -230,6 +230,7 @@ mod tests {
         assert_eq!(os.links.len(), 6);
         assert_eq!(os.tags, ["#os"]);
         assert_eq!(os.name, "Operating Systems");
+        assert_eq!(os.display_name, "Operating Systems");
         assert_eq!(os.words, 41);
 
         assert_eq!(lg.links, ["manifold", "smooth-map", "topology"]);
@@ -264,6 +265,7 @@ mod tests {
         );
     }
 
+
     #[test]
     fn test_blinks() {
         let config = crate::Config::default();
@@ -285,6 +287,30 @@ mod tests {
                 ("chart".to_string(), "Chart".to_string()),
                 ("lie-group".to_string(), "Lie Group".to_string()),
                 ("smooth-map".to_string(), "Smooth Map".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_links_yaml() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 12);
+
+        assert_eq!(
+            index.links_vec("windows"),
+            vec![
+                ("note25".to_string(), "note25".to_string()),
+            ]
+        );
+
+        assert_eq!(
+            index.blinks_vec("note25"),
+            vec![
+                ("windows".to_string(), "Windows".to_string()),
             ]
         );
     }
