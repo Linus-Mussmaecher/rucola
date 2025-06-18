@@ -163,7 +163,7 @@ impl Filter {
             None
         } else {
             let matcher = fuzzy_matcher::skim::SkimMatcherV2::default();
-            let fuzzy_match = matcher.fuzzy_match(&note.name, &self.title);
+            let fuzzy_match = matcher.fuzzy_match(&note.display_name, &self.title);
             if fuzzy_match.is_some() {
                 any = true;
             } else {

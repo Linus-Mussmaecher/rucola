@@ -1,6 +1,7 @@
 # Version 0.6.0 - YAML frontmatter
  - Added support for YAML frontmatter.
    - You can now specify a title in the frontmatter that will override the title inferred from the file name.
+   The title added this way is only used for display, not for linking or other internal purposes.
    - You can now add tags in the frontmatter that will be added to the tags found in the text.
    Tags added this way support up to one level of nesting.
  - Updated dependency versions.

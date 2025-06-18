@@ -148,7 +148,7 @@ impl super::Screen for DisplayScreen {
 
         // Title
         let title = Line::from(vec![Span::styled(
-            self.note.name.as_str(),
+            self.note.display_name.as_str(),
             self.styles.title_style,
         )])
         .alignment(Alignment::Center);
