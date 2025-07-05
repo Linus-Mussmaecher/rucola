@@ -1,3 +1,5 @@
+use std::rc;
+
 use crate::{data, error, io, ui};
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
@@ -53,6 +55,8 @@ pub struct SelectScreen {
     // === Config ===
     /// The file manager this screen uses to enact the user's file system requests on the file system.
     manager: io::FileManager,
+    /// The git repository the vault is stored in, if any.
+    git_repo: Option<rc::Rc<git2::Repository>>,
     /// The HtmlBuider this screen uses to continuously build html files.
     builder: io::HtmlBuilder,
     /// The used styles.
@@ -87,6 +91,7 @@ impl SelectScreen {
     pub fn new(
         index: data::NoteIndexContainer,
         manager: io::FileManager,
+        git_repo: Option<rc::Rc<git2::Repository>>,
         builder: io::HtmlBuilder,
         styles: ui::UiStyles,
         stats_show: StatsShow,
@@ -98,6 +103,7 @@ impl SelectScreen {
             styles,
             builder,
             manager,
+            git_repo,
             filter_area: TextArea::default(),
             name_area: TextArea::default(),
             mode: SelectMode::Select,
@@ -683,7 +689,9 @@ impl super::Screen for SelectScreen {
             Span::styled("S", self.styles.hotkey_style),
             Span::styled("orting──", self.styles.text_style),
             Span::styled("G", self.styles.hotkey_style),
-            Span::styled("it──", self.styles.text_style),
+            Span::styled("it ", self.styles.text_style),
+            Span::styled(a, self.styles.text_style),
+            Span::styled("──", self.styles.text_style),
             Span::styled("M", self.styles.hotkey_style),
             Span::styled("anage Files──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
