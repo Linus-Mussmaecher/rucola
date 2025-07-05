@@ -31,6 +31,8 @@ pub enum RucolaError {
     ComrakError,
     #[error("Failed to parse YAML frontmatter.")]
     YamlError(#[from] yaml_rust::ScanError),
+    #[error("Failed to find Git Repository.")]
+    GitError(#[from] git2::Error),
 }
 
 impl RucolaError {
