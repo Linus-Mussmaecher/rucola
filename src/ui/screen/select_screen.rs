@@ -14,6 +14,8 @@ enum SelectMode {
     SubmenuFile,
     /// Sorting submenu
     SubmenuSorting,
+    /// Git submenu
+    SubmenuGit,
     /// Typing into the filter box.
     Filter,
     /// Show the help screen for the filter box.
@@ -268,9 +270,13 @@ impl super::Screen for SelectScreen {
             SelectMode::Select => match key.code {
                 // Q: Quit application
                 KeyCode::Char('q' | 'Q') => return Ok(ui::Message::Quit),
-                // R: Got to file management submenu
+                // M: Got to file management submenu
                 KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
+                }
+                // G: Got to file management submenu
+                KeyCode::Char('g' | 'G') => {
+                    self.mode = SelectMode::SubmenuGit;
                 }
                 // S: Got to sorting submenu
                 KeyCode::Char('s' | 'S') => {
@@ -510,6 +516,24 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
+            SelectMode::SubmenuGit => match key.code {
+                KeyCode::Char('c' | 'C') => {
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('p' | 'P') => {
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('f' | 'F') => {
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Char('u' | 'U') => {
+                    self.mode = SelectMode::Select;
+                }
+                KeyCode::Esc | KeyCode::Char('g' | 'G') => {
+                    self.mode = SelectMode::Select;
+                }
+                _ => {}
+            },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
                 KeyCode::Char('a' | 'A') => {
@@ -627,6 +651,7 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Rename
                 | SelectMode::Move
                 | SelectMode::SubmenuFile
+                | SelectMode::SubmenuGit
                 | SelectMode::SubmenuSorting => Some(self.selected),
                 SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
             });
@@ -655,10 +680,12 @@ impl super::Screen for SelectScreen {
             Span::styled("dit──", self.styles.text_style),
             Span::styled("V", self.styles.hotkey_style),
             Span::styled("iew──", self.styles.text_style),
-            Span::styled("M", self.styles.hotkey_style),
-            Span::styled("anage Files──", self.styles.text_style),
             Span::styled("S", self.styles.hotkey_style),
             Span::styled("orting──", self.styles.text_style),
+            Span::styled("G", self.styles.hotkey_style),
+            Span::styled("it──", self.styles.text_style),
+            Span::styled("M", self.styles.hotkey_style),
+            Span::styled("anage Files──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
             Span::styled("uit", self.styles.text_style),
         ])
@@ -733,13 +760,20 @@ impl super::Screen for SelectScreen {
 
         // Render possible pop-ups
         match self.mode {
-            SelectMode::SubmenuFile | SelectMode::SubmenuSorting => {
+            SelectMode::SubmenuFile | SelectMode::SubmenuSorting | SelectMode::SubmenuGit => {
                 let contents = if self.mode == SelectMode::SubmenuFile {
                     vec![
                         ("N", "New note"),
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
+                    ]
+                } else if self.mode == SelectMode::SubmenuGit {
+                    vec![
+                        ("C", "Add All & Commit"),
+                        ("P", "Push"),
+                        ("F", "Fetch"),
+                        ("U", "Pull"),
                     ]
                 } else {
                     vec![
