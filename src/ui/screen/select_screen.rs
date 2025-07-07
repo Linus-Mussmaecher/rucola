@@ -1,6 +1,7 @@
 use std::rc;
 
 use crate::{data, error, io, ui};
+use itertools::Itertools;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
 
@@ -767,7 +768,7 @@ impl super::Screen for SelectScreen {
         // Render possible pop-ups
         match self.mode {
             SelectMode::SubmenuFile | SelectMode::SubmenuSorting | SelectMode::SubmenuGit => {
-                let contents = if self.mode == SelectMode::SubmenuFile {
+                let mut contents = if self.mode == SelectMode::SubmenuFile {
                     vec![
                         ("N", "New note"),
                         ("R", "Rename selected note"),
@@ -776,7 +777,8 @@ impl super::Screen for SelectScreen {
                     ]
                 } else if self.mode == SelectMode::SubmenuGit {
                     vec![
-                        ("C", "Add All & Commit"),
+                        ("A", "Add All"),
+                        ("C", "Commit"),
                         ("P", "Push"),
                         ("F", "Fetch"),
                         ("U", "Pull"),
@@ -793,7 +795,43 @@ impl super::Screen for SelectScreen {
                         ("B", "Sort by broken links"),
                         ("R", "Reverse sorting"),
                     ]
-                };
+                }
+                .iter()
+                .map(|(a, b)| (a.to_string(), b.to_string()))
+                .collect_vec();
+
+                // If in git mode, calculate some information.
+                if self.mode == SelectMode::SubmenuGit {
+                    if let Some(git_repo) = self.git_repo.as_ref() {
+                        let head = git_repo.head().unwrap();
+                        let head_id = head.target().unwrap();
+
+                        let branch = git_repo
+                            .find_branch(head.shorthand().unwrap(), git2::BranchType::Local)
+                            .unwrap();
+
+                        let upstream = branch.upstream().unwrap();
+
+                        let upstream_id = upstream.get().target().unwrap();
+
+                        let (ahead, behind) =
+                            git_repo.graph_ahead_behind(head_id, upstream_id).unwrap();
+
+                        if ahead > 0 {
+                            contents
+                                .insert(0, (String::new(), format!("{} commits ahead.", ahead)));
+                        }
+
+                        if behind > 0 {
+                            contents
+                                .insert(0, (String::new(), format!("{} commits behind.", behind)));
+                        }
+
+                        if ahead == 0 && behind == 0 {
+                            contents.insert(0, (String::new(), "Up to Date".to_string()));
+                        }
+                    }
+                }
 
                 let popup_areas = Layout::vertical([
                     Constraint::Fill(1),
