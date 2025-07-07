@@ -38,23 +38,25 @@ impl GitManager {
     }
 
     /// Checks if there are any untracked or uncommited changes in the repository at the current time.
-    /// TODO: remove unwraps
     pub fn changes(&self) -> (bool, bool) {
         let mut status_options = git2::StatusOptions::new();
 
-        let statuses = self
-            .git_repo
-            .statuses(Some(
-                status_options
-                    .include_untracked(true)
-                    .recurse_untracked_dirs(true)
-                    .include_ignored(false)
-                    .exclude_submodules(true),
-            ))
-            .unwrap();
+        let statuses = self.git_repo.statuses(Some(
+            status_options
+                .include_untracked(true)
+                .recurse_untracked_dirs(true)
+                .include_ignored(false)
+                .exclude_submodules(true),
+        ));
+
+        if statuses.is_err() {
+            return (false, false);
+        }
+
+        let statuses = statuses.unwrap();
 
         (
-            statuses.iter().all(|entry| {
+            statuses.iter().any(|entry| {
                 let status = entry.status();
                 status.is_wt_modified()
                     || status.is_wt_deleted()
@@ -62,7 +64,7 @@ impl GitManager {
                     || status.is_wt_typechange()
                     || status.is_wt_renamed()
             }),
-            statuses.iter().all(|entry| {
+            statuses.iter().any(|entry| {
                 let status = entry.status();
                 status.is_index_modified()
                     || status.is_index_deleted()
