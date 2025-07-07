@@ -798,13 +798,12 @@ impl super::Screen for SelectScreen {
                 .map(|(a, b)| (a.to_string(), b.to_string()))
                 .collect_vec();
 
-                // If in git mode, calculate some information.
+                // If in git mode, calculate & display some information.
                 if self.mode == SelectMode::SubmenuGit {
-                    if let Some((ahead, behind)) = self
-                        .git_manager
-                        .as_ref()
-                        .map(|git_manager| git_manager.calculate_ahead_behind())
-                    {
+                    if let Some(git_manager) = &self.git_manager {
+                        let (ahead, behind) = git_manager.calculate_ahead_behind();
+                        let (untracked, uncommited) = git_manager.changes();
+
                         if ahead > 0 {
                             contents.insert(
                                 0,
@@ -835,6 +834,14 @@ impl super::Screen for SelectScreen {
 
                         if ahead == 0 && behind == 0 {
                             contents.insert(0, (String::new(), "Up to Date".to_string()));
+                        }
+
+                        if untracked {
+                            contents.insert(0, (String::new(), "Untracked changes".to_string()));
+                        }
+
+                        if uncommited {
+                            contents.insert(0, (String::new(), "Uncommited changes".to_string()));
                         }
                     }
                 }
