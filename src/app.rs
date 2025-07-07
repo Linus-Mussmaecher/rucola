@@ -1,5 +1,3 @@
-use std::rc;
-
 use super::{data, error, io, ui, ui::Screen};
 use ratatui::prelude::*;
 
@@ -22,7 +20,7 @@ pub struct App {
     /// The file manager this app's screens use to enact the user's file system requests on the file system.
     manager: io::FileManager,
     /// The git repository the vault is stored in, if any.
-    git_repo: Option<rc::Rc<git2::Repository>>,
+    git_manager: Option<io::GitManager>,
     /// The HtmlBuider this app's screens use to continuously build html files.
     builder: io::HtmlBuilder,
     /// The styles used by this app's screens.
@@ -72,13 +70,7 @@ impl App {
 
         let manager = io::FileManager::new(&config, vault_path.clone());
 
-        let git_repo = match git2::Repository::discover(vault_path.clone()) {
-            Ok(repo) => Some(rc::Rc::new(repo)),
-            Err(e) => {
-                errors.push(e.into());
-                None
-            }
-        };
+        let git_manager = io::GitManager::new(vault_path.clone());
 
         let tracker = match io::FileTracker::new(&config, vault_path.clone()) {
             Ok(tracker) => tracker,
@@ -113,7 +105,7 @@ impl App {
                 select: ui::screen::SelectScreen::new(
                     index.clone(),
                     manager.clone(),
-                    git_repo.clone(),
+                    git_manager.clone(),
                     builder.clone(),
                     styles,
                     config.stats_show,
@@ -123,7 +115,7 @@ impl App {
                 index,
                 styles,
                 manager,
-                git_repo,
+                git_manager,
                 builder,
             },
             errors,

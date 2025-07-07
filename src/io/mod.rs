@@ -6,3 +6,6 @@ pub use file_tracker::FileTracker;
 
 mod html_builder;
 pub use html_builder::HtmlBuilder;
+
+mod git_manager;
+pub use git_manager::GitManager;

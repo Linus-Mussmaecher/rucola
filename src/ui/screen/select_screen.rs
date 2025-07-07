@@ -1,5 +1,3 @@
-use std::rc;
-
 use crate::{data, error, io, ui};
 use itertools::Itertools;
 use ratatui::crossterm::event::KeyCode;
@@ -57,7 +55,7 @@ pub struct SelectScreen {
     /// The file manager this screen uses to enact the user's file system requests on the file system.
     manager: io::FileManager,
     /// The git repository the vault is stored in, if any.
-    git_repo: Option<rc::Rc<git2::Repository>>,
+    git_manager: Option<io::GitManager>,
     /// The HtmlBuider this screen uses to continuously build html files.
     builder: io::HtmlBuilder,
     /// The used styles.
@@ -92,7 +90,7 @@ impl SelectScreen {
     pub fn new(
         index: data::NoteIndexContainer,
         manager: io::FileManager,
-        git_repo: Option<rc::Rc<git2::Repository>>,
+        git_manager: Option<io::GitManager>,
         builder: io::HtmlBuilder,
         styles: ui::UiStyles,
         stats_show: StatsShow,
@@ -104,7 +102,7 @@ impl SelectScreen {
             styles,
             builder,
             manager,
-            git_repo,
+            git_manager,
             filter_area: TextArea::default(),
             name_area: TextArea::default(),
             mode: SelectMode::Select,
@@ -802,29 +800,37 @@ impl super::Screen for SelectScreen {
 
                 // If in git mode, calculate some information.
                 if self.mode == SelectMode::SubmenuGit {
-                    if let Some(git_repo) = self.git_repo.as_ref() {
-                        let head = git_repo.head().unwrap();
-                        let head_id = head.target().unwrap();
-
-                        let branch = git_repo
-                            .find_branch(head.shorthand().unwrap(), git2::BranchType::Local)
-                            .unwrap();
-
-                        let upstream = branch.upstream().unwrap();
-
-                        let upstream_id = upstream.get().target().unwrap();
-
-                        let (ahead, behind) =
-                            git_repo.graph_ahead_behind(head_id, upstream_id).unwrap();
-
+                    if let Some((ahead, behind)) = self
+                        .git_manager
+                        .as_ref()
+                        .map(|git_manager| git_manager.calculate_ahead_behind())
+                    {
                         if ahead > 0 {
-                            contents
-                                .insert(0, (String::new(), format!("{} commits ahead.", ahead)));
+                            contents.insert(
+                                0,
+                                (
+                                    String::new(),
+                                    format!(
+                                        "{} commit{} ahead",
+                                        ahead,
+                                        if ahead > 1 { "s" } else { "" }
+                                    ),
+                                ),
+                            );
                         }
 
                         if behind > 0 {
-                            contents
-                                .insert(0, (String::new(), format!("{} commits behind.", behind)));
+                            contents.insert(
+                                0,
+                                (
+                                    String::new(),
+                                    format!(
+                                        "{} commit{} behind",
+                                        behind,
+                                        if behind > 1 { "s" } else { "" }
+                                    ),
+                                ),
+                            );
                         }
 
                         if ahead == 0 && behind == 0 {
