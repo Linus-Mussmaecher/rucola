@@ -16,7 +16,12 @@ pub struct FileTracker {
     /// Watcher that checks for file changes in the vault directory and needs to be kept alive with this index.
     /// Can be unused because it is just here for RAII.
     #[allow(unused)]
+    #[cfg(not(target_os = "macos"))]
     watcher: notify::RecommendedWatcher,
+    /// The recommended watcher for macos does not register file renames, so use the PollWatcher fallback instead.
+    #[allow(unused)]
+    #[cfg(target_os = "macos")]
+    watcher: notify::PollWatcher,
     /// Channel from which file change events in the vault directory are deposited by the watcher and can be requested.
     file_change_channel: mpsc::Receiver<Result<notify::Event, notify::Error>>,
 }
@@ -43,10 +48,28 @@ impl FileTracker {
         let (sender, receiver) = mpsc::channel();
 
         // Create watcher so we can store it in the file, delaying its drop (which stops its function) until the end of the lifetime of this index.
-        let watcher = notify::recommended_watcher(move |res| {
-            // ignore errors
-            let _ = sender.send(res);
-        })?;
+        #[cfg(not(target_os = "macos"))]
+        let watcher = {
+            notify::recommended_watcher(move |res| {
+                // ignore errors
+                let _ = sender.send(res);
+            })?
+        };
+
+        #[cfg(target_os = "macos")]
+        let watcher = {
+            // Watcher should poll for external changes every 2 seconds.
+            let watcher_config =
+                notify::Config::default().with_poll_interval(std::time::Duration::from_secs(2));
+
+            notify::PollWatcher::new(
+                move |res| {
+                    // ignore errors
+                    let _ = sender.send(res);
+                },
+                watcher_config,
+            )?
+        };
 
         Ok(Self {
             vault_path,
@@ -240,6 +263,10 @@ mod tests {
             .unwrap();
         fm.rename_note_file(index_con.clone(), "lie-group", String::from("Lie Soup"))
             .unwrap();
+
+        // TODO: remove this once there are polls attached to the rename actions
+        #[cfg(target_os = "macos")]
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
         id_changes.sort_unstable();
