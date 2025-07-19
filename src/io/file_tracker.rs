@@ -272,8 +272,58 @@ mod tests {
         fm.rename_note_file(index_con.clone(), "lie-group", String::from("Lie Soup"))
             .unwrap();
 
-        // TODO: remove this once there are polls attached to the rename actions
-        #[cfg(target_os = "macos")]
+        let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
+        id_changes.sort_unstable();
+
+        assert!(modifications);
+        assert_eq!(
+            id_changes,
+            vec![String::from("atlas"), String::from("lie-group"),]
+        );
+
+        assert!(index_con.borrow().get("atlas").is_none());
+        assert!(index_con.borrow().get("lie-group").is_none());
+        assert!(index_con.borrow().get("atlantis").is_some());
+        assert!(index_con.borrow().get("lie-soup").is_some());
+
+        let at = index_con.borrow().get("atlantis").unwrap().clone();
+        let lg = index_con.borrow().get("lie-soup").unwrap().clone();
+
+        assert_eq!(at.name, String::from("Atlantis"));
+        assert_eq!(lg.name, String::from("Lie Soup"));
+
+        assert_eq!(
+            at.path,
+            tmp.join(path::PathBuf::from("Math"))
+                .join(path::PathBuf::from("Atlantis.md"))
+        );
+        assert_eq!(lg.path, tmp.join(path::PathBuf::from("Lie Soup.md")));
+    }
+
+    #[test]
+    fn test_watcher_rename_with_delay() {
+        let tmp = testdir::testdir!();
+
+        let config = crate::Config::default();
+        let fm = crate::io::FileManager::new(&config, tmp.clone());
+        fm.create_note_file("Lie Group").unwrap();
+        fm.create_note_file("Math/Atlas").unwrap();
+
+        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
+        let index = crate::data::NoteIndex::new(tracker, builder).0;
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        assert!(index_con.borrow().get("atlas").is_some());
+        assert!(index_con.borrow().get("lie-group").is_some());
+        assert!(index_con.borrow().get("atlantis").is_none());
+        assert!(index_con.borrow().get("lie-soup").is_none());
+
+        fm.rename_note_file(index_con.clone(), "atlas", String::from("Atlantis"))
+            .unwrap();
+        fm.rename_note_file(index_con.clone(), "lie-group", String::from("Lie Soup"))
+            .unwrap();
+
         std::thread::sleep(std::time::Duration::from_secs(2));
 
         let (modifications, mut id_changes) = index_con.borrow_mut().handle_file_events().unwrap();
