@@ -339,6 +339,7 @@ impl super::Screen for DisplayScreen {
                             error::RucolaError::Input("New name is empty.".to_string())
                         })?,
                     )?;
+                    self.index.borrow().poll_file_system();
                 }
                 _ => {
                     self.name_area.input(key);
@@ -358,6 +359,7 @@ impl super::Screen for DisplayScreen {
                             error::RucolaError::Input("Move location is empty.".to_string())
                         })?,
                     )?;
+                    self.index.borrow().poll_file_system();
                 }
 
                 _ => {
@@ -369,6 +371,7 @@ impl super::Screen for DisplayScreen {
                     // delete it from index & filesystem
                     self.manager
                         .delete_note_file(self.index.clone(), &data::name_to_id(&self.note.name))?;
+                    self.index.borrow().poll_file_system();
                     return Ok(ui::Message::DisplayStackPop);
                 }
                 _ => {

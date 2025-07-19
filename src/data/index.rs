@@ -205,6 +205,11 @@ impl NoteIndex {
             .sorted_by(|(id1, _), (id2, _)| id1.cmp(id2))
             .collect()
     }
+
+    /// Requests this index to update itself to be in sync with the tracked file system.
+    pub fn poll_file_system(&self) {
+        self.tracker.poll_file_system();
+    }
 }
 
 #[cfg(test)]

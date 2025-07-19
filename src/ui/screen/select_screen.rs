@@ -405,6 +405,7 @@ impl super::Screen for SelectScreen {
                             self.manager
                                 .delete_note_file(self.index.clone(), &env_stats.id)?;
                             // if successfull, refresh the ui
+                            self.index.borrow().poll_file_system();
                             self.refresh_env_stats();
                         }
                         self.mode = SelectMode::Select;
@@ -469,6 +470,7 @@ impl super::Screen for SelectScreen {
                                         })?,
                                 )?;
                                 // if successfull, refresh the ui
+                                self.index.borrow().poll_file_system();
                                 self.refresh_env_stats();
                             }
                             SelectMode::Rename => {
@@ -486,7 +488,8 @@ impl super::Screen for SelectScreen {
                                                 )
                                             })?,
                                     )?;
-                                    // if successfull, refresh the ui
+                                    // if successfull, update the index and refresh the ui
+                                    self.index.borrow().poll_file_system();
                                     self.refresh_env_stats();
                                 }
                             }
@@ -506,6 +509,7 @@ impl super::Screen for SelectScreen {
                                             })?,
                                     )?;
                                     // if successfull, refresh the ui
+                                    self.index.borrow().poll_file_system();
                                     self.refresh_env_stats();
                                 }
                             }
