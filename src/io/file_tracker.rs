@@ -114,6 +114,14 @@ impl FileTracker {
     pub fn try_events_iter(&self) -> TryIter<'_, Result<notify::Event, notify::Error>> {
         self.file_change_channel.try_iter()
     }
+
+    /// Syncs the tracker right now with the files its tracking
+    pub fn poll_file_system(&self) {
+        #[cfg(target_os = "macos")]
+        {
+            self.watcher.poll();
+        }
+    }
 }
 #[cfg(test)]
 mod tests {
