@@ -18,23 +18,20 @@ impl GitManager {
     }
 
     /// Calculates how many commits the current branch is ahead/behind compared to its origin.
-    /// TODO: remove unwraps
-    pub fn calculate_ahead_behind(&self) -> (usize, usize) {
-        let head = self.git_repo.head().unwrap();
-        let head_id = head.target().unwrap();
+    pub fn calculate_ahead_behind(&self) -> Option<(usize, usize)> {
+        let head = self.git_repo.head().ok()?;
+        let head_id = head.target()?;
 
         let branch = self
             .git_repo
             .find_branch(head.shorthand().unwrap(), git2::BranchType::Local)
             .unwrap();
 
-        let upstream = branch.upstream().unwrap();
+        let upstream = branch.upstream().ok()?;
 
-        let upstream_id = upstream.get().target().unwrap();
+        let upstream_id = upstream.get().target()?;
 
-        self.git_repo
-            .graph_ahead_behind(head_id, upstream_id)
-            .unwrap()
+        self.git_repo.graph_ahead_behind(head_id, upstream_id).ok()
     }
 
     /// Checks if there are any untracked or uncommited changes in the repository at the current time.

@@ -15,8 +15,6 @@ enum SelectMode {
     SubmenuFile,
     /// Sorting submenu
     SubmenuSorting,
-    /// Git submenu
-    SubmenuGit,
     /// Typing into the filter box.
     Filter,
     /// Show the help screen for the filter box.
@@ -279,10 +277,6 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('m' | 'M') => {
                     self.mode = SelectMode::SubmenuFile;
                 }
-                // G: Got to file management submenu
-                KeyCode::Char('g' | 'G') => {
-                    self.mode = SelectMode::SubmenuGit;
-                }
                 // S: Got to sorting submenu
                 KeyCode::Char('s' | 'S') => {
                     self.mode = SelectMode::SubmenuSorting;
@@ -525,24 +519,6 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
-            SelectMode::SubmenuGit => match key.code {
-                KeyCode::Char('c' | 'C') => {
-                    self.mode = SelectMode::Select;
-                }
-                KeyCode::Char('p' | 'P') => {
-                    self.mode = SelectMode::Select;
-                }
-                KeyCode::Char('f' | 'F') => {
-                    self.mode = SelectMode::Select;
-                }
-                KeyCode::Char('u' | 'U') => {
-                    self.mode = SelectMode::Select;
-                }
-                KeyCode::Esc | KeyCode::Char('g' | 'G') => {
-                    self.mode = SelectMode::Select;
-                }
-                _ => {}
-            },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
                 KeyCode::Char('a' | 'A') => {
@@ -660,7 +636,6 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Rename
                 | SelectMode::Move
                 | SelectMode::SubmenuFile
-                | SelectMode::SubmenuGit
                 | SelectMode::SubmenuSorting => Some(self.selected),
                 SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
             });
@@ -684,6 +659,35 @@ impl super::Screen for SelectScreen {
         ])
         .left_aligned();
 
+        // Display some git info:
+        let git_info = if let Some(git_manager) = &self.git_manager {
+            let mut info = "Git ".to_owned();
+            let (ahead, behind) = git_manager.calculate_ahead_behind().unwrap_or((0, 0));
+            let (untracked, uncommited) = git_manager.changes();
+
+            if ahead > 0 {
+                info.push_str("^");
+            }
+
+            if behind > 0 {
+                info.push_str("v");
+            }
+
+            if untracked {
+                info.push_str("!");
+            }
+
+            if uncommited {
+                info.push_str("+");
+            }
+
+            info.push_str("──");
+
+            info
+        } else {
+            String::new()
+        };
+
         let instructions_bot_right = Line::from(vec![
             Span::styled("E", self.styles.hotkey_style),
             Span::styled("dit──", self.styles.text_style),
@@ -691,8 +695,7 @@ impl super::Screen for SelectScreen {
             Span::styled("iew──", self.styles.text_style),
             Span::styled("S", self.styles.hotkey_style),
             Span::styled("orting──", self.styles.text_style),
-            Span::styled("G", self.styles.hotkey_style),
-            Span::styled("it─", self.styles.text_style),
+            Span::styled(git_info, self.styles.text_style),
             Span::styled("M", self.styles.hotkey_style),
             Span::styled("anage Files──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
@@ -769,21 +772,13 @@ impl super::Screen for SelectScreen {
 
         // Render possible pop-ups
         match self.mode {
-            SelectMode::SubmenuFile | SelectMode::SubmenuSorting | SelectMode::SubmenuGit => {
-                let mut contents = if self.mode == SelectMode::SubmenuFile {
+            SelectMode::SubmenuFile | SelectMode::SubmenuSorting => {
+                let contents = if self.mode == SelectMode::SubmenuFile {
                     vec![
                         ("N", "New note"),
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
                         ("D", "Delete selected note"),
-                    ]
-                } else if self.mode == SelectMode::SubmenuGit {
-                    vec![
-                        ("A", "Add All"),
-                        ("C", "Commit"),
-                        ("P", "Push"),
-                        ("F", "Fetch"),
-                        ("U", "Pull"),
                     ]
                 } else {
                     vec![
@@ -801,54 +796,6 @@ impl super::Screen for SelectScreen {
                 .iter()
                 .map(|(a, b)| (a.to_string(), b.to_string()))
                 .collect_vec();
-
-                // If in git mode, calculate & display some information.
-                if self.mode == SelectMode::SubmenuGit {
-                    if let Some(git_manager) = &self.git_manager {
-                        let (ahead, behind) = git_manager.calculate_ahead_behind();
-                        let (untracked, uncommited) = git_manager.changes();
-
-                        if ahead > 0 {
-                            contents.insert(
-                                0,
-                                (
-                                    String::new(),
-                                    format!(
-                                        "{} commit{} ahead",
-                                        ahead,
-                                        if ahead > 1 { "s" } else { "" }
-                                    ),
-                                ),
-                            );
-                        }
-
-                        if behind > 0 {
-                            contents.insert(
-                                0,
-                                (
-                                    String::new(),
-                                    format!(
-                                        "{} commit{} behind",
-                                        behind,
-                                        if behind > 1 { "s" } else { "" }
-                                    ),
-                                ),
-                            );
-                        }
-
-                        if ahead == 0 && behind == 0 {
-                            contents.insert(0, (String::new(), "Up to Date".to_string()));
-                        }
-
-                        if untracked {
-                            contents.insert(0, (String::new(), "Untracked changes".to_string()));
-                        }
-
-                        if uncommited {
-                            contents.insert(0, (String::new(), "Uncommited changes".to_string()));
-                        }
-                    }
-                }
 
                 let popup_areas = Layout::vertical([
                     Constraint::Fill(1),

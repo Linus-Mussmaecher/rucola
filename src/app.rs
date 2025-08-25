@@ -19,8 +19,6 @@ pub struct App {
     // === CONFIG ===
     /// The file manager this app's screens use to enact the user's file system requests on the file system.
     manager: io::FileManager,
-    /// The git repository the vault is stored in, if any.
-    git_manager: Option<io::GitManager>,
     /// The HtmlBuider this app's screens use to continuously build html files.
     builder: io::HtmlBuilder,
     /// The styles used by this app's screens.
@@ -105,7 +103,7 @@ impl App {
                 select: ui::screen::SelectScreen::new(
                     index.clone(),
                     manager.clone(),
-                    git_manager.clone(),
+                    git_manager,
                     builder.clone(),
                     styles,
                     config.stats_show,
@@ -115,7 +113,6 @@ impl App {
                 index,
                 styles,
                 manager,
-                git_manager,
                 builder,
             },
             errors,

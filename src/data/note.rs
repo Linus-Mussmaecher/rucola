@@ -160,7 +160,7 @@ impl Note {
     }
 
     /// Converts this note to a small ratatui table displaying its most vital stats.
-    pub fn to_stats_table(&self, styles: &ui::UiStyles) -> Table {
+    pub fn to_stats_table(&self, styles: &ui::UiStyles) -> Table<'_> {
         let stats_widths = [
             Constraint::Length(8),
             Constraint::Length(12),
