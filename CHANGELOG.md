@@ -1,4 +1,10 @@
 # Version 0.6.0 - YAML frontmatter
+ - Added minor git integration.
+   If rucola detects a git repo in its vault path, it will display
+     - a `!` if there are untracked changes.
+     - a `+` if there are uncommited changes.
+     - a `^` if the branch is ahead of the remote.
+     - a `v` if the branch is behind the remote.
  - Added support for YAML frontmatter.
    - You can now specify a title in the frontmatter that will override the title inferred from the file name.
    The title added this way is only used for display, not for linking or other internal purposes.

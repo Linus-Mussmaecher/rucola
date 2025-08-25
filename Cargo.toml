@@ -1,6 +1,6 @@
 [package]
 name = "rucola-notes"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["linus.mussmaecher@gmail.com"]
 edition = "2021"
 description = "Terminal-based markdown note manager."
