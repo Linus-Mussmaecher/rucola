@@ -281,7 +281,10 @@ impl super::Screen for SelectScreen {
                 }
                 // G: Got to file management submenu
                 KeyCode::Char('g' | 'G') => {
-                    self.mode = SelectMode::SubmenuGit;
+                    // Only go to git menu if a git repo is found.
+                    if self.git_manager.is_some() {
+                        self.mode = SelectMode::SubmenuGit;
+                    }
                 }
                 // S: Got to sorting submenu
                 KeyCode::Char('s' | 'S') => {
@@ -526,7 +529,16 @@ impl super::Screen for SelectScreen {
                 };
             }
             SelectMode::SubmenuGit => match key.code {
+                KeyCode::Char('a' | 'A') => {
+                    if let Some(git_manager) = &self.git_manager {
+                        git_manager.add_all()?;
+                    }
+                    self.mode = SelectMode::Select;
+                }
                 KeyCode::Char('c' | 'C') => {
+                    if let Some(git_manager) = &self.git_manager {
+                        git_manager.commit()?;
+                    }
                     self.mode = SelectMode::Select;
                 }
                 KeyCode::Char('p' | 'P') => {
@@ -691,8 +703,19 @@ impl super::Screen for SelectScreen {
             Span::styled("iew──", self.styles.text_style),
             Span::styled("S", self.styles.hotkey_style),
             Span::styled("orting──", self.styles.text_style),
-            Span::styled("G", self.styles.hotkey_style),
-            Span::styled("it─", self.styles.text_style),
+            // Display git menu only if a git repo is found.
+            Span::styled(
+                if self.git_manager.is_some() { "G" } else { "" },
+                self.styles.hotkey_style,
+            ),
+            Span::styled(
+                if self.git_manager.is_some() {
+                    "it──"
+                } else {
+                    ""
+                },
+                self.styles.text_style,
+            ),
             Span::styled("M", self.styles.hotkey_style),
             Span::styled("anage Files──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
@@ -805,7 +828,8 @@ impl super::Screen for SelectScreen {
                 // If in git mode, calculate & display some information.
                 if self.mode == SelectMode::SubmenuGit {
                     if let Some(git_manager) = &self.git_manager {
-                        let (ahead, behind) = git_manager.calculate_ahead_behind();
+                        let (ahead, behind) =
+                            git_manager.calculate_ahead_behind().unwrap_or((0, 0));
                         let (untracked, uncommited) = git_manager.changes();
 
                         if ahead > 0 {
@@ -836,9 +860,9 @@ impl super::Screen for SelectScreen {
                             );
                         }
 
-                        if ahead == 0 && behind == 0 {
-                            contents.insert(0, (String::new(), "Up to Date".to_string()));
-                        }
+                        // if ahead == 0 && behind == 0 {
+                        //     contents.insert(0, (String::new(), "Up to Date".to_string()));
+                        // }
 
                         if untracked {
                             contents.insert(0, (String::new(), "Untracked changes".to_string()));

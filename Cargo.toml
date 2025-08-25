@@ -27,6 +27,8 @@ clap = {version = "^4.5", features = ["derive"]}
 open = "^5"
 notify = "^8.0"
 git2 = "^0.20"
+chrono = "^0.4"
+gethostname = "^1.0"
 # Parsing
 comrak = "^0.39"
 # comrak = {git = "https://github.com/kivikakk/comrak.git", rev = "b67d406d3b101b93539c37a1ca75bff81ff8c149"}

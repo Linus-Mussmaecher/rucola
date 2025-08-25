@@ -37,7 +37,7 @@ impl NoteEnvStatistics {
     }
 
     /// Converts this note to a ratatui table row with its stats
-    fn to_row(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Option<Row> {
+    fn to_row(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Option<Row<'_>> {
         // generate the stats row for each element
         index.borrow().get(&self.id).map(|note| {
             Row::new(vec![
@@ -254,7 +254,11 @@ impl EnvironmentStats {
     }
 
     /// Converts this environemnt to a table of rows with the (sorted) notes contained in it.
-    pub fn to_note_table(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Table {
+    pub fn to_note_table(
+        &self,
+        index: data::NoteIndexContainer,
+        styles: &ui::UiStyles,
+    ) -> Table<'_> {
         // Calculate widths
         let notes_table_widths = [
             Constraint::Min(25),
@@ -277,7 +281,7 @@ impl EnvironmentStats {
     }
 
     /// Converts this environment statistics struct to a ratatui table with the basic, global stats.
-    pub fn to_global_stats_table(&self, styles: &ui::UiStyles) -> Table {
+    pub fn to_global_stats_table(&self, styles: &ui::UiStyles) -> Table<'_> {
         // Horizontal layout
         let stats_widths = [
             Constraint::Length(20),
@@ -314,7 +318,7 @@ impl EnvironmentStats {
     }
 
     /// Converts this environment statistics struct to a ratatui table with the full, local stats.
-    pub fn to_local_stats_table(&self, global: &Self, styles: &ui::UiStyles) -> Table {
+    pub fn to_local_stats_table(&self, global: &Self, styles: &ui::UiStyles) -> Table<'_> {
         // Horizontal layout
         let stats_widths = [
             Constraint::Length(20),
