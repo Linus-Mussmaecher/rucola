@@ -196,6 +196,22 @@ impl Note {
             Row::new(vec![
                 Cell::from("Chars:").style(styles.text_style),
                 Cell::from(format!("{:7}", self.characters)).style(styles.text_style),
+                Cell::from("Changed:").style(styles.text_style),
+                Cell::from(format!(
+                    "{}",
+                    self.last_modification
+                        .map(|st| {
+                            Into::<chrono::DateTime<chrono::offset::Local>>::into(st)
+                                .format("%Y-%m-%d %H:%M")
+                                .to_string()
+                        })
+                        .unwrap_or("".to_owned())
+                ))
+                .style(styles.text_style),
+            ]),
+            Row::new(vec![
+                Cell::from("").style(styles.text_style),
+                Cell::from("").style(styles.text_style),
                 Cell::from("Path:").style(styles.text_style),
                 Cell::from(self.path.to_str().unwrap_or_default()).style(styles.text_style),
             ]),

@@ -139,7 +139,7 @@ impl super::Screen for DisplayScreen {
         // Generate vertical layout
         let vertical = Layout::vertical([
             Constraint::Length(1),
-            Constraint::Length(4),
+            Constraint::Length(5),
             Constraint::Fill(1),
             Constraint::Fill(1),
         ]);

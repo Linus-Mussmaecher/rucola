@@ -35,6 +35,7 @@ regex = "^1.11"
 yaml-rust = "0.4"
 fuzzy-matcher = "^0.3"
 itertools = "^0.14"
+chrono = "^0.4"
 # Error handling
 thiserror = "^2.0"
 # Config

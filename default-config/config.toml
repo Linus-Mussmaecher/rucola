@@ -17,7 +17,7 @@ default_extension = "md"
 theme = "default_dark"
 # theme = "default_light"
 
-# What sort of stats to show on the main select screen.
+# The statistics to show on the main select screen.
 # stats_show = "Both"     # Always show both local and global stats.
 # stats_show = "Local"    # Always show only local stats.
 stats_show = "Relevant"   # Show global stats if there is no filter applied and local if there is.
