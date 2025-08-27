@@ -107,6 +107,8 @@ impl App {
                     builder.clone(),
                     styles,
                     config.stats_show,
+                    config.default_sorting,
+                    config.default_sorting_asc,
                 ),
                 display: None,
                 display_stack: Vec::new(),

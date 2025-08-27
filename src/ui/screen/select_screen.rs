@@ -92,6 +92,8 @@ impl SelectScreen {
         builder: io::HtmlBuilder,
         styles: ui::UiStyles,
         stats_show: StatsShow,
+        default_sorting: data::SortingMode,
+        default_sorting_asc: bool,
     ) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
@@ -105,13 +107,14 @@ impl SelectScreen {
             name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
-            sorting: data::SortingMode::Name,
-            sorting_asc: true,
+            sorting: default_sorting,
+            sorting_asc: default_sorting_asc,
             selected: 0,
             stats_show,
         };
 
-        res.local_stats.sort(index, data::SortingMode::Name, true);
+        res.local_stats
+            .sort(index, default_sorting, default_sorting_asc);
 
         res.style_text_area();
 
@@ -553,6 +556,10 @@ impl super::Screen for SelectScreen {
                     self.set_mode_and_maybe_sort(data::SortingMode::Broken, false);
                     self.mode = SelectMode::Select;
                 }
+                KeyCode::Char('t' | 'T') => {
+                    self.set_mode_and_maybe_sort(data::SortingMode::LastModified, false);
+                    self.mode = SelectMode::Select;
+                }
                 KeyCode::Char('r' | 'R') => {
                     self.set_mode_and_maybe_sort(None, !self.sorting_asc);
                     self.mode = SelectMode::Select;
@@ -790,6 +797,7 @@ impl super::Screen for SelectScreen {
                         ("I", "Sort by global inlinks"),
                         ("N", "Sort by local inlinks"),
                         ("B", "Sort by broken links"),
+                        ("T", "Sort by last modified"),
                         ("R", "Reverse sorting"),
                     ]
                 }
