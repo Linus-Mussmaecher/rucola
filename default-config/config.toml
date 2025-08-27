@@ -23,6 +23,15 @@ theme = "default_dark"
 stats_show = "Relevant"   # Show global stats if there is no filter applied and local if there is.
 
 
+# Default sorting mode for notes on the main select screen.
+# Available options: "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 
+# "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified"
+default_sorting = "Name"
+
+# Default sorting direction (true for ascending, false for descending)
+default_sorting_asc = true
+
+
 # The default editor to use for editing notes.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note when calling this command.
