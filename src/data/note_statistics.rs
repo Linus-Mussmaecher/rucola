@@ -55,7 +55,7 @@ impl NoteEnvStatistics {
 }
 
 /// Describes the current sorting mode of the displayed list.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum SortingMode {
     #[default]
     Name,
@@ -67,6 +67,7 @@ pub enum SortingMode {
     LocalInLinks,
     Score,
     Broken,
+    LastModified,
 }
 
 /// A data struct containing statistical information about a (subset of a) user's notes.
@@ -235,6 +236,16 @@ impl EnvironmentStats {
                         SortingMode::LocalInLinks => env_stats.inlinks_local,
                         SortingMode::Score => env_stats.match_score as usize,
                         SortingMode::Broken => env_stats.broken_links,
+                        SortingMode::LastModified => {
+                            // Get the file's modification time as seconds since epoch
+                            note.path
+                                .metadata()
+                                .and_then(|m| m.modified())
+                                .ok()
+                                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                                .map(|d| d.as_secs() as usize)
+                                .unwrap_or(0)
+                        }
                     }
                 } else {
                     0

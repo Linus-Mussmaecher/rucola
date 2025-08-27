@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path};
 
-use crate::{error, ui};
+use crate::{data, error, ui};
 
 /// The file format a viewer expects.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -28,6 +28,10 @@ pub struct Config {
     pub(crate) theme: String,
     /// When to show the global stats area
     pub(crate) stats_show: ui::screen::StatsShow,
+    /// Default sorting mode for notes
+    pub(crate) default_sorting: data::SortingMode,
+    /// Default sorting direction (true for ascending, false for descending)
+    pub(crate) default_sorting_asc: bool,
     /// The editor to use for notes.
     pub(crate) editor: Option<Vec<String>>,
     /// Main viewer to inspect rendered notes.
@@ -58,6 +62,8 @@ impl Default for Config {
             default_extension: String::from("md"),
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
+            default_sorting: data::SortingMode::Name,
+            default_sorting_asc: true,
             editor: None,
             viewer_type: Some(ViewerType::Html),
             viewer: Some(vec![String::from("firefox"), String::from("%p")]),
