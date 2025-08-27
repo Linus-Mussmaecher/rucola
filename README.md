@@ -131,7 +131,7 @@ LaTeX compilation & macro system is facilitated by [KaTeX](https://katex.org/) w
 ## License
 Rucola is released under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0).
 
-Copyright (C) 2024 Linus Mußmächer <linus.mussmaecher@gmail.com>
+Copyright (C) 2024 Linus Mußmächer <linus@mussmaecher.de>
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

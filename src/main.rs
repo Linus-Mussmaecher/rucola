@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>
+// Copyright (C) 2024 Linus Mussmaecher <linus@mussmaecher.de>
 use clap::Parser;
 use ratatui::crossterm::{event, terminal, ExecutableCommand};
 use ratatui::prelude::*;
@@ -23,7 +23,7 @@ pub use config::Config;
 /// This program comes with ABSOLUTELY NO WARRANTY.
 /// This is free software, and you are welcome to redistribute it under certain conditions.
 /// Type `rucola --license` for details.
-/// Copyright (C) 2024 Linus Mussmaecher <linus.mussmaecher@gmail.com>.
+/// Copyright (C) 2024 Linus Mussmaecher <linus@mussmaecher.de.
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Arguments {
@@ -169,7 +169,7 @@ fn restore_terminal() -> std::io::Result<()> {
 fn print_license() {
     print!("Rucola is released under the GNU General Public License v3, available at <https://www.gnu.org/licenses/gpl-3.0>.
 
-Copyright (C) 2024 Linus Mußmächer <linus.mussmaecher@gmail.com>
+Copyright (C) 2024 Linus Mußmächer <linus@mussmaecher.de>
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

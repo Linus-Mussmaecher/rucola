@@ -62,7 +62,7 @@
         Id='*'
         Name='rucola-notes'
         UpgradeCode='0581E782-1C3D-4B56-96EA-AC0AD9AB83A5'
-        Manufacturer='linus.mussmaecher@gmail.com'
+        Manufacturer='linus@mussmaecher.de'
         Language='1033'
         Codepage='1252'
         Version='$(var.Version)'>
@@ -70,7 +70,7 @@
         <Package Id='*'
             Keywords='Installer'
             Description='Terminal-based markdown note manager.'
-            Manufacturer='linus.mussmaecher@gmail.com'
+            Manufacturer='linus@mussmaecher.de'
             InstallerVersion='450'
             Languages='1033'
             Compressed='yes'
