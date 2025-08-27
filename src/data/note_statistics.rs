@@ -238,13 +238,11 @@ impl EnvironmentStats {
                         SortingMode::Broken => env_stats.broken_links,
                         SortingMode::LastModified => {
                             // Get the file's modification time as seconds since epoch
-                            note.path
-                                .metadata()
-                                .and_then(|m| m.modified())
-                                .ok()
+                            note.last_modification
                                 .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                                 .map(|d| d.as_secs() as usize)
-                                .unwrap_or(0)
+                                // If no time since modification can be determined, use a value that will put this note at the end of the sorted list.
+                                .unwrap_or(if ascending { usize::MAX } else { usize::MIN })
                         }
                     }
                 } else {

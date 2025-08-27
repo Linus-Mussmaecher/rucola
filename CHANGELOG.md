@@ -1,3 +1,7 @@
+# Version 0.7.0 - Additional sorting options
+ - Added the possibility to sort by the date of the last modification to the note.
+ - Added the option to specify a default sorting direction and mode in the configuration file.
+
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.
    If rucola detects a git repo in its vault path, it will display

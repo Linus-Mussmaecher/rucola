@@ -1,5 +1,5 @@
 use ratatui::{prelude::*, widgets::*};
-use std::{fmt::Debug, fs, path};
+use std::{fmt::Debug, fs, path, time};
 
 use itertools::Itertools;
 
@@ -22,6 +22,8 @@ pub struct Note {
     pub characters: usize,
     /// A copy of the path leading to this note.
     pub path: path::PathBuf,
+    /// The date and time when the note was last modified.
+    pub last_modification: Option<time::SystemTime>,
 }
 
 impl Note {
@@ -122,6 +124,8 @@ impl Note {
                 .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
             // Path: Already given - convert to owned version.
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
+            // Modification: Can be read from the metadata of the path.
+            last_modification: path.metadata().and_then(|m| m.modified()).ok(),
             // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
             // Finally, append tags specified in the YAML frontmatter.
             tags: root

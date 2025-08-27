@@ -556,7 +556,7 @@ impl super::Screen for SelectScreen {
                     self.set_mode_and_maybe_sort(data::SortingMode::Broken, false);
                     self.mode = SelectMode::Select;
                 }
-                KeyCode::Char('t' | 'T') => {
+                KeyCode::Char('m' | 'M') => {
                     self.set_mode_and_maybe_sort(data::SortingMode::LastModified, false);
                     self.mode = SelectMode::Select;
                 }
@@ -797,7 +797,7 @@ impl super::Screen for SelectScreen {
                         ("I", "Sort by global inlinks"),
                         ("N", "Sort by local inlinks"),
                         ("B", "Sort by broken links"),
-                        ("T", "Sort by last modified"),
+                        ("M", "Sort by last modification"),
                         ("R", "Reverse sorting"),
                     ]
                 }
