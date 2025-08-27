@@ -224,11 +224,11 @@ impl SelectScreen {
     fn filter(&mut self, filter: data::Filter) {
         // actual filtering
         self.local_stats = data::EnvironmentStats::new_with_filter(&self.index, filter);
-        // reset sorting
-        self.sorting_asc = false;
-        self.sorting = data::SortingMode::Score;
+        // // reset sorting
+        // self.sorting_asc = false;
+        // self.sorting = data::SortingMode::Score;
         self.local_stats
-            .sort(self.index.clone(), self.sorting, self.sorting_asc);
+            .sort(self.index.clone(), data::SortingMode::Score, false);
         // on a new filter, select the first element
         self.selected = 0;
     }
@@ -296,6 +296,8 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('c' | 'C') => {
                     let _ = super::extract_string_and_clear(&mut self.filter_area);
                     self.filter(data::Filter::default());
+                    self.local_stats
+                        .sort(self.index.clone(), self.sorting, self.sorting_asc);
                 }
                 // T: Change all/any words requirement
                 KeyCode::Char('a' | 'A') => {

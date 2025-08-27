@@ -1,6 +1,7 @@
-# Version 0.7.0 - Additional sorting options
+# Version 0.7.0 - Sorting
  - Added the possibility to sort by the date of the last modification to the note.
  - Added the option to specify a default sorting direction and mode in the configuration file.
+ - Filtering will no longer override your current sort option, instead clearing the filter will reset your sorting mode and direction to your previous choice.
 
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.

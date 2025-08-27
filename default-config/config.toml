@@ -25,7 +25,8 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 
 # Default sorting mode for notes on the main select screen.
 # Available options: "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 
-# "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified"
+# "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified".
+# The "Score"-Option generally only makes sense with a filter applied and should not be chosen.
 default_sorting = "Name"
 
 # Default sorting direction (true for ascending, false for descending)
@@ -51,7 +52,7 @@ viewer = ["firefox", "%p"]
 
 # Preferred file type of the main viewer.
 # Possible values are "Html" and "Markdown", if none is given, "Html" is assumed.
-# viewer_type = "Html"
+viewer_type = "Html"
 
 # Alternative viewer to inspect rendered notes.
 # The first element is the command, the others will be used as positional arguments.
