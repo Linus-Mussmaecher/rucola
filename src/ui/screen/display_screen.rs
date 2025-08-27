@@ -453,7 +453,7 @@ impl DisplayScreen {
             .unwrap_or_default();
 
         // create default surrounding block
-        let block = Block::bordered().title_top(title).title_bottom(count);
+        let block = Block::bordered().title_top(title).title_top(count);
 
         // in some places, add instructions
         let block = match index {
