@@ -666,19 +666,19 @@ impl super::Screen for SelectScreen {
             let (untracked, uncommited) = git_manager.changes();
 
             if ahead > 0 {
-                info.push_str("^");
+                info.push('');
             }
 
             if behind > 0 {
-                info.push_str("v");
+                info.push('');
             }
 
             if untracked {
-                info.push_str("!");
+                info.push('!');
             }
 
             if uncommited {
-                info.push_str("+");
+                info.push('+');
             }
 
             info.push_str("──");
