@@ -274,7 +274,7 @@ impl FileManager {
             // Try the $EDITOR variable
             .or_else(|| {
                 std::env::var("EDITOR").ok().map(|editor| {
-                    let mut cmd = process::Command::new((editor));
+                    let mut cmd = process::Command::new(editor);
                     cmd.arg(path.canonicalize().as_ref().unwrap_or(path));
                     cmd
                 })

@@ -197,16 +197,15 @@ impl Note {
                 Cell::from("Chars:").style(styles.text_style),
                 Cell::from(format!("{:7}", self.characters)).style(styles.text_style),
                 Cell::from("Changed:").style(styles.text_style),
-                Cell::from(format!(
-                    "{}",
+                Cell::from(
                     self.last_modification
                         .map(|st| {
                             Into::<chrono::DateTime<chrono::offset::Local>>::into(st)
                                 .format("%Y-%m-%d %H:%M")
                                 .to_string()
                         })
-                        .unwrap_or("".to_owned())
-                ))
+                        .unwrap_or("".to_owned().to_string()),
+                )
                 .style(styles.text_style),
             ]),
             Row::new(vec![

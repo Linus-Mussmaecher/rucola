@@ -28,7 +28,7 @@ enum SelectMode {
 }
 
 /// Describes when to show a which stats area.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Default)]
 pub enum StatsShow {
     // Always shows both stats
     #[default]
@@ -91,9 +91,7 @@ impl SelectScreen {
         git_manager: Option<io::GitManager>,
         builder: io::HtmlBuilder,
         styles: ui::UiStyles,
-        stats_show: StatsShow,
-        default_sorting: data::SortingMode,
-        default_sorting_asc: bool,
+        config: &crate::Config,
     ) -> Self {
         let mut res = Self {
             local_stats: data::EnvironmentStats::new_with_filter(&index, data::Filter::default()),
@@ -107,14 +105,14 @@ impl SelectScreen {
             name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
-            sorting: default_sorting,
-            sorting_asc: default_sorting_asc,
+            sorting: config.default_sorting,
+            sorting_asc: config.default_sorting_asc,
             selected: 0,
-            stats_show,
+            stats_show: config.stats_show,
         };
 
         res.local_stats
-            .sort(index, default_sorting, default_sorting_asc);
+            .sort(index, config.default_sorting, config.default_sorting_asc);
 
         res.style_text_area();
 
