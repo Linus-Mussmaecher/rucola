@@ -273,9 +273,11 @@ impl FileManager {
             })
             // Try the $EDITOR variable
             .or_else(|| {
-                std::env::var("EDITOR")
-                    .ok()
-                    .map(|editor| open::with_command(path, editor))
+                std::env::var("EDITOR").ok().map(|editor| {
+                    let mut cmd = process::Command::new((editor));
+                    cmd.arg(path.canonicalize().as_ref().unwrap_or(path));
+                    cmd
+                })
             })
             // if it was not there, take the default command
             .or_else(|| open::commands(path).pop())
