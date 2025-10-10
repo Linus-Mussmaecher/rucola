@@ -8,6 +8,9 @@
 [<img alt="test status" src="https://img.shields.io/github/actions/workflow/status/Linus-Mussmaecher/rucola/continuous-testing.yml?label=tests&branch=main&labelColor=555555&style=for-the-badge">](https://github.com/Linus-Mussmaecher/rucola/actions?query=branch%3Amain)
 [<img alt="cratesio" src="https://img.shields.io/crates/v/rucola-notes.svg?labelColor=555555&color=417a5a&logo=linux-containers&style=for-the-badge">](https://crates.io/crates/rucola-notes)
 [<img alt="arch-user-repository" src="https://img.shields.io/archlinux/v/extra/x86_64/rucola.svg?labelColor=555555&color=1793d1&logo=arch-linux&style=for-the-badge">](https://archlinux.org/packages/extra/x86_64/rucola/)
+[<img alt="repology" src="https://img.shields.io/repology/repositories/rucola?labelColor=555555&color=44a544&logo=linux-containers&style=for-the-badge">](https://repology.org/project/rucola/packages)
+
+
 
 Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
 
@@ -84,13 +87,19 @@ Rucola has no requirements, but a [Nerd font](https://www.nerdfonts.com) may be 
 For installation instructions via shell script, `.msi`, homebrew or tarball, see the [latest release](https://github.com/Linus-Mussmaecher/rucola/releases).
 These installers are generated using [`cargo dist`](https://github.com/axodotdev/cargo-dist) and are provided for Windows, Mac and Linux.
 
-#### Arch Linux
+#### Packages
 
-You can install `rucola` from the [official repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
+<a href="https://repology.org/project/rucola/versions">
+    <img src="https://repology.org/badge/vertical-allrepos/rucola.svg" alt="Packaging status" align="right">
+</a>
+
+You can install `rucola` from the [official Arch User Repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
 
 ```
 pacman -S rucola
 ```
+
+Rucola is also packaged for some other distributions as seen on the right.
 
 #### Crates.io
 Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
