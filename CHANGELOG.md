@@ -5,6 +5,8 @@
  - Fixed a bug that caused rucola to sometimes fail to open the editor specified in the `$EDITOR` environment variable when on Mac.
  - Fixed a bug that caused parts of the file to be interpreted as YAML frontmatter when using breaks.
  - Fixed a bug that caused YAML frontmatter to be part of the parsed HTML files.
+ - Added information about viewers and viewing keys to the default config file.
+ - Fixed an error that caused the number of links or backlinks to show at the bottom instead of the top of the tables in the display screen.
 
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.
