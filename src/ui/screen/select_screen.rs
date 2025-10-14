@@ -918,6 +918,9 @@ impl super::Screen for SelectScreen {
                     ]),
                 ];
 
+                // Pop-up should be as tall as the number of help dialog rows
+                // plus 2 rows for top and bottom border
+                let popup_height = help_rows.len() as u16 + 2;
                 let help_table = Table::new(help_rows, help_widths).column_spacing(1).block(
                     Block::bordered()
                         .title(style::Styled::set_style(
@@ -935,7 +938,7 @@ impl super::Screen for SelectScreen {
 
                 let popup_areas = Layout::vertical([
                     Constraint::Fill(1),
-                    Constraint::Length(10),
+                    Constraint::Length(popup_height),
                     Constraint::Fill(1),
                 ])
                 .split(area);
