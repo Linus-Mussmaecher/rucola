@@ -24,6 +24,8 @@ pub struct Note {
     pub path: path::PathBuf,
     /// The date and time when the note was last modified.
     pub last_modification: Option<time::SystemTime>,
+    /// Wether or not the note contains (valid) YAML frontmatter. If it does, this is the index of the beginning of the actual content.
+    pub yaml_frontmatter: Option<usize>,
 }
 
 impl Note {
@@ -32,28 +34,27 @@ impl Note {
         // Open the file.
         let content = fs::read_to_string(path)?;
 
-        // Create a regex to check for YAML front matter.
-        let regex = regex::Regex::new("---\n((.|\n)*)\n---\n((.|\n)*)")?;
+        let break_position = content.find("\n---\n");
 
-        // Extract both the YAML front matter, if present, and the main content.
-        let (yaml, content) = if let Some(matches) = regex.captures(&content) {
-            // If the regex matched, YAML front matter was present.
-            (
-                // The 1st capture group is the front matter.
-                matches.get(1).map(|m| m.as_str().to_owned()),
-                // The 3rd capture group is the actual content.
-                matches.get(3).unwrap().as_str().to_owned(),
-            )
+        let (title, tags, begin_content) = if let Some(break_position) = break_position {
+            let possible_frontmatter = content.split_at(break_position).0;
+
+            if let Ok((title, tags)) =
+                Self::parse_yaml(possible_frontmatter.trim_start_matches("---"))
+            {
+                (title, tags, Some(break_position + 5))
+            } else {
+                (None, Vec::new(), None)
+            }
         } else {
-            // If the regex didn't match, then just use the content.
-            (None, content)
+            (None, Vec::new(), None)
         };
 
         // Parse markdown into AST
         let arena = comrak::Arena::new();
         let root = comrak::parse_document(
             &arena,
-            &content,
+            content.split_at(begin_content.unwrap_or(0)).1,
             &comrak::Options {
                 extension: comrak::ExtensionOptions::builder()
                     .wikilinks_title_after_pipe(true)
@@ -63,51 +64,6 @@ impl Note {
         );
 
         // Parse YAML.
-        let (title, tags) = if let Some(yaml) = yaml {
-            let docs = yaml_rust::YamlLoader::load_from_str(&yaml)?;
-            let doc = &docs[0];
-
-            // Check if there was a title specified.
-            let title = doc["title"].as_str().map(|s| s.to_owned());
-
-            // Check if tags were specified.
-            let tags = doc["tags"]
-                // Convert the entry into a vec - if the entry isn't there, use an empty vec.
-                .as_vec()
-                .unwrap_or(&Vec::new())
-                .iter()
-                // Convert the individual entries into strs, as rust-yaml doesn't do nested lists.
-                .flat_map(|v| v.as_str())
-                // Convert those into Strings and prepend the #.
-                .flat_map(|s| {
-                    // Entries of sublists will appear as separated by ` - `, so split by that.
-                    let parts = s.split(" - ").collect_vec();
-
-                    if parts.is_empty() {
-                        // This should not happen.
-                        Vec::new()
-                    } else if parts.len() == 1 {
-                        // Only one parts => There were not subtags. Simply prepend a `#`.
-                        vec![format!("#{}", s)]
-                    } else {
-                        // More than 1 part => There were subtags.
-                        let mut res = Vec::new();
-
-                        // Iterate through all of the substrings except for the first, which is the supertag.
-                        for subtag in parts.iter().skip(1) {
-                            res.push(format!("#{}/{}", parts[0], subtag));
-                        }
-
-                        res
-                    }
-                })
-                // Collect all tags in a vec.
-                .collect_vec();
-
-            (title, tags)
-        } else {
-            (None, Vec::new())
-        };
 
         Ok(Self {
             // Name: Check if there was one specified in the YAML fronmatter.
@@ -160,6 +116,8 @@ impl Note {
             words: content.split_whitespace().count(),
             // Characters: Simply use the length of the string.
             characters: content.len(),
+            // YAML: We already set this bool.
+            yaml_frontmatter: begin_content,
         })
     }
 
@@ -217,6 +175,51 @@ impl Note {
         ];
 
         Table::new(stats_rows, stats_widths).column_spacing(1)
+    }
+
+    /// Takes a str that possibly contains YAML frontmatter and attempts to parse it into a title and a list of tags.
+    fn parse_yaml(yaml: &str) -> Result<(Option<String>, Vec<String>), yaml_rust::ScanError> {
+        let docs = yaml_rust::YamlLoader::load_from_str(yaml)?;
+        let doc = &docs[0];
+
+        // Check if there was a title specified.
+        let title = doc["title"].as_str().map(|s| s.to_owned());
+
+        // Check if tags were specified.
+        let tags = doc["tags"]
+            // Convert the entry into a vec - if the entry isn't there, use an empty vec.
+            .as_vec()
+            .unwrap_or(&Vec::new())
+            .iter()
+            // Convert the individual entries into strs, as rust-yaml doesn't do nested lists.
+            .flat_map(|v| v.as_str())
+            // Convert those into Strings and prepend the #.
+            .flat_map(|s| {
+                // Entries of sublists will appear as separated by ` - `, so split by that.
+                let parts = s.split(" - ").collect_vec();
+
+                if parts.is_empty() {
+                    // This should not happen.
+                    Vec::new()
+                } else if parts.len() == 1 {
+                    // Only one parts => There were not subtags. Simply prepend a `#`.
+                    vec![format!("#{}", s)]
+                } else {
+                    // More than 1 part => There were subtags.
+                    let mut res = Vec::new();
+
+                    // Iterate through all of the substrings except for the first, which is the supertag.
+                    for subtag in parts.iter().skip(1) {
+                        res.push(format!("#{}/{}", parts[0], subtag));
+                    }
+
+                    res
+                }
+            })
+            // Collect all tags in a vec.
+            .collect_vec();
+
+        Ok((title, tags))
     }
 }
 

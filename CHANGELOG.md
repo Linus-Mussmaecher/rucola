@@ -3,6 +3,8 @@
  - Added the option to specify a default sorting direction and mode in the configuration file.
  - Filtering will no longer override your current sort option, instead clearing the filter will reset your sorting mode and direction to your previous choice.
  - Fixed a bug that caused rucola to sometimes fail to open the editor specified in the `$EDITOR` environment variable when on Mac.
+ - Fixed a bug that caused parts of the file to be interpreted as YAML frontmatter when using breaks.
+ - Fixed a bug that caused YAML frontmatter to be part of the parsed HTML files.
 
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.

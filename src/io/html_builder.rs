@@ -73,7 +73,7 @@ impl HtmlBuilder {
         let arena = comrak::Arena::new();
         let root = comrak::parse_document(
             &arena,
-            &content,
+            content.split_at(note.yaml_frontmatter.unwrap_or(0)).1,
             &comrak::Options {
                 extension: comrak::ExtensionOptions::builder()
                     .wikilinks_title_after_pipe(true)
