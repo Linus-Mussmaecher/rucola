@@ -34,6 +34,7 @@ default_sorting_asc = true
 
 
 # The default editor to use for editing notes.
+# Can be called by pressing `e` or `E`/`Shift + e` while in the display or select screen.
 # The first element is the command, the others will be used as positional arguments.
 # An element "%p" will be replaced by the file path of the note when calling this command.
 # Comment out / leave unset to always use your system's default editor or $EDITOR environment variable.
@@ -43,6 +44,7 @@ default_sorting_asc = true
 
 
 # Main viewer to inspect rendered notes.
+# Can be called by pressing `v` while in the display or select screen.
 # The first element is the command, the others will be used as positional arguments.
 # Splitting arguments like this is _not_ optional - `["firefox -P Notes", "%p"]` will not work while `["firefox", "-P", "Notes", "%p"]` will.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
@@ -55,6 +57,7 @@ viewer = ["firefox", "%p"]
 viewer_type = "Html"
 
 # Alternative viewer to inspect rendered notes.
+# Can be called by pressing `V`/`Shift + v` while in the display or select screen.
 # The first element is the command, the others will be used as positional arguments.
 # Splitting arguments like this is _not_ optional - `["glow --tui", "%p"]` will not work while `["glow", "--tui", "%p"]` will.
 # When calling this command, An element "%p" will be replaced by the file path of the note's HTML or Markdown file, depending on the filetype specified down below.
