@@ -12,4 +12,5 @@ Despite only the tag #test appearing in this text, its tags should be
 
 - `test`
 - `files/yaml`
+- `files/markdown`
 - `abbreviations`

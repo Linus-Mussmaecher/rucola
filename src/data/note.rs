@@ -34,19 +34,32 @@ impl Note {
         // Open the file.
         let content = fs::read_to_string(path)?;
 
-        let break_position = content.find("\n---\n");
-
-        let (title, tags, begin_content) = if let Some(break_position) = break_position {
-            let possible_frontmatter = content.split_at(break_position).0;
-
-            if let Ok((title, tags)) =
-                Self::parse_yaml(possible_frontmatter.trim_start_matches("---"))
-            {
-                (title, tags, Some(break_position + 5))
+        // Attempt to identify YAML frontmatter
+        let (title, tags, begin_content) =
+        // File needs to start with three dashes.
+        if content.starts_with("---\n") {
+            // Then search for the next three dashes.
+            let break_position = content.find("\n---\n");
+            // If they exist,
+            if let Some(break_position) = break_position {
+                // Take everything in between
+                let possible_frontmatter = content.split_at(break_position).0;
+                // Attempt to parse it as YAML.
+                if let Ok((title, tags)) =
+                    Self::parse_yaml(possible_frontmatter.trim_start_matches("---\n"))
+                {
+                    // If it worked, return the parsed data and the start of the actual note.
+                    (title, tags, Some(break_position + 5))
+                } else {
+                    // Fail case: Parsing failed.
+                    (None, Vec::new(), None)
+                }
             } else {
+                // Fail case: File has no second ---.
                 (None, Vec::new(), None)
             }
         } else {
+            // Fail case: File doesn't start with ---.
             (None, Vec::new(), None)
         };
 
