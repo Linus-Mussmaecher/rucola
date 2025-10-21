@@ -229,9 +229,7 @@ impl FileManager {
         write!(
             file,
             "# {}",
-            path.file_stem()
-                .map(|fs| fs.to_string_lossy().to_string())
-                .unwrap_or_else(|| "note".to_owned())
+            crate::data::path_to_name(&path).unwrap_or_else(|_e| "Note".to_owned())
         )?;
 
         Ok(())

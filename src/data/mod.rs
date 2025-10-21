@@ -14,6 +14,8 @@ pub use index::NoteIndexContainer;
 
 use unicode_normalization::UnicodeNormalization;
 
+use crate::error;
+
 /// Turns a file name or link into its id in the following steps:
 ///  - normalize the unicode characters into their composed forms
 ///  - everything after the first # or ., including the # or ., is ignored
@@ -35,6 +37,13 @@ pub fn name_to_id(name: &str) -> String {
         .to_lowercase()
         .replace(' ', "-")
         .replace(".md", "")
+}
+
+/// Converts a path to the name of the file, removing the file extension.
+pub fn path_to_name(path: &std::path::Path) -> Result<String, error::RucolaError> {
+    path.file_stem()
+        .map(|os| os.to_string_lossy().to_string())
+        .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))
 }
 
 #[cfg(test)]
@@ -70,6 +79,46 @@ mod tests {
         assert_eq!(
             name_to_id(&format!("K{}rper.md", nfc_o)),
             name_to_id(&format!("k{}rper", nfd_o))
+        );
+    }
+
+    #[test]
+    fn test_path_name_conversion() {
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math/Lie-Theory.md")).unwrap(),
+            "Lie-Theory"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math-Stuff/lie-theory.md")).unwrap(),
+            "lie-theory"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math/Lie Theory.md")).unwrap(),
+            "Lie Theory"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math-Stuff/Lie Theory.md")).unwrap(),
+            "Lie Theory"
+        );
+    }
+
+    #[test]
+    fn test_path_name_conversion_unicode() {
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math/Körper.md")).unwrap(),
+            "Körper"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math-Stuff/körper.md")).unwrap(),
+            "körper"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math/Maß.md")).unwrap(),
+            "Maß"
+        );
+        assert_eq!(
+            path_to_name(std::path::Path::new("General/Math-Stuff/maß-einheiten.md")).unwrap(),
+            "maß-einheiten"
         );
     }
 }

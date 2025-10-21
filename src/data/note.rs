@@ -80,17 +80,10 @@ impl Note {
 
         Ok(Self {
             // Name: Check if there was one specified in the YAML fronmatter.
-            // If not, remove file extension.
-            display_name: title.unwrap_or(
-                path.file_stem()
-                    .map(|os| os.to_string_lossy().to_string())
-                    .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
-            ),
-            // File name: Remove file extension.
-            name: path
-                .file_stem()
-                .map(|os| os.to_string_lossy().to_string())
-                .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))?,
+            // If not, get the name from the path.
+            display_name: title.unwrap_or(super::path_to_name(path)?),
+            // File name: Get it from the path.
+            name: super::path_to_name(path)?,
             // Path: Already given - convert to owned version.
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Modification: Can be read from the metadata of the path.
