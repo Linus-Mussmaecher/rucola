@@ -100,8 +100,8 @@ impl Filter {
                         .chain(std::iter::once(tag.as_str()))
                     // flatten this so we have just an iterator over (sub)strs
                 })
-                // check if any of these substring is the searched tag
-                .any(|subtag| subtag == tag)
+                // check if any of these substring is the searched tag or, in case of a multi-word tag, the tag with appropriate replacements.
+                .any(|subtag| subtag == tag || subtag == tag.replace("-", " "))
             // now compare this to our expectation
             //  - inclusion: We _want_ one of them to be equal
             //  - exclusion: We _dont_ want one of them to be equal
@@ -293,5 +293,34 @@ mod tests {
         assert_eq!(filter4.links, vec![("smooth-map".to_string(), true),]);
         assert_eq!(filter4.blinks, vec![("atlas".to_string(), true)]);
         assert_eq!(filter4.title, "");
+    }
+
+    #[test]
+    fn test_filter_from_string_multi_word_tags() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 12);
+
+        // === Filter 2 ===
+
+        let filter2 = Filter::new("#funny-abbreviations", false);
+
+        assert_eq!(
+            filter2.tags,
+            vec![("#funny-abbreviations".to_string(), true),]
+        );
+
+        assert_eq!(filter2.links, vec![]);
+
+        assert_eq!(filter2.title, "");
+
+        let yamlformat = index.inner.get("note25").unwrap();
+        let chart = index.inner.get("chart").unwrap();
+
+        assert!(filter2.apply(yamlformat, &index).is_some());
+        assert!(filter2.apply(chart, &index).is_none());
     }
 }

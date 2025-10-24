@@ -952,6 +952,15 @@ impl super::Screen for SelectScreen {
                         Cell::from("Show notes without tag [tag].").style(self.styles.text_style),
                     ]),
                     Row::new(vec![
+                        Cell::from("").style(self.styles.subtitle_style),
+                        Cell::from("Use '-' instead of ' ' for multi-word tags.")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
+                        Cell::from(" ").style(self.styles.subtitle_style),
+                        Cell::from("").style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![
                         Cell::from(">[note]").style(self.styles.subtitle_style),
                         Cell::from("Show notes linking to [note].").style(self.styles.text_style),
                     ]),
@@ -970,6 +979,12 @@ impl super::Screen for SelectScreen {
                         Cell::from("Show notes not linked to from [note].")
                             .style(self.styles.text_style),
                     ]),
+                    Row::new(vec![
+                        Cell::from("").style(self.styles.subtitle_style),
+                        Cell::from("Use '-' instead of ' ' for multi-word titles.")
+                            .style(self.styles.text_style),
+                    ]),
+                    Row::new(vec![Cell::from("").style(self.styles.subtitle_style)]),
                     Row::new(vec![
                         Cell::from("|").style(self.styles.subtitle_style),
                         Cell::from("All text after | will be searched in the full text.")

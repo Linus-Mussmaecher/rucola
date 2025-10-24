@@ -291,7 +291,7 @@ mod tests {
                 String::from("#test"),
                 String::from("#files/yaml"),
                 String::from("#files/markdown"),
-                String::from("#abbreviations")
+                String::from("#funny abbreviations")
             ]
         );
     }
