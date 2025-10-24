@@ -25,6 +25,8 @@ enum SelectMode {
     Rename,
     /// Typing into the create box to move a note.
     Move,
+    /// Confirmation for deletion
+    Delete,
 }
 
 /// Describes when to show a which stats area.
@@ -393,19 +395,7 @@ impl super::Screen for SelectScreen {
                 match key.code {
                     // D: Delete note
                     KeyCode::Char('d' | 'D') => {
-                        if let Some(env_stats) = self
-                            // get the selected item in the list for the id
-                            .local_stats
-                            .get_selected(self.selected)
-                        {
-                            // delete it from index & filesystem
-                            self.manager
-                                .delete_note_file(self.index.clone(), &env_stats.id)?;
-                            // if successfull, refresh the ui
-                            self.index.borrow().poll_file_system();
-                            self.refresh_env_stats();
-                        }
-                        self.mode = SelectMode::Select;
+                        self.mode = SelectMode::Delete;
                     }
                     // N: Create note
                     KeyCode::Char('n' | 'N') => {
@@ -522,6 +512,27 @@ impl super::Screen for SelectScreen {
                     }
                 };
             }
+            // Deletion submenu: Enter deletes, all others cancel.
+            SelectMode::Delete => match key.code {
+                KeyCode::Enter => {
+                    if let Some(env_stats) = self
+                        // get the selected item in the list for the id
+                        .local_stats
+                        .get_selected(self.selected)
+                    {
+                        // delete it from index & filesystem
+                        self.manager
+                            .delete_note_file(self.index.clone(), &env_stats.id)?;
+                        // if successfull, refresh the ui
+                        self.index.borrow().poll_file_system();
+                        self.refresh_env_stats();
+                    }
+                    self.mode = SelectMode::Select;
+                }
+                _ => {
+                    self.mode = SelectMode::Select;
+                }
+            },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => match key.code {
                 KeyCode::Char('a' | 'A') => {
@@ -642,6 +653,7 @@ impl super::Screen for SelectScreen {
                 SelectMode::Select
                 | SelectMode::Rename
                 | SelectMode::Move
+                | SelectMode::Delete
                 | SelectMode::SubmenuFile
                 | SelectMode::SubmenuSorting => Some(self.selected),
                 SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
@@ -865,6 +877,58 @@ impl super::Screen for SelectScreen {
                 // Clear the area and then render the widget on top.
                 Widget::render(Clear, center_area, buf);
                 Widget::render(&self.name_area, center_area, buf);
+            }
+            SelectMode::Delete => {
+                let delete_confirmation = Paragraph::new(Text::styled(
+                    format!(
+                        "Delete selected note \"{}\"?",
+                        self.local_stats
+                            .get_selected(self.selected)
+                            .and_then(|note| self
+                                .index
+                                .borrow()
+                                .get(&note.id)
+                                .map(|note| note.display_name.clone()))
+                            .unwrap_or(String::from("<Unknown Note>"))
+                    ),
+                    self.styles.text_style,
+                ))
+                .block(
+                    Block::bordered()
+                        .title(style::Styled::set_style(
+                            "Confirm deletion",
+                            self.styles.title_style,
+                        ))
+                        .title_bottom(
+                            Line::from(vec![
+                                Span::styled("󰌑", self.styles.hotkey_style),
+                                Span::styled(": Confirm──", self.styles.text_style),
+                                Span::styled("Esc", self.styles.hotkey_style),
+                                Span::styled("/", self.styles.text_style),
+                                Span::styled("Any", self.styles.hotkey_style),
+                                Span::styled(": Cancel", self.styles.text_style),
+                            ])
+                            .right_aligned(),
+                        ),
+                );
+
+                let popup_areas = Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(3),
+                    Constraint::Fill(1),
+                ])
+                .split(area);
+
+                let center_area = Layout::horizontal([
+                    Constraint::Fill(1),
+                    Constraint::Percentage(60),
+                    Constraint::Fill(1),
+                ])
+                .split(popup_areas[1])[1];
+
+                // Clear the area and then render the widget on top.
+                Widget::render(Clear, center_area, buf);
+                Widget::render(delete_confirmation, center_area, buf);
             }
             SelectMode::FilterHelp => {
                 let help_widths = [Constraint::Length(9), Constraint::Min(0)];

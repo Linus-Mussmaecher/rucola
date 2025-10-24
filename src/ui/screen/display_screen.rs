@@ -198,10 +198,7 @@ impl super::Screen for DisplayScreen {
         self.draw_link_table(2, "Level 2 Backlinks", blinks2, buf);
         self.draw_link_table(3, "Level 2 Links", links2, buf);
 
-        if self.mode == DisplayMode::Rename
-            || self.mode == DisplayMode::Move
-            || self.mode == DisplayMode::Delete
-        {
+        if self.mode == DisplayMode::Rename || self.mode == DisplayMode::Move {
             let popup_areas = Layout::vertical([
                 Constraint::Fill(1),
                 Constraint::Length(3),
@@ -219,26 +216,49 @@ impl super::Screen for DisplayScreen {
             // Clear the area and then render the widget on top.
             Widget::render(Clear, center_area, buf);
 
-            if self.mode == DisplayMode::Delete {
-                let keys = Line::from(vec![
-                    Span::styled("󰌑", self.styles.hotkey_style),
-                    Span::styled(": Delete─", self.styles.text_style),
-                    Span::styled("Other", self.styles.hotkey_style),
-                    Span::styled(": Abort", self.styles.text_style),
-                ])
-                .centered();
+            Widget::render(&self.name_area, center_area, buf);
+        }
+        if self.mode == DisplayMode::Delete {
+            let delete_confirmation = Paragraph::new(Text::styled(
+                format!("Delete current note \"{}\"?", self.note.display_name),
+                self.styles.text_style,
+            ))
+            .block(
+                Block::bordered()
+                    .title(style::Styled::set_style(
+                        "Confirm deletion",
+                        self.styles.title_style,
+                    ))
+                    .title_bottom(
+                        Line::from(vec![
+                            Span::styled("󰌑", self.styles.hotkey_style),
+                            Span::styled(": Confirm──", self.styles.text_style),
+                            Span::styled("Esc", self.styles.hotkey_style),
+                            Span::styled("/", self.styles.text_style),
+                            Span::styled("Any", self.styles.hotkey_style),
+                            Span::styled(": Cancel", self.styles.text_style),
+                        ])
+                        .right_aligned(),
+                    ),
+            );
 
-                let del = Paragraph::new(Span::styled(
-                    "Are you sure you want to delete?\n",
-                    self.styles.text_style,
-                ))
-                .alignment(Alignment::Center)
-                .block(Block::bordered().title_bottom(keys));
+            let popup_areas = Layout::vertical([
+                Constraint::Fill(1),
+                Constraint::Length(3),
+                Constraint::Fill(1),
+            ])
+            .split(area);
 
-                Widget::render(del, center_area, buf);
-            } else {
-                Widget::render(&self.name_area, center_area, buf);
-            }
+            let center_area = Layout::horizontal([
+                Constraint::Fill(1),
+                Constraint::Percentage(60),
+                Constraint::Fill(1),
+            ])
+            .split(popup_areas[1])[1];
+
+            // Clear the area and then render the widget on top.
+            Widget::render(Clear, center_area, buf);
+            Widget::render(delete_confirmation, center_area, buf);
         }
     }
 
