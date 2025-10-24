@@ -439,6 +439,7 @@ mod tests {
 
         let filter1 = data::Filter {
             any: true,
+            tag_match: data::TagMatch::Exact,
             tags: vec![
                 ("#topology".to_string(), true),
                 ("#diffgeo".to_string(), true),
@@ -473,6 +474,7 @@ mod tests {
 
         let filter2 = data::Filter {
             any: false,
+            tag_match: data::TagMatch::Exact,
             tags: vec![
                 ("#topology".to_string(), true),
                 ("#diffgeo".to_string(), true),
@@ -518,6 +520,7 @@ mod tests {
 
         let filter3 = data::Filter {
             any: false,
+            tag_match: data::TagMatch::Exact,
             tags: vec![],
             links: vec![],
             blinks: vec![],
@@ -549,6 +552,7 @@ mod tests {
 
         let filter4 = data::Filter {
             any: true,
+            tag_match: data::TagMatch::Exact,
             tags: vec![],
             links: vec![],
             blinks: vec![("atlas".to_string(), true)],
@@ -580,6 +584,7 @@ mod tests {
 
         let filter5 = data::Filter {
             any: true,
+            tag_match: data::TagMatch::Exact,
             tags: vec![],
             links: vec![("smooth-map".to_string(), true)],
             blinks: vec![("atlas".to_string(), true)],

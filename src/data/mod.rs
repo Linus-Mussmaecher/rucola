@@ -7,6 +7,7 @@ pub use note_statistics::SortingMode;
 
 mod filter;
 pub use filter::Filter;
+pub use filter::TagMatch;
 
 mod index;
 pub use index::NoteIndex;

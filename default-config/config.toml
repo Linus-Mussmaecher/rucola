@@ -22,6 +22,13 @@ theme = "default_dark"
 # stats_show = "Local"    # Always show only local stats.
 stats_show = "Relevant"   # Show global stats if there is no filter applied and local if there is.
 
+# This option controls how tags are matched in the filter menu.
+# Options:
+# - "Exact": Only searches for exact matches of tags, i.e. `#diffgeo` will only find notes tagged as `#diffgeo`, not notes tagged with `#diffgeometry`.
+#   Nested tags, e.g. `#diffgeo/splines`, are still respected and found.
+# - "Prefix": Also finds notes that have tags such that the specified tag is a prefix of the tag, i.e. `#diffgeo` will both find notes tagged as `#diffgeo` and `#diffgeometry`.
+#   Nested tags, e.g. `#diffgeo/splines`, are still respected and found.
+tag_match = "Exact"
 
 # Default sorting mode for notes on the main select screen.
 # Available options: "Shuffle", "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 

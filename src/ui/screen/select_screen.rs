@@ -77,6 +77,8 @@ pub struct SelectScreen {
     // === Sorting options ===
     /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
     any_conditions: bool,
+    /// UI mode wether to match tags by prefix or exactly.
+    tag_match: data::TagMatch,
     /// Default sorting of the note list.
     default_sorting: data::SortingMode,
     /// Default sorting direction of the note list.
@@ -111,6 +113,7 @@ impl SelectScreen {
             name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
+            tag_match: config.tag_match,
             default_sorting: config.default_sorting,
             default_sorting_asc: config.default_sorting_asc,
             sorting: config.default_sorting,
@@ -152,6 +155,16 @@ impl SelectScreen {
                 self.styles.text_style,
             ),
             Span::styled(" Conditions──", self.styles.text_style),
+            Span::styled("T", self.styles.hotkey_style),
+            Span::styled("ags ", self.styles.text_style),
+            Span::styled(
+                match self.tag_match {
+                    data::TagMatch::Exact => "exact",
+                    data::TagMatch::Prefix => "by prefix",
+                },
+                self.styles.text_style,
+            ),
+            Span::styled("──", self.styles.text_style),
             Span::styled("H", self.styles.hotkey_style),
             Span::styled("elp", self.styles.text_style),
         ])
@@ -230,7 +243,7 @@ impl SelectScreen {
         self.filter_area
             .lines()
             .first()
-            .map(|l| data::Filter::new(l, self.any_conditions))
+            .map(|l| data::Filter::new(l, self.any_conditions, self.tag_match))
             .unwrap_or_default()
     }
 
@@ -291,9 +304,15 @@ impl super::Screen for SelectScreen {
                     // reset filter to default
                     self.set_mode_sort(self.default_sorting, self.default_sorting_asc);
                 }
-                // T: Change all/any words requirement
+                // A: Change all/any words requirement
                 KeyCode::Char('a' | 'A') => {
                     self.any_conditions = !self.any_conditions;
+                    self.filter(self.filter_from_input());
+                    self.style_text_area();
+                }
+                // T: Change exact/prefix match
+                KeyCode::Char('t' | 'T') => {
+                    self.tag_match = self.tag_match.cycle();
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }
@@ -932,11 +951,25 @@ impl super::Screen for SelectScreen {
                     Row::new(vec![Cell::from("").style(self.styles.subtitle_style)]),
                     Row::new(vec![
                         Cell::from("#[tag]").style(self.styles.subtitle_style),
-                        Cell::from("Show notes with tag [tag].").style(self.styles.text_style),
+                        match self.tag_match {
+                            data::TagMatch::Exact => Cell::from("Show notes with tag [tag].")
+                                .style(self.styles.text_style),
+                            data::TagMatch::Prefix => {
+                                Cell::from("Show notes with a tag starting with [tag].")
+                                    .style(self.styles.text_style)
+                            }
+                        },
                     ]),
                     Row::new(vec![
                         Cell::from("!#[tag]").style(self.styles.subtitle_style),
-                        Cell::from("Show notes without tag [tag].").style(self.styles.text_style),
+                        match self.tag_match {
+                            data::TagMatch::Exact => Cell::from("Show notes without tag [tag].")
+                                .style(self.styles.text_style),
+                            data::TagMatch::Prefix => {
+                                Cell::from("Show notes with no tag starting with [tag].")
+                                    .style(self.styles.text_style)
+                            }
+                        },
                     ]),
                     Row::new(vec![
                         Cell::from("").style(self.styles.subtitle_style),

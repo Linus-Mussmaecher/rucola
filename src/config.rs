@@ -28,6 +28,8 @@ pub struct Config {
     pub(crate) theme: String,
     /// When to show the global stats area
     pub(crate) stats_show: ui::screen::StatsShow,
+    /// Wether tags have to match exactly or only by prefix when filtering.
+    pub(crate) tag_match: data::TagMatch,
     /// Default sorting mode for notes
     pub(crate) default_sorting: data::SortingMode,
     /// Default sorting direction (true for ascending, false for descending)
@@ -62,6 +64,7 @@ impl Default for Config {
             default_extension: String::from("md"),
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
+            tag_match: data::TagMatch::Exact,
             default_sorting: data::SortingMode::Name,
             default_sorting_asc: true,
             editor: None,

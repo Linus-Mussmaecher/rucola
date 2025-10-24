@@ -1,9 +1,31 @@
 use fuzzy_matcher::FuzzyMatcher;
+
+/// Describes how to match tags when filtering
+#[derive(Debug, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum TagMatch {
+    /// Tags must be input exactly to count as matching.
+    #[default]
+    Exact,
+    /// Entering a full prefix of a tag is enough for it match.
+    Prefix,
+}
+
+impl TagMatch {
+    pub fn cycle(self) -> Self{
+        match self {
+            TagMatch::Exact => TagMatch::Prefix,
+            TagMatch::Prefix => TagMatch::Exact,
+        }
+    }
+}
+
 /// Describes a way to filter notes by their contained tags and/or title
 #[derive(Debug, Default, Clone)]
 pub struct Filter {
     /// Wether or not all specified tags must be contained in the note in order to match the filter, or only any (=at least one) of them.
     pub any: bool,
+    /// Wether or not all tags must be matched exactly or only by prefix.
+    pub tag_match: TagMatch,
     /// The tags to include and exclude by, hash included.
     pub tags: Vec<(String, bool)>,
     /// The links to look for or exclude, already converted to ids.
@@ -17,7 +39,7 @@ pub struct Filter {
 }
 
 impl Filter {
-    pub fn new(filter_string: &str, any: bool) -> Self {
+    pub fn new(filter_string: &str, any: bool, tag_match: TagMatch) -> Self {
         let mut tags = Vec::new();
         let mut links = Vec::new();
         let mut blinks = Vec::new();
@@ -73,6 +95,7 @@ impl Filter {
         // check for any or all tags
         Self {
             any,
+            tag_match,
             tags,
             links,
             blinks,
@@ -98,10 +121,18 @@ impl Filter {
                         .map(|(index, _match)| &tag[0..index])
                         // and appended just a substring that is the whole tag
                         .chain(std::iter::once(tag.as_str()))
-                    // flatten this so we have just an iterator over (sub)strs
+                        // flatten this so we have just an iterator over (sub)strs
                 })
                 // check if any of these substring is the searched tag or, in case of a multi-word tag, the tag with appropriate replacements.
-                .any(|subtag| subtag == tag || subtag == tag.replace("-", " "))
+                .any(|subtag|
+                    match self.tag_match {
+                        // tags needs to be matched exactly
+                        TagMatch::Exact => tag.replace('-', " ") == subtag.replace('-', " "),
+                        // it is enough if the typed tag is a prefix of the found tag
+                        TagMatch::Prefix => subtag.replace('-', " ").starts_with(&tag.replace('-', " ")),
+                    }
+                    
+                )
             // now compare this to our expectation
             //  - inclusion: We _want_ one of them to be equal
             //  - exclusion: We _dont_ want one of them to be equal
@@ -205,6 +236,7 @@ mod tests {
 
         let filter1 = Filter {
             any: false,
+            tag_match: data::TagMatch::Exact,
             tags: vec![("#os".to_string(), true), ("#os/win".to_string(), false)],
             links: vec![],
             blinks: vec![],
@@ -218,6 +250,128 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_prefix() {
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 12);
+
+        let linux = index.inner.get("linux").unwrap();
+        let win = index.inner.get("windows").unwrap();
+        let osx = index.inner.get("osx").unwrap();
+        let topology = index.inner.get("topology").unwrap();
+        let atlas = index.inner.get("atlas").unwrap();
+        let chart = index.inner.get("chart").unwrap();
+        let manifold = index.inner.get("manifold").unwrap();
+        let smooth_map = index.inner.get("smooth-map").unwrap();
+
+        // === Filter 1 ===
+
+        let filter1 = Filter {
+            any: false,
+            tag_match: data::TagMatch::Prefix,
+            tags: vec![("#diff".to_string(), true)],
+            links: vec![],
+            blinks: vec![],
+            title: String::new(),
+            full_text: None,
+        };
+
+        assert!(filter1.apply(linux, &index).is_none());
+        assert!(filter1.apply(osx, &index).is_none());
+        assert!(filter1.apply(win, &index).is_none());
+        assert!(filter1.apply(topology, &index).is_none());
+        assert!(filter1.apply(atlas, &index).is_some());
+        assert!(filter1.apply(chart, &index).is_some());
+        assert!(filter1.apply(manifold, &index).is_some());
+        assert!(filter1.apply(smooth_map, &index).is_some());
+
+        // === Filter 2 ===
+
+        let filter2 = Filter {
+            any: false,
+            tag_match: data::TagMatch::Exact,
+            tags: vec![("#diff".to_string(), true)],
+            links: vec![],
+            blinks: vec![],
+            title: String::new(),
+            full_text: None,
+        };
+
+        assert!(filter2.apply(linux, &index).is_none());
+        assert!(filter2.apply(osx, &index).is_none());
+        assert!(filter2.apply(win, &index).is_none());
+        assert!(filter2.apply(topology, &index).is_none());
+        assert!(filter2.apply(atlas, &index).is_none());
+        assert!(filter2.apply(chart, &index).is_none());
+        assert!(filter2.apply(manifold, &index).is_none());
+        assert!(filter2.apply(smooth_map, &index).is_none());
+    }
+
+    #[test]
+    fn test_filter_prefix_negate(){
+        let config = crate::Config::default();
+        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
+        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
+        let index = data::NoteIndex::new(tracker, builder).0;
+
+        assert_eq!(index.inner.len(), 12);
+
+        let linux = index.inner.get("linux").unwrap();
+        let win = index.inner.get("windows").unwrap();
+        let osx = index.inner.get("osx").unwrap();
+        let topology = index.inner.get("topology").unwrap();
+        let atlas = index.inner.get("atlas").unwrap();
+        let chart = index.inner.get("chart").unwrap();
+        let manifold = index.inner.get("manifold").unwrap();
+        let smooth_map = index.inner.get("smooth-map").unwrap();
+
+        // === Filter 1 ===
+
+        let filter1 = Filter {
+            any: false,
+            tag_match: data::TagMatch::Prefix,
+            tags: vec![("#o".to_string(), true), ("#os/wi".to_string(), false)],
+            links: vec![],
+            blinks: vec![],
+            title: String::new(),
+            full_text: None,
+        };
+
+        assert!(filter1.apply(linux, &index).is_some());
+        assert!(filter1.apply(osx, &index).is_some());
+        assert!(filter1.apply(win, &index).is_none());
+        assert!(filter1.apply(topology, &index).is_none());
+        assert!(filter1.apply(atlas, &index).is_none());
+        assert!(filter1.apply(chart, &index).is_none());
+        assert!(filter1.apply(manifold, &index).is_none());
+        assert!(filter1.apply(smooth_map, &index).is_none());
+
+        // === Filter 2 ===
+
+        let filter2 = Filter {
+            any: false,
+            tag_match: data::TagMatch::Exact,
+            tags: vec![("#o".to_string(), true), ("#os/wi".to_string(), false)],
+            links: vec![],
+            blinks: vec![],
+            title: String::new(),
+            full_text: None,
+        };
+
+        assert!(filter2.apply(linux, &index).is_none());
+        assert!(filter2.apply(osx, &index).is_none());
+        assert!(filter2.apply(win, &index).is_none());
+        assert!(filter2.apply(topology, &index).is_none());
+        assert!(filter2.apply(atlas, &index).is_none());
+        assert!(filter2.apply(chart, &index).is_none());
+        assert!(filter2.apply(manifold, &index).is_none());
+        assert!(filter2.apply(smooth_map, &index).is_none());
+    }
+
+    #[test]
     fn test_filter_from_string() {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
@@ -228,7 +382,7 @@ mod tests {
 
         // === Filter 2 ===
 
-        let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false);
+        let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false, TagMatch::Exact);
 
         assert_eq!(
             filter2.tags,
@@ -262,6 +416,7 @@ mod tests {
         let filter3 = Filter::new(
             "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux |equivalent",
             false,
+            TagMatch::Exact
         );
 
         assert_eq!(
@@ -287,7 +442,7 @@ mod tests {
     #[test]
     fn test_filter_from_string_case_insensitive() {
         // === Filter 4 ===
-        let filter4 = Filter::new("<aTlas >Smooth-mAp", true);
+        let filter4 = Filter::new("<aTlas >Smooth-mAp", true, TagMatch::Exact);
 
         assert_eq!(filter4.tags, vec![]);
         assert_eq!(filter4.links, vec![("smooth-map".to_string(), true),]);
@@ -306,7 +461,7 @@ mod tests {
 
         // === Filter 2 ===
 
-        let filter2 = Filter::new("#funny-abbreviations", false);
+        let filter2 = Filter::new("#funny-abbreviations", false, TagMatch::Exact);
 
         assert_eq!(
             filter2.tags,

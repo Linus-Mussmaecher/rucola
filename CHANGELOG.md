@@ -1,15 +1,16 @@
-# Version 0.7.0 - Sorting
+# Version 0.7.0 - Sorting & Filtering
  - Added date of last modification as a sortin option.
  - Added shuffling as a sorting option.
  - Added the option to specify a default sorting direction and mode in the configuration file.
  - Filtering will now temporarily override your sorting option and direction, clearing the filter will reset to your default choice of sorting option and direction.
+ - Deleting a note now always triggers a confirmation dialogue before actually deleting.
+ - Users can now filter for multi-word tags by replacing spaces with dashes just like when searching for multi-word titles.
+ - Users now have the option to find tags not only by exact match, but also by searching for a prefix of entered tags, i.e. entering `#diffg` will find notes tagged as `#diffgeo` when this option is active. This behaviour can be toggled in the program, and the default option can be set in the config file.
  - Fixed a bug that caused rucola to sometimes fail to open the editor specified in the `$EDITOR` environment variable when on Mac.
  - Fixed a bug that caused parts of the file to be interpreted as YAML frontmatter when using breaks.
  - Fixed a bug that caused YAML frontmatter to be part of the parsed HTML files.
  - Added information about viewers and viewing keys to the default config file.
  - Fixed an error that caused the number of links or backlinks to show at the bottom instead of the top of the tables in the display screen.
- - Deleting a note now always triggers a confirmation dialogue before actually deleting.
- - Users can now filter for multi-word tags by replacing spaces with dashes just like when searching for multi-word titles.
 
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.
