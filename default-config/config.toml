@@ -24,10 +24,10 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 
 
 # Default sorting mode for notes on the main select screen.
-# Available options: "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 
+# Available options: "Shuffle", "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 
 # "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified".
 # The "Score"-Option generally only makes sense with a filter applied and should not be chosen.
-default_sorting = "Name"
+default_sorting = "Shuffle"
 
 # Default sorting direction (true for ascending, false for descending)
 default_sorting_asc = true

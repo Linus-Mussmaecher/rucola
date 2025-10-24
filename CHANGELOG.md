@@ -1,12 +1,15 @@
 # Version 0.7.0 - Sorting
- - Added the possibility to sort by the date of the last modification to the note.
+ - Added date of last modification as a sortin option.
+ - Added shuffling as a sorting option.
  - Added the option to specify a default sorting direction and mode in the configuration file.
- - Filtering will no longer override your current sort option, instead clearing the filter will reset your sorting mode and direction to your previous choice.
+ - Filtering will now temporarily override your sorting option and direction, clearing the filter will reset to your default choice of sorting option and direction.
  - Fixed a bug that caused rucola to sometimes fail to open the editor specified in the `$EDITOR` environment variable when on Mac.
  - Fixed a bug that caused parts of the file to be interpreted as YAML frontmatter when using breaks.
  - Fixed a bug that caused YAML frontmatter to be part of the parsed HTML files.
  - Added information about viewers and viewing keys to the default config file.
  - Fixed an error that caused the number of links or backlinks to show at the bottom instead of the top of the tables in the display screen.
+ - Deleting a note now always triggers a confirmation dialogue before actually deleting.
+ - Users can now filter for multi-word tags by replacing spaces with dashes just like when searching for multi-word titles.
 
 # Version 0.6.0 - YAML frontmatter
  - Added minor git integration.

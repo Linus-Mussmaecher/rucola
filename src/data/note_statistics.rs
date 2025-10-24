@@ -1,4 +1,5 @@
 use crate::{data, ui};
+use rand::seq::SliceRandom;
 use ratatui::{prelude::*, widgets::*};
 use std::collections::HashMap;
 
@@ -58,6 +59,7 @@ impl NoteEnvStatistics {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum SortingMode {
     #[default]
+    Shuffle,
     Name,
     Words,
     Chars,
@@ -209,14 +211,19 @@ impl EnvironmentStats {
         self.filtered_stats.get(index)
     }
 
+    /// Reverses the underlying vec
+    pub fn reverse_order(&mut self) {
+        self.filtered_stats.reverse();
+    }
+
     /// Sorts the underlying vec
     pub fn sort(&mut self, index: data::NoteIndexContainer, mode: SortingMode, ascending: bool) {
         // Always sort by name first
         self.filtered_stats
             .sort_by_cached_key(|env_stats| env_stats.id.clone());
 
-        // If the sorting mode is not name, now sort by the actual sorting mode.
-        if mode != SortingMode::Name {
+        // If the sorting mode is not name or shuffle, now sort by the actual sorting mode.
+        if mode != SortingMode::Name && mode != SortingMode::Shuffle {
             // If sorting in reverse is desired, pre-reverse this, so when reversing again later, the list will still be sub-sorted by name ascendingly.
             if !ascending {
                 self.filtered_stats.reverse();
@@ -226,7 +233,7 @@ impl EnvironmentStats {
                 if let Some(note) = index.borrow().get(&env_stats.id) {
                     match mode {
                         // This should not appear
-                        SortingMode::Name => 0,
+                        SortingMode::Shuffle | SortingMode::Name => 0,
                         // These should appear
                         SortingMode::Words => note.words,
                         SortingMode::Chars => note.characters,
@@ -249,6 +256,9 @@ impl EnvironmentStats {
                     0
                 }
             })
+        // if the sorting mode is shuffle, then shuffle the list
+        } else if mode == SortingMode::Shuffle {
+            self.filtered_stats.shuffle(&mut rand::rng());
         }
 
         // Potentially reverse sorting
