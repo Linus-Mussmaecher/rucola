@@ -78,6 +78,10 @@ pub struct SelectScreen {
     /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
     any_conditions: bool,
     /// Default sorting of the note list.
+    default_sorting: data::SortingMode,
+    /// Default sorting direction of the note list.
+    default_sorting_asc: bool,
+    /// Default sorting of the note list.
     sorting: data::SortingMode,
     /// Default sorting direction of the note list.
     sorting_asc: bool,
@@ -107,6 +111,8 @@ impl SelectScreen {
             name_area: TextArea::default(),
             mode: SelectMode::Select,
             any_conditions: false,
+            default_sorting: config.default_sorting,
+            default_sorting_asc: config.default_sorting_asc,
             sorting: config.default_sorting,
             sorting_asc: config.default_sorting_asc,
             selected: 0,
@@ -210,6 +216,15 @@ impl SelectScreen {
         }
     }
 
+    /// Sorts the display according to the current mode
+    fn set_mode_sort(&mut self, sorting: data::SortingMode, sorting_asc: bool) {
+        self.sorting = sorting;
+        self.sorting_asc = sorting_asc;
+        self.local_stats
+            .sort(self.index.clone(), self.sorting, self.sorting_asc);
+        self.selected = 0;
+    }
+
     /// Creates a filter from the current content of the filter area.
     fn filter_from_input(&self) -> data::Filter {
         self.filter_area
@@ -224,13 +239,8 @@ impl SelectScreen {
     fn filter(&mut self, filter: data::Filter) {
         // actual filtering
         self.local_stats = data::EnvironmentStats::new_with_filter(&self.index, filter);
-        // // reset sorting
-        // self.sorting_asc = false;
-        // self.sorting = data::SortingMode::Score;
-        self.local_stats
-            .sort(self.index.clone(), data::SortingMode::Score, false);
-        // on a new filter, select the first element
-        self.selected = 0;
+        // reset sorting
+        self.set_mode_sort(data::SortingMode::Score, false);
     }
 
     /// Re-creates the global and local stats from the index.
@@ -278,8 +288,8 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('c' | 'C') => {
                     let _ = super::extract_string_and_clear(&mut self.filter_area);
                     self.filter(data::Filter::default());
-                    self.local_stats
-                        .sort(self.index.clone(), self.sorting, self.sorting_asc);
+                    // reset filter to default
+                    self.set_mode_sort(self.default_sorting, self.default_sorting_asc);
                 }
                 // T: Change all/any words requirement
                 KeyCode::Char('a' | 'A') => {
@@ -517,72 +527,43 @@ impl super::Screen for SelectScreen {
             },
             // Sorting submenu: Wait for second input
             SelectMode::SubmenuSorting => {
-                let old_selected = self.selected;
-                self.selected = 0;
                 self.mode = SelectMode::Select;
                 match key.code {
                     KeyCode::Char('s' | 'S') => {
-                        self.local_stats
-                            .sort(self.index.clone(), data::SortingMode::Shuffle, true);
+                        self.set_mode_sort(data::SortingMode::Shuffle, true);
                     }
                     KeyCode::Char('a' | 'A') => {
-                        self.local_stats
-                            .sort(self.index.clone(), data::SortingMode::Name, true);
+                        self.set_mode_sort(data::SortingMode::Name, true);
                     }
                     KeyCode::Char('w' | 'W') => {
-                        self.local_stats
-                            .sort(self.index.clone(), data::SortingMode::Words, false);
+                        self.set_mode_sort(data::SortingMode::Words, false);
                     }
                     KeyCode::Char('c' | 'C') => {
-                        self.local_stats
-                            .sort(self.index.clone(), data::SortingMode::Chars, false);
+                        self.set_mode_sort(data::SortingMode::Chars, false);
                     }
                     KeyCode::Char('o' | 'O') => {
-                        self.local_stats.sort(
-                            self.index.clone(),
-                            data::SortingMode::GlobalOutLinks,
-                            false,
-                        );
+                        self.set_mode_sort(data::SortingMode::GlobalOutLinks, false);
                     }
                     KeyCode::Char('u' | 'U') => {
-                        self.local_stats.sort(
-                            self.index.clone(),
-                            data::SortingMode::LocalOutLinks,
-                            false,
-                        );
+                        self.set_mode_sort(data::SortingMode::LocalOutLinks, false);
                     }
                     KeyCode::Char('i' | 'I') => {
-                        self.local_stats.sort(
-                            self.index.clone(),
-                            data::SortingMode::GlobalInLinks,
-                            false,
-                        );
+                        self.set_mode_sort(data::SortingMode::GlobalInLinks, false);
                     }
                     KeyCode::Char('n' | 'N') => {
-                        self.local_stats.sort(
-                            self.index.clone(),
-                            data::SortingMode::LocalInLinks,
-                            false,
-                        );
+                        self.set_mode_sort(data::SortingMode::LocalInLinks, false);
                     }
                     KeyCode::Char('b' | 'B') => {
-                        self.local_stats
-                            .sort(self.index.clone(), data::SortingMode::Broken, false);
+                        self.set_mode_sort(data::SortingMode::Broken, false);
                     }
                     KeyCode::Char('m' | 'M') => {
-                        self.local_stats.sort(
-                            self.index.clone(),
-                            data::SortingMode::LastModified,
-                            false,
-                        );
+                        self.set_mode_sort(data::SortingMode::LastModified, false);
                     }
                     KeyCode::Char('r' | 'R') => {
                         self.local_stats.reverse_order();
                     }
-                    KeyCode::Esc => {
-                        self.selected = old_selected;
-                    }
-                    _ => {}
+                    KeyCode::Esc => {}
+                    _ => self.mode = SelectMode::SubmenuSorting,
                 }
             }
         };
