@@ -1,5 +1,5 @@
 # Version 0.7.0 - Sorting & Filtering
- - Added date of last modification as a sortin option.
+ - Added date of last modification as a sorting option.
  - Added shuffling as a sorting option.
  - Added the option to specify a default sorting direction and mode in the configuration file.
  - Filtering will now temporarily override your sorting option and direction, clearing the filter will reset to your default choice of sorting option and direction.
