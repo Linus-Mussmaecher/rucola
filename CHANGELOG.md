@@ -1,3 +1,6 @@
+# Version 0.7.1 Bug Fix
+- Fixed an issue that caused YAML parsing to sometimes panic when no content was found.
+
 # Version 0.7.0 - Sorting & Filtering
  - Added date of last modification as a sorting option.
  - Added shuffling as a sorting option.

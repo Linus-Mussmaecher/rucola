@@ -184,9 +184,11 @@ impl Note {
     }
 
     /// Takes a str that possibly contains YAML frontmatter and attempts to parse it into a title and a list of tags.
-    fn parse_yaml(yaml: &str) -> Result<(Option<String>, Vec<String>), yaml_rust::ScanError> {
+    fn parse_yaml(yaml: &str) -> Result<(Option<String>, Vec<String>), error::RucolaError> {
         let docs = yaml_rust::YamlLoader::load_from_str(yaml)?;
-        let doc = &docs[0];
+        let doc = &docs
+            .get(0)
+            .ok_or(error::RucolaError::YamlDocsError(yaml.to_owned()))?;
 
         // Check if there was a title specified.
         let title = doc["title"].as_str().map(|s| s.to_owned());
