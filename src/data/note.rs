@@ -6,7 +6,7 @@ use itertools::Itertools;
 use crate::{error, ui};
 
 /// An abstract representation of a note that contains statistics about it but _not_ the full text.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct Note {
     /// The title of the note.
     pub display_name: String,
@@ -187,7 +187,7 @@ impl Note {
     fn parse_yaml(yaml: &str) -> Result<(Option<String>, Vec<String>), error::RucolaError> {
         let docs = yaml_rust::YamlLoader::load_from_str(yaml)?;
         let doc = &docs
-            .get(0)
+            .first()
             .ok_or(error::RucolaError::YamlDocsError(yaml.to_owned()))?;
 
         // Check if there was a title specified.

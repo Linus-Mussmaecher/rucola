@@ -224,7 +224,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder).0;
+        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -254,7 +254,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder).0;
+        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -315,7 +315,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder).0;
+        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -376,7 +376,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder).0;
+        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -455,7 +455,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder).0;
+        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 

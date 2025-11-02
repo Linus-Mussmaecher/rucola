@@ -24,6 +24,8 @@ pub struct Config {
     pub(crate) file_types: Vec<String>,
     /// Default file ending for newly created notes
     pub(crate) default_extension: String,
+    /// Wether to create a cache file of the index to reload on program start.
+    pub(crate) cache_index: bool,
     /// Selected theme
     pub(crate) theme: String,
     /// When to show the global stats area
@@ -62,6 +64,7 @@ impl Default for Config {
             vault_path: None,
             file_types: vec![String::from("markdown")],
             default_extension: String::from("md"),
+            cache_index: false,
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             tag_match: data::TagMatch::Exact,

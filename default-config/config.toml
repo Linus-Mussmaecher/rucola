@@ -10,6 +10,19 @@ file_types = ["markdown"]
 # The default extension to append to newly created files.
 default_extension = "md"
 
+# By default, rucola re-indexes your entire vault on every launch.
+# When this option is turned on, rucola will save a cache of its internal index to a file when you quit the program and re-load it when you start the program.
+# The index file is saved in `<vault_path>/rucola_cache.toml`.
+# 
+# WARNING 1: Quitting rucola through an external method (e.g. terminating the process, closing the terminal window) will result in your index not being saved. You index will be out of sync on the next launch.
+#
+# WARNING 2: With this option turned on, rucola will not notice any changes to your vault you make while it is closed (changing files, creating files, deleting files). Doing so will result in your index being out of sync on the next launch.
+#
+# WARNING 3: Warning 2 also means that when using rucola on multiple machines, you should transfer your cache file every time. Otherwise, your index will be out of sync whenever you switch machines.
+#
+# If you index is out sync, you can fix it by deleting any existing index cache files and re-launching rucola, triggering a re-index.
+cache_index = false
+
 
 # The default look of the application.
 # Two default themes (for light and dark terminal setups) are provided.

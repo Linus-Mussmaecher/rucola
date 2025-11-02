@@ -89,7 +89,8 @@ impl App {
         errors.extend(loading_screen_callback(msg).err());
 
         // Index all files in path
-        let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone());
+        let (index, index_errors) =
+            data::NoteIndex::new(tracker, builder.clone(), &config, vault_path.clone());
         errors.extend(index_errors);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
@@ -181,7 +182,8 @@ impl App {
         // Act on the potentially returned message.
         match &msg {
             // Message that do not modify the app trigger no immediate effect and are later passed up.
-            ui::Message::None | ui::Message::Quit | ui::Message::OpenExternalCommand(_) => {}
+            ui::Message::Quit => self.index.borrow().save(),
+            ui::Message::None | ui::Message::OpenExternalCommand(_) => {}
             ui::Message::DisplayStackClear => {
                 // Clear the display stack and remove the current display screen, if there is one.
                 self.display_stack.clear();

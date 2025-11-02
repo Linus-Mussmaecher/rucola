@@ -1,6 +1,7 @@
-use std::{borrow::BorrowMut, collections::HashMap};
+use std::{borrow::BorrowMut, collections::HashMap, path};
 
 use itertools::Itertools;
+use std::io::Write;
 
 use crate::{error, io};
 
@@ -28,6 +29,20 @@ impl std::fmt::Debug for NoteIndex {
 }
 
 impl NoteIndex {
+
+    fn load_cached_index(
+        vault_path: path::PathBuf
+    ) -> Option<HashMap<String, Note>> {
+        let cache_path = path::Path::new(&vault_path).with_file_name("rucola_cache.toml");
+        if cache_path.exists() {
+            let file_content = std::fs::read_to_string(cache_path).ok()?;
+            let cached_index: HashMap<String, Note> = toml::from_str(&file_content).ok()?;
+            Some(cached_index)
+        } else {
+             None   
+        }
+    }
+    
     /// Reads a passed directory recursively, returning a hashmap containing
     ///  - An entry for every '.md' file in the directory or any subdirectories
     ///  - The key will be the file name, without the file extension, in lowercase and with spaces replaced by dashes
@@ -37,11 +52,17 @@ impl NoteIndex {
     pub fn new(
         mut tracker: io::FileTracker,
         builder: io::HtmlBuilder,
+        config: &crate::config::Config,
+        vault_path: path::PathBuf,
     ) -> (Self, Vec<error::RucolaError>) {
         // create an error struct
         let mut errors = vec![];
+
+        // check if an index file exists
+        let cached_index = config.cache_index.then(|| Self::load_cached_index(vault_path)).flatten();
+        
         // collect all the notes from the vault folder
-        let inner = tracker
+        let inner = cached_index.unwrap_or_else(|| tracker
             .get_walker() // Check only OKs
             .flatten()
             // Convert tiles to notes and skip errors
@@ -56,7 +77,7 @@ impl NoteIndex {
             // Extract name and convert to id
             .map(|note| (super::name_to_id(&note.name), note))
             // Collect into hash map
-            .collect::<HashMap<_, _>>();
+            .collect::<HashMap<_, _>>());
 
         // create htmls and save errors
         errors.extend(
@@ -210,6 +231,11 @@ impl NoteIndex {
     pub fn poll_file_system(&self) {
         self.tracker.poll_file_system();
     }
+
+    pub fn save(&self) {
+        let mut file = std::fs::File::create("index.toml").unwrap();
+        let _ = write!(file, "{}", toml::to_string(&self.inner).unwrap());
+    }
 }
 
 #[cfg(test)]
@@ -222,7 +248,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder).0;
+        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -247,7 +273,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder).0;
+        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -276,7 +302,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder).0;
+        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -301,7 +327,7 @@ mod tests {
         let config = crate::Config::default();
         let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
         let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder).0;
+        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
 
         assert_eq!(index.inner.len(), 12);
 
