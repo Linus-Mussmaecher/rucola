@@ -221,10 +221,11 @@ mod tests {
 
     #[test]
     fn test_filter() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -251,10 +252,11 @@ mod tests {
 
     #[test]
     fn test_filter_prefix() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -312,10 +314,11 @@ mod tests {
 
     #[test]
     fn test_filter_prefix_negate(){
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -373,10 +376,11 @@ mod tests {
 
     #[test]
     fn test_filter_from_string() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -452,10 +456,11 @@ mod tests {
 
     #[test]
     fn test_filter_from_string_multi_word_tags() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = data::NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = data::NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 

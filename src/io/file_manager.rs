@@ -21,17 +21,17 @@ pub struct FileManager {
 }
 impl Default for FileManager {
     fn default() -> Self {
-        Self::new(
-            &crate::Config::default(),
-            std::env::current_dir().expect("Current directory to exist and be accessible."),
-        )
+        Self::new(&crate::Config::default())
     }
 }
 
 impl FileManager {
-    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> Self {
+    pub fn new(config: &crate::Config) -> Self {
         Self {
-            vault_path,
+            vault_path: config
+                .vault_path
+                .clone()
+                .expect("Vault path should be set."),
             default_extension: config.default_extension.clone(),
             editor: config.editor.clone(),
             primary_viewer: config.viewer.clone(),
@@ -356,8 +356,9 @@ mod tests {
     fn test_edit() {
         let editor = std::env::var("EDITOR");
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
+        let mut config = crate::Config::default();
+        config.vault_path = Some(path::PathBuf::from("./tests"));
+        let fm = super::FileManager::new(&config);
         let path = path::Path::new("./tests/common/notes/Books.md");
 
         if let Ok(_editor) = editor {
@@ -368,8 +369,9 @@ mod tests {
 
     #[test]
     fn test_viewing() {
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
+        let mut config = crate::Config::default();
+        config.vault_path = Some(path::PathBuf::from("./tests"));
+        let fm = super::FileManager::new(&config);
         let note =
             crate::data::Note::from_path(path::Path::new("./tests/common/notes/Books.md")).unwrap();
 
@@ -381,7 +383,10 @@ mod tests {
     fn test_create() {
         let tmp = testdir::testdir!();
 
-        let fm = super::FileManager::new(&crate::Config::default(), tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+
+        let fm = super::FileManager::new(&config);
 
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -403,14 +408,12 @@ mod tests {
     fn test_create_other_suffix() {
         let tmp = testdir::testdir!();
 
-        let fm = super::FileManager::new(
-            &crate::Config {
-                default_extension: String::from("txt"),
-                file_types: vec![String::from("txt")],
-                ..Default::default()
-            },
-            tmp.clone(),
-        );
+        let fm = super::FileManager::new(&crate::Config {
+            default_extension: String::from("txt"),
+            file_types: vec![String::from("txt")],
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        });
 
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -432,8 +435,9 @@ mod tests {
     fn test_delete() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+        let fm = super::FileManager::new(&config);
 
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -446,15 +450,9 @@ mod tests {
         assert!(lg_path.exists());
         assert!(at_path.exists());
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
         let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         fm.delete_note_file(index_con.clone(), "lie-group").unwrap();
@@ -470,8 +468,9 @@ mod tests {
     fn test_rename() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+        let fm = super::FileManager::new(&config);
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
         let at_path = tmp
@@ -487,15 +486,9 @@ mod tests {
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
 
         assert!(index.get("atlas").is_some());
         assert!(index.get("lie-group").is_some());
@@ -518,8 +511,9 @@ mod tests {
     fn test_rename_updates_links() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+        let fm = super::FileManager::new(&config);
 
         let at_path = tmp.join(String::from("Atlas.md"));
         let ma_path = tmp.join(String::from("Manifold.md"));
@@ -545,15 +539,9 @@ mod tests {
         )
         .unwrap();
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
 
         let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -586,8 +574,9 @@ mod tests {
     fn test_move() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+        let fm = super::FileManager::new(&config);
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
         let at_path = tmp
@@ -606,15 +595,9 @@ mod tests {
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
 
         let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -641,8 +624,9 @@ mod tests {
         let md_ending_tar = path::PathBuf::from("./tests/common/test.md");
         let txt_ending_tar = path::PathBuf::from("./tests/common/test.txt");
 
-        let config = crate::Config::default();
-        let fm = super::FileManager::new(&config, path::PathBuf::from("./tests"));
+        let mut config = crate::Config::default();
+        config.vault_path = Some(path::PathBuf::from("./tests"));
+        let fm = super::FileManager::new(&config);
 
         let mut no_ending = path::PathBuf::from("./tests/common/test");
         let mut md_ending = path::PathBuf::from("./tests/common/test.md");

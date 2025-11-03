@@ -42,7 +42,7 @@ impl App {
         // Load configuration
         errors.extend(loading_screen_callback("Loading configuration...").err());
 
-        let (config, vault_path) = match crate::Config::load(args) {
+        let config = match crate::Config::load(args) {
             Ok(config_data) => config_data,
             Err(e) => {
                 errors.push(e);
@@ -64,13 +64,18 @@ impl App {
         // Use the config file to create managers & trackers
         errors.extend(loading_screen_callback("Creating managers & trackers...").err());
 
-        let builder = io::HtmlBuilder::new(&config, vault_path.clone());
+        let builder = io::HtmlBuilder::new(&config);
 
-        let manager = io::FileManager::new(&config, vault_path.clone());
+        let manager = io::FileManager::new(&config);
 
-        let git_manager = io::GitManager::new(vault_path.clone());
+        let git_manager = io::GitManager::new(
+            config
+                .vault_path
+                .clone()
+                .expect("Vault path should be set."),
+        );
 
-        let tracker = match io::FileTracker::new(&config, vault_path.clone()) {
+        let tracker = match io::FileTracker::new(&config) {
             Ok(tracker) => tracker,
             Err(e) => {
                 errors.push(e);
@@ -81,7 +86,11 @@ impl App {
         // Print error message based on current directory
         let mut msg = "Indexing...";
         if let Some(user_dirs) = directories::UserDirs::new() {
-            if vault_path == directories::UserDirs::home_dir(&user_dirs) {
+            if config
+                .vault_path
+                .as_ref()
+                .is_some_and(|path| path == directories::UserDirs::home_dir(&user_dirs))
+            {
                 msg = "Indexing...\n\nYou are running rucola in your home directory. This might take a while.\nConsider running in your notes directory instead.";
             }
         }
@@ -89,8 +98,7 @@ impl App {
         errors.extend(loading_screen_callback(msg).err());
 
         // Index all files in path
-        let (index, index_errors) =
-            data::NoteIndex::new(tracker, builder.clone(), &config, vault_path.clone());
+        let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone(), &config);
         errors.extend(index_errors);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));

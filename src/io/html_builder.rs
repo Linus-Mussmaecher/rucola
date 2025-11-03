@@ -21,15 +21,12 @@ pub struct HtmlBuilder {
 
 impl Default for HtmlBuilder {
     fn default() -> Self {
-        Self::new(
-            &crate::Config::default(),
-            std::env::current_dir().expect("Current directory to exist and be accessible."),
-        )
+        Self::new(&crate::Config::default())
     }
 }
 
 impl HtmlBuilder {
-    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> Self {
+    pub fn new(config: &crate::Config) -> Self {
         // Resolve css path
         let mut css_path = None;
 
@@ -52,7 +49,10 @@ impl HtmlBuilder {
         }
 
         Self {
-            vault_path,
+            vault_path: config
+                .vault_path
+                .clone()
+                .expect("Vault path should be set."),
             enable_html: config.enable_html,
             css_path,
             html_prepend: config.html_prepend.clone(),
@@ -240,8 +240,9 @@ mod tests {
 
     #[test]
     fn test_create_html_no_panic() {
-        let config = crate::Config::default();
-        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let hb = super::HtmlBuilder::new(&config);
 
         let os =
             crate::data::Note::from_path(Path::new("./tests/common/notes/Operating Systems.md"))
@@ -252,8 +253,9 @@ mod tests {
 
     #[test]
     fn test_create_html_no_panic_math() {
-        let config = crate::Config::default();
-        let hb = super::HtmlBuilder::new(&config, PathBuf::from("./tests"));
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let hb = super::HtmlBuilder::new(&config);
 
         // with math
         let smooth_map =
@@ -284,10 +286,11 @@ mod tests {
 
     #[test]
     fn test_create_html_creates_files() {
-        let config = crate::Config::default();
+        let mut config = crate::Config::default();
         let vault_path = PathBuf::from("./tests");
         let b_path = super::name_to_html_path("Books", &vault_path);
-        let hb = super::HtmlBuilder::new(&config, vault_path);
+        config.vault_path = Some(vault_path);
+        let hb = super::HtmlBuilder::new(&config);
 
         let books =
             crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
@@ -305,10 +308,11 @@ mod tests {
 
     #[test]
     fn test_create_html_creates_files_with_math() {
-        let config = crate::Config::default();
+        let mut config = crate::Config::default();
         let vault_path = PathBuf::from("./tests");
         let lg_path = super::name_to_html_path("Lie Group", &vault_path);
-        let hb = super::HtmlBuilder::new(&config, vault_path);
+        config.vault_path = Some(vault_path);
+        let hb = super::HtmlBuilder::new(&config);
 
         // with math
         let liegroup =

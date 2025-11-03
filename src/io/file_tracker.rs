@@ -25,18 +25,16 @@ pub struct FileTracker {
     /// Channel from which file change events in the vault directory are deposited by the watcher and can be requested.
     file_change_channel: mpsc::Receiver<Result<notify::Event, notify::Error>>,
 }
+
 impl Default for FileTracker {
     fn default() -> Self {
-        Self::new(
-            &crate::Config::default(),
-            std::env::current_dir().expect("Current directory to exist and be accessible."),
-        )
-        .expect("Watcher to be created and pre-defined file types to work.")
+        Self::new(&crate::Config::default())
+            .expect("Watcher to be created and pre-defined file types to work.")
     }
 }
 
 impl FileTracker {
-    pub fn new(config: &crate::Config, vault_path: path::PathBuf) -> error::Result<Self> {
+    pub fn new(config: &crate::Config) -> error::Result<Self> {
         // Pre-calculate allowed file types
         let mut types_builder = ignore::types::TypesBuilder::new();
         types_builder.add_defaults();
@@ -72,7 +70,10 @@ impl FileTracker {
         };
 
         Ok(Self {
-            vault_path,
+            vault_path: config
+                .vault_path
+                .clone()
+                .expect("Vault path should be set."),
             file_types: types_builder.build()?,
             watcher,
             file_change_channel: receiver,
@@ -135,9 +136,10 @@ mod tests {
         let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
         let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
-        let config = crate::Config::default();
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
 
-        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config).unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
         assert!(tracker.is_tracked(&md));
@@ -150,9 +152,10 @@ mod tests {
         let md_ignored = path::PathBuf::from("./tests/.html/books.md");
         let html_ignored = path::PathBuf::from("./tests/.html/books.html");
 
-        let config = crate::Config::default();
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
 
-        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config).unwrap();
 
         assert!(!tracker.is_tracked(&md_ignored));
         assert!(!tracker.is_tracked(&html_ignored));
@@ -163,9 +166,10 @@ mod tests {
         let md = path::PathBuf::from("./tests/common/notes/Books.md");
         let md_foreign = path::PathBuf::from("./README.md");
 
-        let config = crate::Config::default();
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
 
-        let tracker = super::FileTracker::new(&config, path::PathBuf::from("./tests/")).unwrap();
+        let tracker = super::FileTracker::new(&config).unwrap();
 
         assert!(tracker.is_tracked(&md));
         assert!(!tracker.is_tracked(&md_foreign));
@@ -177,13 +181,11 @@ mod tests {
         let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
         let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
-        let tracker = super::FileTracker::new(
-            &crate::Config {
-                file_types: vec!["md".to_owned(), "txt".to_owned()],
-                ..Default::default()
-            },
-            path::PathBuf::from("./tests"),
-        )
+        let tracker = super::FileTracker::new(&crate::Config {
+            file_types: vec!["md".to_owned(), "txt".to_owned()],
+            vault_path: Some(path::PathBuf::from("./tests")),
+            ..Default::default()
+        })
         .unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
@@ -199,13 +201,11 @@ mod tests {
         let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
         let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
-        let tracker = super::FileTracker::new(
-            &crate::Config {
-                file_types: vec!["all".to_owned()],
-                ..Default::default()
-            },
-            path::PathBuf::from("./tests"),
-        )
+        let tracker = super::FileTracker::new(&crate::Config {
+            file_types: vec!["all".to_owned()],
+            vault_path: Some(path::PathBuf::from("./tests")),
+            ..Default::default()
+        })
         .unwrap();
 
         assert!(!tracker.is_tracked(&no_ending));
@@ -252,20 +252,15 @@ mod tests {
     fn test_watcher_rename() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = crate::io::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+        let fm = crate::io::FileManager::new(&config);
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
         let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(index_con.borrow().get("atlas").is_some());
@@ -310,20 +305,16 @@ mod tests {
     fn test_watcher_rename_with_delay() {
         let tmp = testdir::testdir!();
 
-        let config = crate::Config::default();
-        let fm = crate::io::FileManager::new(&config, tmp.clone());
+        let mut config = crate::Config::default();
+        config.vault_path = Some(tmp.clone());
+
+        let fm = crate::io::FileManager::new(&config);
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
 
-        let tracker = crate::io::FileTracker::new(&config, tmp.clone()).unwrap();
-        let builder = crate::io::HtmlBuilder::new(&config, tmp.clone());
-        let index = crate::data::NoteIndex::new(
-            tracker,
-            builder,
-            &config,
-            std::path::PathBuf::from("./tests"),
-        )
-        .0;
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
         let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         assert!(index_con.borrow().get("atlas").is_some());

@@ -53,10 +53,11 @@ impl NoteIndex {
         mut tracker: io::FileTracker,
         builder: io::HtmlBuilder,
         config: &crate::config::Config,
-        vault_path: path::PathBuf,
     ) -> (Self, Vec<error::RucolaError>) {
         // create an error struct
         let mut errors = vec![];
+
+        let vault_path = config.vault_path.clone().expect("Vault path should be set.");
 
         // check if an index file exists
         let cached_index = config.cache_index.then(|| Self::load_cached_index(vault_path)).flatten();
@@ -245,10 +246,11 @@ mod tests {
 
     #[test]
     fn test_index() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -270,10 +272,11 @@ mod tests {
 
     #[test]
     fn test_links() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -299,10 +302,11 @@ mod tests {
 
     #[test]
     fn test_blinks() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
@@ -324,10 +328,11 @@ mod tests {
 
     #[test]
     fn test_links_yaml() {
-        let config = crate::Config::default();
-        let tracker = io::FileTracker::new(&config, std::path::PathBuf::from("./tests")).unwrap();
-        let builder = io::HtmlBuilder::new(&config, std::path::PathBuf::from("./tests"));
-        let index = NoteIndex::new(tracker, builder, &config, std::path::PathBuf::from("./tests")).0;
+        let mut config = crate::Config::default();
+        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder, &config).0;
 
         assert_eq!(index.inner.len(), 12);
 
