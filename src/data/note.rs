@@ -24,7 +24,7 @@ pub struct Note {
     pub path: path::PathBuf,
     /// The date and time when the note was last modified.
     pub last_modification: Option<time::SystemTime>,
-    /// Wether or not the note contains (valid) YAML frontmatter. If it does, this is the index of the beginning of the actual content.
+    /// Whether or not the note contains (valid) YAML frontmatter. If it does, this is the index of the beginning of the actual content.
     pub yaml_frontmatter: Option<usize>,
 }
 
@@ -79,7 +79,7 @@ impl Note {
         // Parse YAML.
 
         Ok(Self {
-            // Name: Check if there was one specified in the YAML fronmatter.
+            // Name: Check if there was one specified in the YAML frontmatter.
             // If not, get the name from the path.
             display_name: title.unwrap_or(super::path_to_name(path)?),
             // File name: Get it from the path.
@@ -88,7 +88,7 @@ impl Note {
             path: path.canonicalize().unwrap_or(path.to_path_buf()),
             // Modification: Can be read from the metadata of the path.
             last_modification: path.metadata().and_then(|m| m.modified()).ok(),
-            // Tags: Go though all text nodes in the AST, split them at whitespace and look for those starting with a hash.
+            // Tags: Go through all text nodes in the AST, split them at whitespace and look for those starting with a hash.
             // Finally, append tags specified in the YAML frontmatter.
             tags: root
                 .descendants()
@@ -102,7 +102,7 @@ impl Note {
                 })
                 .chain(tags)
                 .collect(),
-            // Links: Go though all wikilinks in the syntax tree and map them
+            // Links: Go through all wikilinks in the syntax tree and map them
             links: root
                 .descendants()
                 .flat_map(|node| match &node.data.borrow().value {

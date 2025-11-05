@@ -102,7 +102,7 @@ css = "default_dark"
 html_prepend = """
 """
 
-# Wether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
+# Whether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
 katex=true
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.

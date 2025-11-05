@@ -115,7 +115,7 @@ impl NoteIndex {
     ///  - removed files are removed from the index (if they were present)
     ///  - Modifications of files are checked for being notes and if so, the respective index entries are updated with the new data.
     ///
-    /// Returns wether the index has changed, and a list of all IdChanges.
+    /// Returns whether the index has changed, and a list of all IdChanges.
     pub fn handle_file_events(&mut self) -> error::Result<(bool, Vec<String>)> {
         let mut modifications = false;
         let mut id_changes = vec![];

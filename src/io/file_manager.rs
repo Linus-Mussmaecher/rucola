@@ -63,7 +63,7 @@ impl FileManager {
     /// Checks if 'new_name' is a valid new file name, in particular not a path.
     /// Then retrieves the note of the given id from the index.
     /// Creates a new path from the old path with the new file name.
-    /// The new extension is the one from the new path if given, if none is given (and no extension is not valid in the config), then the old extension is reapplied.
+    /// The new extension is the one from the new path if given; if none is given (and no extension is not valid in the config), then the old extension is reapplied.
     /// Then moves the old file to the new location and updates the index.
     pub fn rename_note_file(
         &self,
@@ -119,7 +119,7 @@ impl FileManager {
             }
         }
 
-        // actual fs copy (early returns if unsuccessfull)
+        // actual fs copy (early returns if unsuccessful)
         fs::rename(&note.path, &new_path)?;
 
         // === RENAMING ===
@@ -150,13 +150,13 @@ impl FileManager {
 
             // open the file again
             let mut file = std::fs::OpenOptions::new()
-                // this truncate is neccesary to remove the old content
+                // this truncate is necessary to remove the old content
                 .truncate(true)
                 // standard read-write permissions
                 .write(true)
                 .read(true)
                 .open(&other_note.path)?;
-            // write new new (mostly old) string into the file
+            // write new (mostly old) string into the file
             file.write_all(res.as_bytes())?;
         }
 
@@ -190,7 +190,7 @@ impl FileManager {
             }
         }
 
-        // actual fs copy (early returns if unsuccessfull)
+        // Actual fs copy (early returns if unsuccessful)
         fs::rename(&note.path, &new_path)?;
 
         Ok(())

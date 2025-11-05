@@ -22,9 +22,9 @@ impl TagMatch {
 /// Describes a way to filter notes by their contained tags and/or title
 #[derive(Debug, Default, Clone)]
 pub struct Filter {
-    /// Wether or not all specified tags must be contained in the note in order to match the filter, or only any (=at least one) of them.
+    /// Whether or not all specified tags must be contained in the note in order to match the filter, or only any (=at least one) of them.
     pub any: bool,
-    /// Wether or not all tags must be matched exactly or only by prefix.
+    /// Whether or not all tags must be matched exactly or only by prefix.
     pub tag_match: TagMatch,
     /// The tags to include and exclude by, hash included.
     pub tags: Vec<(String, bool)>,
@@ -116,7 +116,7 @@ impl Filter {
                 .iter()
                 // split each tag into..
                 .flat_map(|tag| {
-                    // an iterator of substring starting at 0 and going to every appearance to /
+                    // an iterator of substring starting at 0 and going to every appearance of /
                     tag.match_indices('/')
                         .map(|(index, _match)| &tag[0..index])
                         // and appended just a substring that is the whole tag
@@ -131,7 +131,6 @@ impl Filter {
                         // it is enough if the typed tag is a prefix of the found tag
                         TagMatch::Prefix => subtag.replace('-', " ").starts_with(&tag.replace('-', " ")),
                     }
-                    
                 )
             // now compare this to our expectation
             //  - inclusion: We _want_ one of them to be equal

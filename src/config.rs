@@ -24,13 +24,13 @@ pub struct Config {
     pub(crate) file_types: Vec<String>,
     /// Default file ending for newly created notes
     pub(crate) default_extension: String,
-    /// Wether to create a cache file of the index to reload on program start.
+    /// Whether to create a cache file of the index to reload on program start.
     pub(crate) cache_index: bool,
     /// Selected theme
     pub(crate) theme: String,
     /// When to show the global stats area
     pub(crate) stats_show: ui::screen::StatsShow,
-    /// Wether tags have to match exactly or only by prefix when filtering.
+    /// Whether tags have to match exactly or only by prefix when filtering.
     pub(crate) tag_match: data::TagMatch,
     /// Default sorting mode for notes
     pub(crate) default_sorting: data::SortingMode,
@@ -52,7 +52,7 @@ pub struct Config {
     pub(crate) css: Option<String>,
     /// String to prepend to all generated html documents (e.g. for MathJax)
     pub(crate) html_prepend: Option<String>,
-    /// Wether or not to insert a MathJax preamble in notes containing math code.
+    /// Whether or not to insert a MathJax preamble in notes containing math code.
     pub(crate) katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     pub(crate) math_replacements: HashMap<String, String>,
