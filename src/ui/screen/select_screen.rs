@@ -75,9 +75,9 @@ pub struct SelectScreen {
     selected: usize,
 
     // === Sorting options ===
-    /// UI mode wether the user wants the filter conditions to all apply or if any (one of them) is enough.
+    /// UI mode whether the user wants the filter conditions to all apply or if any (one of them) is enough.
     any_conditions: bool,
-    /// UI mode wether to match tags by prefix or exactly.
+    /// UI mode whether to match tags by prefix or exactly.
     tag_match: data::TagMatch,
     /// Default sorting of the note list.
     default_sorting: data::SortingMode,
@@ -467,7 +467,7 @@ impl super::Screen for SelectScreen {
                                             ))
                                         })?,
                                 )?;
-                                // if successfull, refresh the ui
+                                // if successful, refresh the ui
                                 self.index.borrow().poll_file_system();
                                 self.refresh_env_stats();
                             }
@@ -486,7 +486,7 @@ impl super::Screen for SelectScreen {
                                                 )
                                             })?,
                                     )?;
-                                    // if successfull, update the index and refresh the ui
+                                    // if successful, update the index and refresh the ui
                                     self.index.borrow().poll_file_system();
                                     self.refresh_env_stats();
                                 }
@@ -506,7 +506,7 @@ impl super::Screen for SelectScreen {
                                                 )
                                             })?,
                                     )?;
-                                    // if successfull, refresh the ui
+                                    // if successful, refresh the ui
                                     self.index.borrow().poll_file_system();
                                     self.refresh_env_stats();
                                 }
@@ -534,7 +534,7 @@ impl super::Screen for SelectScreen {
                         // delete it from index & filesystem
                         self.manager
                             .delete_note_file(self.index.clone(), &env_stats.id)?;
-                        // if successfull, refresh the ui
+                        // if successful, refresh the ui
                         self.index.borrow().poll_file_system();
                         self.refresh_env_stats();
                     }

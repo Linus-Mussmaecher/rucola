@@ -13,7 +13,7 @@ pub struct HtmlBuilder {
     css_path: Option<path::PathBuf>,
     /// String to prepend to all generated html documents (e.g. for MathJax)
     html_prepend: Option<String>,
-    /// Wether or not to insert a MathJax preamble in notes containing math code.
+    /// Whether or not to insert a MathJax preamble in notes containing math code.
     katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     math_replacements: HashMap<String, String>,

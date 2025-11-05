@@ -118,7 +118,7 @@ impl EnvironmentStats {
 
         // Count links by iterating over unfiltered index
         for (id, note) in index.inner.iter() {
-            // Remember if source is from withing the environment.
+            // Remember if source is from within the environment.
             let local_source = filtered_index.contains_key(id);
             // Keep track of found local targets.
             let mut local_targets = 0;
@@ -272,7 +272,7 @@ impl EnvironmentStats {
         self.filtered_stats.len()
     }
 
-    /// Converts this environemnt to a table of rows with the (sorted) notes contained in it.
+    /// Converts this environment to a table of rows with the (sorted) notes contained in it.
     pub fn to_note_table(
         &self,
         index: data::NoteIndexContainer,
