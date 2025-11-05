@@ -123,7 +123,7 @@ Rucola can be launched from your command line with the `rucola` command.
 > For more information on possible configuration options, features and usage tips, see the [GitHub Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki).
 
 ### Configuration
-Rucola requires three configuation files:
+Rucola requires three configuration files:
  - `config.toml`: The main TOML configuration file. See [the Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki/Configuration) for its entries.
  - `<style>.toml`: A TOML style file to customize the appearance of rucola itself. The exact name is given in `config.toml`. See [the Wiki](https://github.com/Linus-Mussmaecher/rucola/wiki/Style) for its entries.
  - `<cssstyle>.css`: A CSS style file to customize the appearance of the HTML files created when converting markdown notes.
