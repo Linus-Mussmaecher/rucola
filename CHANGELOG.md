@@ -19,7 +19,7 @@
  - Added minor git integration.
    If rucola detects a git repo in its vault path, it will display
      - a `!` if there are untracked changes.
-     - a `+` if there are uncommited changes.
+     - a `+` if there are uncommitted changes.
      - a `^` if the branch is ahead of the remote.
      - a `v` if the branch is behind the remote.
  - Added support for YAML frontmatter.
