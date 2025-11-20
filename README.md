@@ -107,6 +107,18 @@ Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
  cargo install --locked rucola-notes
 ```
 
+#### Termux User Repository (TUR)
+Install using `pkg` from [`TUR`](https://github.com/termux-user-repository/tur):
+
+```
+  # First enable the TUR repo in Termux
+  pkg install tur-repo
+  pkg install rucola
+ ```
+
+Now you can use rucola on an android device.
+
+
 #### Manual Build
 If you want to build the latest commit of rucola by yourself, you can clone the repository, build & install: 
 ```
