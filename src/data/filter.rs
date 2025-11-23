@@ -220,8 +220,11 @@ mod tests {
 
     #[test]
     fn test_filter() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -251,8 +254,11 @@ mod tests {
 
     #[test]
     fn test_filter_prefix() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -313,8 +319,11 @@ mod tests {
 
     #[test]
     fn test_filter_prefix_negate() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -375,8 +384,11 @@ mod tests {
 
     #[test]
     fn test_filter_from_string() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -459,8 +471,11 @@ mod tests {
 
     #[test]
     fn test_filter_from_string_multi_word_tags() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;

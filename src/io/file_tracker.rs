@@ -136,8 +136,10 @@ mod tests {
         let txt = path::PathBuf::from("./tests/common/notes/Books.txt");
         let rs = path::PathBuf::from("./tests/common/notes/Books.rs");
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let config = crate::Config {
+            vault_path: Some(std::path::PathBuf::from("./tests")),
+            ..Default::default()
+        };
 
         let tracker = super::FileTracker::new(&config).unwrap();
 
@@ -152,8 +154,10 @@ mod tests {
         let md_ignored = path::PathBuf::from("./tests/.html/books.md");
         let html_ignored = path::PathBuf::from("./tests/.html/books.html");
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let config = crate::Config {
+            vault_path: Some(std::path::PathBuf::from("./tests")),
+            ..Default::default()
+        };
 
         let tracker = super::FileTracker::new(&config).unwrap();
 
@@ -166,8 +170,10 @@ mod tests {
         let md = path::PathBuf::from("./tests/common/notes/Books.md");
         let md_foreign = path::PathBuf::from("./README.md");
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        let config = crate::Config {
+            vault_path: Some(std::path::PathBuf::from("./tests")),
+            ..Default::default()
+        };
 
         let tracker = super::FileTracker::new(&config).unwrap();
 
@@ -252,8 +258,10 @@ mod tests {
     fn test_watcher_rename() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
         let fm = crate::io::FileManager::new(&config);
         fm.create_note_file("Lie Group").unwrap();
         fm.create_note_file("Math/Atlas").unwrap();
@@ -305,8 +313,10 @@ mod tests {
     fn test_watcher_rename_with_delay() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
 
         let fm = crate::io::FileManager::new(&config);
         fm.create_note_file("Lie Group").unwrap();

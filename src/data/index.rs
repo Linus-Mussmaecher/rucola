@@ -62,7 +62,7 @@ impl NoteIndex {
     pub fn new(
         mut tracker: io::FileTracker,
         builder: io::HtmlBuilder,
-        config: &crate::config::Config,
+        config: &crate::Config,
     ) -> (Self, Vec<error::RucolaError>) {
         // create an error struct
         let mut errors = vec![];
@@ -272,8 +272,12 @@ mod tests {
 
     #[test]
     fn test_index() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config{
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            cache_index: true,
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -298,8 +302,12 @@ mod tests {
 
     #[test]
     fn test_links() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config{
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            cache_index: true,
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -328,8 +336,12 @@ mod tests {
 
     #[test]
     fn test_blinks() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config{
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            cache_index: true,
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -354,8 +366,12 @@ mod tests {
 
     #[test]
     fn test_links_yaml() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config{
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            cache_index: true,
+            ..Default::default()
+        };
+
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -379,10 +395,11 @@ mod tests {
 
     #[test]
     fn test_index_saving() {
-        let mut config = crate::Config::default();
-        let vault_path = std::env::current_dir().unwrap().join("tests");
-        config.vault_path = Some(vault_path.clone());
-        config.cache_index = true;
+        let config = crate::Config{
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            cache_index: true,
+            ..Default::default()
+        };
 
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
@@ -392,7 +409,7 @@ mod tests {
 
         index.save();
 
-        let other_inner = NoteIndex::load_cached_index(vault_path.clone()).expect("To load the index correctly.");
+        let other_inner = NoteIndex::load_cached_index(config.vault_path.clone().unwrap()).expect("To load the index correctly.");
 
         let list1 = index.inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
         let list2 = other_inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
@@ -409,7 +426,7 @@ mod tests {
             assert_eq!(note1.characters, note2.characters);
             assert_eq!(note1.last_modification, note2.last_modification);
             assert_eq!(note1.yaml_frontmatter, note2.yaml_frontmatter);
-            let mut p2 = vault_path.clone();
+            let mut p2 = config.vault_path.clone().unwrap();
             p2.push(note2.path);
             assert_eq!(note1.path, p2);
         }

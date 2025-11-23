@@ -240,8 +240,10 @@ mod tests {
 
     #[test]
     fn test_create_html_no_panic() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
         let hb = super::HtmlBuilder::new(&config);
 
         let os = crate::data::Note::from_path(
@@ -256,8 +258,10 @@ mod tests {
 
     #[test]
     fn test_create_html_no_panic_math() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
         let hb = super::HtmlBuilder::new(&config);
 
         // with math

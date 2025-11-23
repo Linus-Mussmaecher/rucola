@@ -1,28 +1,15 @@
-[books]
-display_name = "Books"
-name = "Books"
-tags = []
+[osx]
+display_name = "OSX"
+name = "OSX"
+tags = ["#os/osx"]
 links = []
-words = 32
-characters = 195
-path = "/common/notes/Books.md"
+words = 36
+characters = 232
+path = "/common/notes/OSX.md"
 
-[books.last_modification]
-secs_since_epoch = 1754274184
-nanos_since_epoch = 48607567
-
-[atlas]
-display_name = "Atlas"
-name = "Atlas"
-tags = ["#lietheo", "#diffgeo"]
-links = ["chart", "manifold", "topology", "manifold"]
-words = 119
-characters = 713
-path = "/common/notes/math/Atlas.md"
-
-[atlas.last_modification]
-secs_since_epoch = 1754274227
-nanos_since_epoch = 303103642
+[osx.last_modification]
+secs_since_epoch = 1754274204
+nanos_since_epoch = 505011101
 
 [topology]
 display_name = "Topology"
@@ -34,6 +21,32 @@ characters = 413
 path = "/common/notes/math/Topology.md"
 
 [topology.last_modification]
+secs_since_epoch = 1754274204
+nanos_since_epoch = 505011101
+
+[manifold]
+display_name = "Manifold"
+name = "Manifold"
+tags = ["#diffgeo", "#topology"]
+links = ["topology", "smooth-map", "atlas", "lie-group"]
+words = 129
+characters = 852
+path = "/common/notes/math/Manifold.md"
+
+[manifold.last_modification]
+secs_since_epoch = 1754274210
+nanos_since_epoch = 468924889
+
+[smooth-map]
+display_name = "Smooth Map"
+name = "Smooth Map"
+tags = ["#diffgeo"]
+links = ["manifold", "atlas"]
+words = 72
+characters = 403
+path = "/common/notes/math/Smooth Map.md"
+
+[smooth-map.last_modification]
 secs_since_epoch = 1754274204
 nanos_since_epoch = 505011101
 
@@ -50,6 +63,32 @@ path = "/common/notes/Windows.md"
 secs_since_epoch = 1760459155
 nanos_since_epoch = 89686451
 
+[operating-systems]
+display_name = "Operating Systems"
+name = "Operating Systems"
+tags = ["#os"]
+links = ["linux", "windows", "osx", "windows", "windows", "linux"]
+words = 41
+characters = 257
+path = "/common/notes/Operating Systems.md"
+
+[operating-systems.last_modification]
+secs_since_epoch = 1754274207
+nanos_since_epoch = 266963417
+
+[lie-group]
+display_name = "Lie Group"
+name = "Lie Group"
+tags = ["#lietheo"]
+links = ["manifold", "smooth-map", "topology"]
+words = 123
+characters = 747
+path = "/common/notes/math/Lie Group.md"
+
+[lie-group.last_modification]
+secs_since_epoch = 1754274204
+nanos_since_epoch = 505011101
+
 [chart]
 display_name = "Chart"
 name = "Chart"
@@ -60,19 +99,6 @@ characters = 678
 path = "/common/notes/math/Chart.md"
 
 [chart.last_modification]
-secs_since_epoch = 1754274204
-nanos_since_epoch = 505011101
-
-[osx]
-display_name = "OSX"
-name = "OSX"
-tags = ["#os/osx"]
-links = []
-words = 36
-characters = 232
-path = "/common/notes/OSX.md"
-
-[osx.last_modification]
 secs_since_epoch = 1754274204
 nanos_since_epoch = 505011101
 
@@ -90,6 +116,19 @@ yaml_frontmatter = 93
 secs_since_epoch = 1761319903
 nanos_since_epoch = 939384957
 
+[atlas]
+display_name = "Atlas"
+name = "Atlas"
+tags = ["#lietheo", "#diffgeo"]
+links = ["chart", "manifold", "topology", "manifold"]
+words = 119
+characters = 713
+path = "/common/notes/math/Atlas.md"
+
+[atlas.last_modification]
+secs_since_epoch = 1754274227
+nanos_since_epoch = 303103642
+
 [linux]
 display_name = "Linux"
 name = "Linux"
@@ -103,54 +142,15 @@ path = "/common/notes/Linux.md"
 secs_since_epoch = 1754274227
 nanos_since_epoch = 303103642
 
-[lie-group]
-display_name = "Lie Group"
-name = "Lie Group"
-tags = ["#lietheo"]
-links = ["manifold", "smooth-map", "topology"]
-words = 123
-characters = 747
-path = "/common/notes/math/Lie Group.md"
+[books]
+display_name = "Books"
+name = "Books"
+tags = []
+links = []
+words = 32
+characters = 195
+path = "/common/notes/Books.md"
 
-[lie-group.last_modification]
-secs_since_epoch = 1754274204
-nanos_since_epoch = 505011101
-
-[manifold]
-display_name = "Manifold"
-name = "Manifold"
-tags = ["#diffgeo", "#topology"]
-links = ["topology", "smooth-map", "atlas", "lie-group"]
-words = 129
-characters = 852
-path = "/common/notes/math/Manifold.md"
-
-[manifold.last_modification]
-secs_since_epoch = 1754274210
-nanos_since_epoch = 468924889
-
-[operating-systems]
-display_name = "Operating Systems"
-name = "Operating Systems"
-tags = ["#os"]
-links = ["linux", "windows", "osx", "windows", "windows", "linux"]
-words = 41
-characters = 257
-path = "/common/notes/Operating Systems.md"
-
-[operating-systems.last_modification]
-secs_since_epoch = 1754274207
-nanos_since_epoch = 266963417
-
-[smooth-map]
-display_name = "Smooth Map"
-name = "Smooth Map"
-tags = ["#diffgeo"]
-links = ["manifold", "atlas"]
-words = 72
-characters = 403
-path = "/common/notes/math/Smooth Map.md"
-
-[smooth-map.last_modification]
-secs_since_epoch = 1754274204
-nanos_since_epoch = 505011101
+[books.last_modification]
+secs_since_epoch = 1754274184
+nanos_since_epoch = 48607567

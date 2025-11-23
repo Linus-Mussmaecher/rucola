@@ -354,8 +354,10 @@ mod tests {
     fn test_edit() {
         let editor = std::env::var("EDITOR");
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
         let path = std::env::current_dir()
             .unwrap()
@@ -369,8 +371,10 @@ mod tests {
 
     #[test]
     fn test_viewing() {
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
         let note = crate::data::Note::from_path(
             &std::env::current_dir()
@@ -387,8 +391,10 @@ mod tests {
     fn test_create() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
 
         let fm = super::FileManager::new(&config);
 
@@ -439,8 +445,10 @@ mod tests {
     fn test_delete() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
 
         fm.create_note_file("Lie Group").unwrap();
@@ -472,8 +480,10 @@ mod tests {
     fn test_rename() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
@@ -515,8 +525,10 @@ mod tests {
     fn test_rename_updates_links() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
 
         let at_path = tmp.join(String::from("Atlas.md"));
@@ -584,8 +596,10 @@ mod tests {
     fn test_move() {
         let tmp = testdir::testdir!();
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(tmp.clone());
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
@@ -638,8 +652,10 @@ mod tests {
             .unwrap()
             .join("tests/common/test.txt");
 
-        let mut config = crate::Config::default();
-        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
+        let config = crate::Config {
+            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            ..Default::default()
+        };
         let fm = super::FileManager::new(&config);
 
         let mut no_ending = std::env::current_dir().unwrap().join("tests/common/test");
