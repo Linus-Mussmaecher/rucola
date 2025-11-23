@@ -350,16 +350,16 @@ impl FileManager {
 #[cfg(test)]
 mod tests {
 
-    use std::path;
-
     #[test]
     fn test_edit() {
         let editor = std::env::var("EDITOR");
 
         let mut config = crate::Config::default();
-        config.vault_path = Some(path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let fm = super::FileManager::new(&config);
-        let path = path::Path::new("./tests/common/notes/Books.md");
+        let path = std::env::current_dir()
+            .unwrap()
+            .join("tests/common/notes/Books.md");
 
         if let Ok(_editor) = editor {
             // if we can unwrap the env variable, then we should be able to create a command
@@ -370,10 +370,14 @@ mod tests {
     #[test]
     fn test_viewing() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let fm = super::FileManager::new(&config);
-        let note =
-            crate::data::Note::from_path(path::Path::new("./tests/common/notes/Books.md")).unwrap();
+        let note = crate::data::Note::from_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/Books.md"),
+        )
+        .unwrap();
 
         fm.create_view_command(&note, true).unwrap();
         fm.create_view_command(&note, false).unwrap();
@@ -524,17 +528,23 @@ mod tests {
         fm.create_note_file("Topology").unwrap();
 
         std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Atlas.md"),
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/math/Atlas.md"),
             &at_path,
         )
         .unwrap();
         std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Manifold.md"),
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/math/Manifold.md"),
             &ma_path,
         )
         .unwrap();
         std::fs::copy(
-            path::Path::new("./tests/common/notes/math/Topology.md"),
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/math/Topology.md"),
             &to_path,
         )
         .unwrap();
@@ -621,16 +631,24 @@ mod tests {
 
     #[test]
     fn test_file_endings() {
-        let md_ending_tar = path::PathBuf::from("./tests/common/test.md");
-        let txt_ending_tar = path::PathBuf::from("./tests/common/test.txt");
+        let md_ending_tar = std::env::current_dir()
+            .unwrap()
+            .join("tests/common/test.md");
+        let txt_ending_tar = std::env::current_dir()
+            .unwrap()
+            .join("tests/common/test.txt");
 
         let mut config = crate::Config::default();
-        config.vault_path = Some(path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let fm = super::FileManager::new(&config);
 
-        let mut no_ending = path::PathBuf::from("./tests/common/test");
-        let mut md_ending = path::PathBuf::from("./tests/common/test.md");
-        let mut txt_ending = path::PathBuf::from("./tests/common/test.txt");
+        let mut no_ending = std::env::current_dir().unwrap().join("tests/common/test");
+        let mut md_ending = std::env::current_dir()
+            .unwrap()
+            .join("tests/common/test.md");
+        let mut txt_ending = std::env::current_dir()
+            .unwrap()
+            .join("tests/common/test.txt");
 
         fm.ensure_file_extension(&mut no_ending);
         fm.ensure_file_extension(&mut md_ending);

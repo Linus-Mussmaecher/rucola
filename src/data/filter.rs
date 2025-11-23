@@ -11,7 +11,7 @@ pub enum TagMatch {
 }
 
 impl TagMatch {
-    pub fn cycle(self) -> Self{
+    pub fn cycle(self) -> Self {
         match self {
             TagMatch::Exact => TagMatch::Prefix,
             TagMatch::Prefix => TagMatch::Exact,
@@ -221,7 +221,7 @@ mod tests {
     #[test]
     fn test_filter() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -252,7 +252,7 @@ mod tests {
     #[test]
     fn test_filter_prefix() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -312,9 +312,9 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_prefix_negate(){
+    fn test_filter_prefix_negate() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -376,7 +376,7 @@ mod tests {
     #[test]
     fn test_filter_from_string() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -385,7 +385,11 @@ mod tests {
 
         // === Filter 2 ===
 
-        let filter2 = Filter::new("!#lietheo #diffgeo >Manifold !>atlas", false, TagMatch::Exact);
+        let filter2 = Filter::new(
+            "!#lietheo #diffgeo >Manifold !>atlas",
+            false,
+            TagMatch::Exact,
+        );
 
         assert_eq!(
             filter2.tags,
@@ -419,7 +423,7 @@ mod tests {
         let filter3 = Filter::new(
             "!#topology #os >TopologY !>Smooth-mAp <atlas !<linux |equivalent",
             false,
-            TagMatch::Exact
+            TagMatch::Exact,
         );
 
         assert_eq!(
@@ -456,7 +460,7 @@ mod tests {
     #[test]
     fn test_filter_from_string_multi_word_tags() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;

@@ -427,7 +427,7 @@ mod tests {
     #[test]
     fn test_env_stats_1_tags_any() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -464,7 +464,7 @@ mod tests {
     #[test]
     fn test_env_stats_2_tags_all() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -510,7 +510,7 @@ mod tests {
     #[test]
     fn test_env_stats_3_title() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -543,7 +543,7 @@ mod tests {
     #[test]
     fn test_env_stats_4_blinks() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
@@ -576,7 +576,7 @@ mod tests {
     #[test]
     fn test_env_stats_5_links_blinks() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;

@@ -236,17 +236,20 @@ pub fn name_to_html_path(name: &str, vault_path: &path::Path) -> path::PathBuf {
 #[cfg(test)]
 mod tests {
 
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     #[test]
     fn test_create_html_no_panic() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let hb = super::HtmlBuilder::new(&config);
 
-        let os =
-            crate::data::Note::from_path(Path::new("./tests/common/notes/Operating Systems.md"))
-                .unwrap();
+        let os = crate::data::Note::from_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/Operating Systems.md"),
+        )
+        .unwrap();
 
         hb.create_html(&os, true).unwrap();
     }
@@ -254,13 +257,16 @@ mod tests {
     #[test]
     fn test_create_html_no_panic_math() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let hb = super::HtmlBuilder::new(&config);
 
         // with math
-        let smooth_map =
-            crate::data::Note::from_path(Path::new("./tests/common/notes/math/Smooth Map.md"))
-                .unwrap();
+        let smooth_map = crate::data::Note::from_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/math/Smooth Map.md"),
+        )
+        .unwrap();
 
         hb.create_html(&smooth_map, true).unwrap();
     }
@@ -268,32 +274,42 @@ mod tests {
     #[test]
     fn test_name_to_html_path() {
         // let config = crate::Config::default();
-        let vault_path = PathBuf::from("./tests");
+        let vault_path = std::env::current_dir().unwrap().join("tests");
 
         assert_eq!(
             super::name_to_html_path("Lie Group", &vault_path),
-            PathBuf::from("./tests/.html/lie-group.html")
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/.html/lie-group.html")
         );
         assert_eq!(
             super::name_to_html_path("lie-group", &vault_path),
-            PathBuf::from("./tests/.html/lie-group.html")
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/.html/lie-group.html")
         );
         assert_eq!(
             super::name_to_html_path("books", &vault_path),
-            PathBuf::from("./tests/.html/books.html")
+            std::env::current_dir()
+                .unwrap()
+                .join("tests/.html/books.html")
         );
     }
 
     #[test]
     fn test_create_html_creates_files() {
         let mut config = crate::Config::default();
-        let vault_path = PathBuf::from("./tests");
+        let vault_path = std::env::current_dir().unwrap().join("tests");
         let b_path = super::name_to_html_path("Books", &vault_path);
         config.vault_path = Some(vault_path);
         let hb = super::HtmlBuilder::new(&config);
 
-        let books =
-            crate::data::Note::from_path(Path::new("./tests/common/notes/Books.md")).unwrap();
+        let books = crate::data::Note::from_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/Books.md"),
+        )
+        .unwrap();
 
         if b_path.exists() {
             std::fs::remove_file(&b_path).unwrap();
@@ -309,15 +325,18 @@ mod tests {
     #[test]
     fn test_create_html_creates_files_with_math() {
         let mut config = crate::Config::default();
-        let vault_path = PathBuf::from("./tests");
+        let vault_path = std::env::current_dir().unwrap().join("tests");
         let lg_path = super::name_to_html_path("Lie Group", &vault_path);
         config.vault_path = Some(vault_path);
         let hb = super::HtmlBuilder::new(&config);
 
         // with math
-        let liegroup =
-            crate::data::Note::from_path(Path::new("./tests/common/notes/math/Lie Group.md"))
-                .unwrap();
+        let liegroup = crate::data::Note::from_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("tests/common/notes/math/Lie Group.md"),
+        )
+        .unwrap();
 
         if Path::new(&lg_path).exists() {
             std::fs::remove_file(&lg_path).unwrap();
