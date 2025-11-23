@@ -15,7 +15,10 @@ pub struct NoteIndex {
     /// The wrapped HashMap, available only in the data module.
     pub(super) inner: HashMap<String, Note>,
 
+
     /// === Config ===
+    /// The vault path
+    vault_path: path::PathBuf,
     /// The file tracker that sends file events and watches the structure of the vault of this index.
     tracker: io::FileTracker,
     /// The HtmlBuilder this index uses to create its HTML files.
@@ -30,13 +33,20 @@ impl std::fmt::Debug for NoteIndex {
 
 impl NoteIndex {
 
+    /// Loads the cached index from file.
     fn load_cached_index(
         vault_path: path::PathBuf
     ) -> Option<HashMap<String, Note>> {
-        let cache_path = path::Path::new(&vault_path).with_file_name("rucola_cache.toml");
+        // Create the correct path.
+        let cache_path = vault_path.join("rucola_index.toml");
+
+        // Check if it exist and load the contents from file.
         if cache_path.exists() {
             let file_content = std::fs::read_to_string(cache_path).ok()?;
-            let cached_index: HashMap<String, Note> = toml::from_str(&file_content).ok()?;
+            let mut cached_index: HashMap<String, Note> = toml::from_str(&file_content).ok()?;
+            for (_id, note) in cached_index.iter_mut() {
+                note.path = vault_path.join(note.path.clone());
+            }
             Some(cached_index)
         } else {
              None   
@@ -69,7 +79,13 @@ impl NoteIndex {
             // Convert tiles to notes and skip errors
             .filter(|entry| entry.metadata().is_ok_and(|md| md.is_file()))
             .flat_map(|entry| match Note::from_path(entry.path()) {
-                Ok(note) => Some(note),
+                Ok(note) => {
+                    // Also ensure the html is created along the way.
+                    if let Err(e) = builder.create_html(&note, false){
+                        errors.push(e);
+                    }
+                    Some(note)
+                },
                 Err(e) => {
                     errors.push(e);
                     None
@@ -79,14 +95,6 @@ impl NoteIndex {
             .map(|note| (super::name_to_id(&note.name), note))
             // Collect into hash map
             .collect::<HashMap<_, _>>());
-
-        // create htmls and save errors
-        errors.extend(
-            inner
-                .values()
-                .map(|note| builder.create_html(note, false))
-                .flat_map(Result::err),
-        );
 
         // let the watcher start watching _after_ all htmls have been re-done
         match tracker.initialize_watching() {
@@ -99,6 +107,7 @@ impl NoteIndex {
                 inner,
                 tracker,
                 builder,
+                vault_path: config.vault_path.clone().expect("Vault path should be set."),
             },
             errors,
         )
@@ -233,9 +242,26 @@ impl NoteIndex {
         self.tracker.poll_file_system();
     }
 
-    pub fn save(&self) {
-        let mut file = std::fs::File::create("index.toml").unwrap();
-        let _ = write!(file, "{}", toml::to_string(&self.inner).unwrap());
+    /// Saves a copy of this index to the vault path to be quickly reloaded on the next launch.
+    pub fn save(
+        &self,
+    ) {
+        // Create the file at the correct location.
+        let mut file = std::fs::File::create(self.vault_path.join("rucola_index.toml")).unwrap();
+
+
+        // Copy the inner index.
+        let mut copy = self.inner.clone();
+
+        // Change all paths to be relative to the vault path (important for reloading on multiple machines with differing vault paths).
+        for (_id, note) in copy.iter_mut() {
+            let string = note.path.to_str().map(|s| s.replace(self.vault_path.to_str().unwrap(), "")).unwrap();
+            note.path = path::PathBuf::from(string);
+
+        }
+
+        // Write the modified index to the file.
+        let _ = write!(file, "{}", toml::to_string(&copy).unwrap());
     }
 }
 
@@ -247,7 +273,7 @@ mod tests {
     #[test]
     fn test_index() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -273,7 +299,7 @@ mod tests {
     #[test]
     fn test_links() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -303,7 +329,7 @@ mod tests {
     #[test]
     fn test_blinks() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -329,7 +355,7 @@ mod tests {
     #[test]
     fn test_links_yaml() {
         let mut config = crate::Config::default();
-        config.vault_path = Some(std::path::PathBuf::from("./tests"));
+        config.vault_path = Some(std::env::current_dir().unwrap().join("tests"));
         let tracker = io::FileTracker::new(&config).unwrap();
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
@@ -349,5 +375,43 @@ mod tests {
                 ("windows".to_string(), "Windows".to_string()),
             ]
         );
+    }
+
+    #[test]
+    fn test_index_saving() {
+        let mut config = crate::Config::default();
+        let vault_path = std::env::current_dir().unwrap().join("tests");
+        config.vault_path = Some(vault_path.clone());
+        config.cache_index = true;
+
+        let tracker = io::FileTracker::new(&config).unwrap();
+        let builder = io::HtmlBuilder::new(&config);
+        let index = NoteIndex::new(tracker, builder, &config).0;
+
+        assert_eq!(index.inner.len(), 12);
+
+        index.save();
+
+        let other_inner = NoteIndex::load_cached_index(vault_path.clone()).expect("To load the index correctly.");
+
+        let list1 = index.inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
+        let list2 = other_inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
+
+        assert_eq!(list1.len(), 12);
+        assert_eq!(list2.len(), 12);
+
+        for (note1, note2) in list1.zip(list2){
+            assert_eq!(note1.display_name, note2.display_name);
+            assert_eq!(note1.name, note2.name);
+            assert_eq!(note1.tags, note2.tags);
+            assert_eq!(note1.links, note2.links);
+            assert_eq!(note1.words, note2.words);
+            assert_eq!(note1.characters, note2.characters);
+            assert_eq!(note1.last_modification, note2.last_modification);
+            assert_eq!(note1.yaml_frontmatter, note2.yaml_frontmatter);
+            let mut p2 = vault_path.clone();
+            p2.push(note2.path);
+            assert_eq!(note1.path, p2);
+        }
     }
 }
