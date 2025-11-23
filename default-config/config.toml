@@ -12,7 +12,7 @@ default_extension = "md"
 
 # By default, rucola re-indexes your entire vault on every launch.
 # When this option is turned on, rucola will save a cache of its internal index to a file when you quit the program and re-load it when you start the program.
-# The index file is saved in `<vault_path>/rucola_cache.toml`.
+# The index file is saved in `<vault_path>/rucola_index.toml`.
 # 
 # WARNING 1: Quitting rucola through an external method (e.g. terminating the process, closing the terminal window) will result in your index not being saved. You index will be out of sync on the next launch.
 #
