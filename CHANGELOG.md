@@ -1,4 +1,13 @@
-# Version 0.7.1 Bug Fix
+# Version 0.8.0 - Index Caching & More
+- Slightly changed the way markdown links are parsed to allow them to use file extensions.
+- Fixed a bug that caused rucola to panic and crash when run on a git repo with detached head.
+- Added the option to cache the rucola index in a file when the program is closed, and to reload it on start up. This comes with several caveats laid out in the wiki and default config and is disabled by default.
+- Added confirmation dialogue when deleting notes
+- Added more support for multi-word tags
+- Added option to match tags by prefix instead of exactly
+
+
+# Version 0.7.1 - Bug Fix
 - Fixed an issue that caused YAML parsing to sometimes panic when no content was found.
 
 # Version 0.7.0 - Sorting & Filtering
