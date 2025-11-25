@@ -93,10 +93,24 @@ These installers are generated using [`cargo dist`](https://github.com/axodotdev
     <img src="https://repology.org/badge/vertical-allrepos/rucola.svg" alt="Packaging status" align="right">
 </a>
 
-You can install `rucola` from the [official Arch User Repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
+Install `rucola` from the [official Arch User Repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
 
 ```
 pacman -S rucola
+```
+
+Install from [`TUR`](https://github.com/termux-user-repository/tur) using `pkg` to use `rucola` on Android devices:
+
+```
+  # First enable the TUR repo in Termux
+  pkg install tur-repo
+  pkg install rucola
+ ```
+
+Install for [NetBSD](https://www.netbsd.org/) using `pkgin`:
+
+```
+ pkgin install rucola
 ```
 
 Rucola is also packaged for some other distributions as seen on the right.
@@ -106,18 +120,6 @@ Install using `cargo` from [`crates.io`](https://crates.io/crates/rucola-notes):
 ```
  cargo install --locked rucola-notes
 ```
-
-#### Termux User Repository (TUR)
-Install using `pkg` from [`TUR`](https://github.com/termux-user-repository/tur):
-
-```
-  # First enable the TUR repo in Termux
-  pkg install tur-repo
-  pkg install rucola
- ```
-
-Now you can use rucola on an android device.
-
 
 #### Manual Build
 If you want to build the latest commit of rucola by yourself, you can clone the repository, build & install: 
