@@ -23,6 +23,8 @@ pub struct App {
     builder: io::HtmlBuilder,
     /// The styles used by this app's screens.
     styles: ui::UiStyles,
+    /// Decides wether the index is cached when the program is quit.
+    cache_index: bool,
 }
 
 impl App {
@@ -123,6 +125,7 @@ impl App {
                 styles,
                 manager,
                 builder,
+                cache_index: config.cache_index,
             },
             errors,
         )
@@ -190,7 +193,11 @@ impl App {
         // Act on the potentially returned message.
         match &msg {
             // Message that do not modify the app trigger no immediate effect and are later passed up.
-            ui::Message::Quit => self.index.borrow().save(),
+            ui::Message::Quit => {
+                if self.cache_index {
+                    self.index.borrow().save()
+                }
+            }
             ui::Message::None | ui::Message::OpenExternalCommand(_) => {}
             ui::Message::DisplayStackClear => {
                 // Clear the display stack and remove the current display screen, if there is one.
