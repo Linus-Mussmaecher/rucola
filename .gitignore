@@ -20,3 +20,5 @@ target/
 # Added by cargo
 
 /target
+
+/tests/rucola_index.toml
