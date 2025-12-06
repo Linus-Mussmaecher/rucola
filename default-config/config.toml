@@ -23,7 +23,6 @@ default_extension = "md"
 # If you index is out sync, you can fix it by deleting any existing index cache files and re-launching rucola, triggering a re-index.
 cache_index = false
 
-
 # The default look of the application.
 # Two default themes (for light and dark terminal setups) are provided.
 # You can create additional ones by creating a TOML file in your rucola config folder and linking it here by file name.
