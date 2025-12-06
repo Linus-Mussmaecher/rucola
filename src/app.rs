@@ -192,7 +192,7 @@ impl App {
 
         // Act on the potentially returned message.
         match &msg {
-            // Message that do not modify the app trigger no immediate effect and are later passed up.
+            // Message that do not modify the app potentially trigger a save, but no other immediate effect and are later passed up.
             ui::Message::Quit => {
                 if self.cache_index {
                     self.index.borrow().save()

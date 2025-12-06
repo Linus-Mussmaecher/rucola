@@ -250,18 +250,17 @@ impl NoteIndex {
         let mut file = std::fs::File::create(self.vault_path.join("rucola_index.toml")).unwrap();
 
 
-        // Copy the inner index.
-        let mut copy = self.inner.clone();
+        // Copy the inner index into a BTreeMap to get automatic sorting by key.
+        let mut copy: std::collections::BTreeMap<String, Note>= self.inner.iter().map(|(a,b)| (a.clone(), b.clone())).collect();
 
         // Change all paths to be relative to the vault path (important for reloading on multiple machines with differing vault paths).
         for (_id, note) in copy.iter_mut() {
             let string = note.path.to_str().map(|s| s.replace(self.vault_path.to_str().unwrap(), "")).unwrap();
             note.path = path::PathBuf::from(string);
-
         }
 
         // Write the modified index to the file.
-        let _ = write!(file, "{}", toml::to_string(&copy).unwrap());
+        write!(file, "{}", toml::to_string(&copy).unwrap()).unwrap();
     }
 }
 
