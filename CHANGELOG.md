@@ -1,3 +1,7 @@
+# Version 0.8.1 - Sorted Index Caching
+- Added an additional check that only saves the index when a later reload is also desired.
+- Changed the caching of the index to be sorted alphabetically by key to work better with version control software.
+
 # Version 0.8.0 - Index Caching & More
 - Slightly changed the way markdown links are parsed to allow them to use file extensions.
 - Fixed a bug that caused rucola to panic and crash when run on a git repo with detached head.
