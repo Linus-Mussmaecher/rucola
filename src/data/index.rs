@@ -256,6 +256,7 @@ impl NoteIndex {
         // Change all paths to be relative to the vault path (important for reloading on multiple machines with differing vault paths).
         for (_id, note) in copy.iter_mut() {
             let string = note.path.to_str().map(|s| s.replace(self.vault_path.to_str().unwrap(), "")).unwrap();
+            let string = string.trim_start_matches("/");
             note.path = path::PathBuf::from(string);
         }
 
@@ -394,8 +395,10 @@ mod tests {
 
     #[test]
     fn test_index_saving() {
+        let testdir = std::env::current_dir().unwrap().join("tests");
+        
         let config = crate::Config{
-            vault_path: Some(std::env::current_dir().unwrap().join("tests")),
+            vault_path: Some(testdir.clone()),
             cache_index: true,
             ..Default::default()
         };
@@ -408,7 +411,7 @@ mod tests {
 
         index.save();
 
-        let other_inner = NoteIndex::load_cached_index(config.vault_path.clone().unwrap()).expect("To load the index correctly.");
+        let other_inner = NoteIndex::load_cached_index(testdir.clone()).expect("To load the index correctly.");
 
         let list1 = index.inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
         let list2 = other_inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
@@ -425,9 +428,7 @@ mod tests {
             assert_eq!(note1.characters, note2.characters);
             assert_eq!(note1.last_modification, note2.last_modification);
             assert_eq!(note1.yaml_frontmatter, note2.yaml_frontmatter);
-            let mut p2 = config.vault_path.clone().unwrap();
-            p2.push(note2.path);
-            assert_eq!(note1.path, p2);
+            assert_eq!(note1.path, testdir.join(note2.path));
         }
     }
 }
