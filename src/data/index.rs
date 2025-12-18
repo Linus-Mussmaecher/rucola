@@ -225,7 +225,7 @@ impl NoteIndex {
             .unwrap_or_default()
     }
 
-    /// Returns an iterator over pairs of (id, name) of notes linking to this note.
+    /// Returns a vector over pairs of (id, name) of notes linking to this note.
     pub fn blinks_vec(&self, target_id: &str) -> Vec<(String, String)> {
         let id_copy = target_id.to_string();
         self.inner
@@ -234,6 +234,21 @@ impl NoteIndex {
             .map(|(id, note)| (id.to_owned(), note.name.to_owned()))
             .unique()
             .sorted_by(|(id1, _), (id2, _)| id1.cmp(id2))
+            .collect()
+    }
+
+    /// Returns a map of all tags contained in this index with their number of appearances, sorted in descending order.
+    pub fn tags_vec(&self) -> Vec<(String, usize)> {
+        self.inner
+            .iter()
+            .flat_map(|(_id, note)| note.tags.iter())
+            .cloned()
+            .counts()
+            .into_iter()
+            .sorted_by_key(|(tag, _count)| tag.clone())
+            .rev()
+            .sorted_by_key(|(_tag, count)| *count)
+            .rev()
             .collect()
     }
 

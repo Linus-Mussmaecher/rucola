@@ -19,6 +19,8 @@ enum SelectMode {
     Filter,
     /// Show the help screen for the filter box.
     FilterHelp,
+    /// Show a list of all tags in the vault.
+    TagList(usize),
     /// Typing into the create box.
     Create,
     /// Typing into the create box to rename a note.
@@ -143,6 +145,9 @@ impl SelectScreen {
 
         // The hotkey instructions at the bottom.
         let instructions = Line::from(vec![
+            Span::styled("T", self.styles.hotkey_style),
+            Span::styled("ag List", self.styles.text_style),
+            Span::styled("──", self.styles.text_style),
             Span::styled("C", self.styles.hotkey_style),
             Span::styled("lear filter", self.styles.text_style),
         ])
@@ -154,16 +159,7 @@ impl SelectScreen {
                 if self.any_conditions { "ny" } else { "ll" },
                 self.styles.text_style,
             ),
-            Span::styled(" Conditions──", self.styles.text_style),
-            Span::styled("T", self.styles.hotkey_style),
-            Span::styled("ags ", self.styles.text_style),
-            Span::styled(
-                match self.tag_match {
-                    data::TagMatch::Exact => "exact",
-                    data::TagMatch::Prefix => "by prefix",
-                },
-                self.styles.text_style,
-            ),
+            Span::styled(" Conditions", self.styles.text_style),
             Span::styled("──", self.styles.text_style),
             Span::styled("H", self.styles.hotkey_style),
             Span::styled("elp", self.styles.text_style),
@@ -289,11 +285,11 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('s' | 'S') => {
                     self.mode = SelectMode::SubmenuSorting;
                 }
-                // F: or /: Go to filter mode
+                // F, /: Go to filter mode
                 KeyCode::Char('f' | 'F' | '/') => {
                     self.mode = SelectMode::Filter;
                 }
-                // ?: Go to filter help mode
+                // ?, h, H: Go to filter help mode
                 KeyCode::Char('?' | 'h' | 'H') => {
                     self.mode = SelectMode::FilterHelp;
                 }
@@ -310,12 +306,8 @@ impl super::Screen for SelectScreen {
                     self.filter(self.filter_from_input());
                     self.style_text_area();
                 }
-                // T: Change exact/prefix match
-                KeyCode::Char('t' | 'T') => {
-                    self.tag_match = self.tag_match.cycle();
-                    self.filter(self.filter_from_input());
-                    self.style_text_area();
-                }
+                // T: Show tags list
+                KeyCode::Char('t' | 'T') => self.mode = SelectMode::TagList(0),
                 // Open selected item in editor
                 KeyCode::Char('e' | 'E') => {
                     self.mode = SelectMode::Select;
@@ -396,6 +388,28 @@ impl super::Screen for SelectScreen {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Char('c' | 'C') => {
                         self.mode = SelectMode::Select;
+                    }
+                    // All other key events are ignored
+                    _ => {}
+                };
+            }
+            SelectMode::TagList(offset) => {
+                match key.code {
+                    // Escape or Enter: Back to main mode
+                    KeyCode::Esc | KeyCode::Char('c' | 'C') => {
+                        self.mode = SelectMode::Select;
+                    }
+                    KeyCode::Char('j' | 'J') => {
+                        self.mode = SelectMode::TagList(offset + 1);
+                    }
+                    KeyCode::Char('k' | 'K') => {
+                        self.mode = SelectMode::TagList(offset.saturating_sub(1));
+                    }
+                    // G: Change exact/prefix match
+                    KeyCode::Char('t' | 'T') => {
+                        self.tag_match = self.tag_match.cycle();
+                        self.filter(self.filter_from_input());
+                        self.style_text_area();
                     }
                     // All other key events are ignored
                     _ => {}
@@ -661,7 +675,10 @@ impl super::Screen for SelectScreen {
                 | SelectMode::Delete
                 | SelectMode::SubmenuFile
                 | SelectMode::SubmenuSorting => Some(self.selected),
-                SelectMode::Filter | SelectMode::FilterHelp | SelectMode::Create => None,
+                SelectMode::Filter
+                | SelectMode::FilterHelp
+                | SelectMode::TagList(_)
+                | SelectMode::Create => None,
             });
 
         // Instructions at the bottom of the page
@@ -1052,6 +1069,71 @@ impl super::Screen for SelectScreen {
                 // Clear the area and then render the help menu on top.
                 Widget::render(Clear, center_area, buf);
                 Widget::render(help_table, center_area, buf);
+            }
+            SelectMode::TagList(offset) => {
+                let tag_widths = [Constraint::Min(0), Constraint::Length(4)];
+
+                let tag_rows = self
+                    .index
+                    .borrow()
+                    .tags_vec()
+                    .into_iter()
+                    .skip(offset)
+                    .take(12)
+                    .map(|(tag, count)| {
+                        Row::new(vec![
+                            Cell::from(tag).style(self.styles.text_style),
+                            Cell::from(format!("{:4}", count)).style(self.styles.text_style),
+                        ])
+                    })
+                    .collect_vec();
+
+                // Pop-up should be as tall as the number of help dialog rows
+                // plus 2 rows for top and bottom border
+                let popup_height = tag_rows.len() as u16 + 2;
+                let tag_table = Table::new(tag_rows, tag_widths).column_spacing(1).block(
+                    Block::bordered()
+                        .title(style::Styled::set_style("Tags", self.styles.title_style))
+                        .title_bottom(
+                            Line::from(vec![
+                                Span::styled("C", self.styles.hotkey_style),
+                                Span::styled("lose", self.styles.text_style),
+                            ])
+                            .right_aligned(),
+                        )
+                        .title_bottom(
+                            Line::from(vec![
+                                Span::styled("T", self.styles.hotkey_style),
+                                Span::styled("ags ", self.styles.text_style),
+                                Span::styled(
+                                    match self.tag_match {
+                                        data::TagMatch::Exact => "exact",
+                                        data::TagMatch::Prefix => "by prefix",
+                                    },
+                                    self.styles.text_style,
+                                ),
+                            ])
+                            .left_aligned(),
+                        ),
+                );
+
+                let popup_areas = Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(popup_height),
+                    Constraint::Fill(1),
+                ])
+                .split(area);
+
+                let center_area = Layout::horizontal([
+                    Constraint::Fill(1),
+                    Constraint::Length(64),
+                    Constraint::Fill(1),
+                ])
+                .split(popup_areas[1])[1];
+
+                // Clear the area and then render the tag list on top.
+                Widget::render(Clear, center_area, buf);
+                Widget::render(tag_table, center_area, buf);
             }
         }
     }
