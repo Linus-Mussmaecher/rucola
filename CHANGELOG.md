@@ -1,6 +1,7 @@
 # Version 0.9.0 - Tag List
 - Added a pop-up list of all tags in the current vault to the select screen.
 - Moved the option to switch between exact and prefix tag matching to the tag list.
+- Added functionality to scroll the tag list and select a tag to be put into the filter.
 
 # Version 0.8.1 - Sorted Index Caching
 - Added an additional check that only saves the index when a later reload is also desired.

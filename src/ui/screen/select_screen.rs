@@ -393,17 +393,40 @@ impl super::Screen for SelectScreen {
                     _ => {}
                 };
             }
-            SelectMode::TagList(offset) => {
+            SelectMode::TagList(selected) => {
                 match key.code {
                     // Escape or Enter: Back to main mode
                     KeyCode::Esc | KeyCode::Char('c' | 'C') => {
                         self.mode = SelectMode::Select;
                     }
+                    // J: Navigate Down
                     KeyCode::Char('j' | 'J') => {
-                        self.mode = SelectMode::TagList(offset + 1);
+                        let total = self.index.borrow().tags_vec().len();
+                        self.mode = SelectMode::TagList(
+                            (selected.saturating_add(1)).min(total.saturating_sub(1)),
+                        );
                     }
+                    // K: Navigate Up
                     KeyCode::Char('k' | 'K') => {
-                        self.mode = SelectMode::TagList(offset.saturating_sub(1));
+                        self.mode = SelectMode::TagList(selected.saturating_sub(1));
+                    }
+                    // Enter: Find the tag that is selected, then filter by it
+                    KeyCode::Enter => {
+                        // extract the selected tag
+                        if let Some(tag) = self
+                            .index
+                            .borrow()
+                            .tags_vec()
+                            .get(selected)
+                            .map(|(tag, _count)| tag)
+                        {
+                            // if successfull, replace the filter with it
+                            let _ = super::extract_string_and_clear(&mut self.filter_area);
+                            self.filter_area.insert_str(tag);
+                        }
+                        // filter and go to select mode
+                        self.filter(self.filter_from_input());
+                        self.mode = SelectMode::Select;
                     }
                     // G: Change exact/prefix match
                     KeyCode::Char('t' | 'T') => {
@@ -1070,7 +1093,7 @@ impl super::Screen for SelectScreen {
                 Widget::render(Clear, center_area, buf);
                 Widget::render(help_table, center_area, buf);
             }
-            SelectMode::TagList(offset) => {
+            SelectMode::TagList(selected) => {
                 let tag_widths = [Constraint::Min(0), Constraint::Length(4)];
 
                 let tag_rows = self
@@ -1078,8 +1101,6 @@ impl super::Screen for SelectScreen {
                     .borrow()
                     .tags_vec()
                     .into_iter()
-                    .skip(offset)
-                    .take(12)
                     .map(|(tag, count)| {
                         Row::new(vec![
                             Cell::from(tag).style(self.styles.text_style),
@@ -1088,52 +1109,75 @@ impl super::Screen for SelectScreen {
                     })
                     .collect_vec();
 
-                // Pop-up should be as tall as the number of help dialog rows
+                // Pop-up should be as tall as the number of tags, but a maximum of 16 rows
                 // plus 2 rows for top and bottom border
-                let popup_height = tag_rows.len() as u16 + 2;
-                let tag_table = Table::new(tag_rows, tag_widths).column_spacing(1).block(
-                    Block::bordered()
-                        .title(style::Styled::set_style("Tags", self.styles.title_style))
-                        .title_bottom(
-                            Line::from(vec![
-                                Span::styled("C", self.styles.hotkey_style),
-                                Span::styled("lose", self.styles.text_style),
-                            ])
-                            .right_aligned(),
-                        )
-                        .title_bottom(
-                            Line::from(vec![
-                                Span::styled("T", self.styles.hotkey_style),
-                                Span::styled("ags ", self.styles.text_style),
-                                Span::styled(
-                                    match self.tag_match {
-                                        data::TagMatch::Exact => "exact",
-                                        data::TagMatch::Prefix => "by prefix",
-                                    },
-                                    self.styles.text_style,
-                                ),
-                            ])
-                            .left_aligned(),
-                        ),
-                );
-
-                let popup_areas = Layout::vertical([
+                let tags_height = (tag_rows.len() as u16 + 2).min(16);
+                let tags_areas = Layout::vertical([
                     Constraint::Fill(1),
-                    Constraint::Length(popup_height),
+                    Constraint::Length(tags_height),
                     Constraint::Fill(1),
                 ])
                 .split(area);
 
+                // generate a table state for selection etc.
+                let mut state = TableState::new()
+                    .with_offset(
+                        selected
+                            // try to keep element at above 1/3rd of the total height
+                            .saturating_sub(tags_height as usize / 3)
+                            .min(
+                                // but when reaching the end of the list, still scroll down
+                                tag_rows
+                                    .len()
+                                    // correct for table edges
+                                    .saturating_add(2)
+                                    .saturating_sub(tags_height as usize),
+                            ),
+                    )
+                    // In certain modes, show a selected element
+                    .with_selected(selected);
+
+                // Generate the table
+                let tag_table = Table::new(tag_rows, tag_widths)
+                    .column_spacing(1)
+                    .block(
+                        Block::bordered()
+                            .title(style::Styled::set_style("Tags", self.styles.title_style))
+                            .title_bottom(
+                                Line::from(vec![
+                                    Span::styled("C", self.styles.hotkey_style),
+                                    Span::styled("lose", self.styles.text_style),
+                                ])
+                                .right_aligned(),
+                            )
+                            .title_bottom(
+                                Line::from(vec![
+                                    Span::styled("T", self.styles.hotkey_style),
+                                    Span::styled("ags ", self.styles.text_style),
+                                    Span::styled(
+                                        match self.tag_match {
+                                            data::TagMatch::Exact => "exact",
+                                            data::TagMatch::Prefix => "by prefix",
+                                        },
+                                        self.styles.text_style,
+                                    ),
+                                ])
+                                .left_aligned(),
+                            ),
+                    )
+                    .row_highlight_style(self.styles.selected_style);
+
+                // Generate an area to clear for the tag list
                 let center_area = Layout::horizontal([
                     Constraint::Fill(1),
                     Constraint::Length(64),
                     Constraint::Fill(1),
                 ])
-                .split(popup_areas[1])[1];
+                .split(tags_areas[1])[1];
 
                 // Clear the area and then render the tag list on top.
                 Widget::render(Clear, center_area, buf);
-                Widget::render(tag_table, center_area, buf);
+                StatefulWidget::render(tag_table, center_area, buf, &mut state);
             }
         }
     }
