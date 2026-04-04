@@ -331,7 +331,7 @@ impl FileManager {
             // create a command from it
             .and_then(|viewer_arg_list| {
                 let mut iter = viewer_arg_list.iter();
-                if let Some(programm) = iter.next() {
+                if let Some(programm) = iter.next().filter(|viewer| !viewer.is_empty()) {
                     let mut cmd = process::Command::new(programm);
                     for arg in iter {
                         if arg == "%p" {
