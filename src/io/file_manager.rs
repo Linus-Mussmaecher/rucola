@@ -253,8 +253,10 @@ impl FileManager {
             // create a command from it
             .and_then(|editor_arg_list| {
                 let mut iter = editor_arg_list.iter();
-                if let Some(programm) = iter.next() {
+                // the first entry is the program name
+                if let Some(programm) = iter.next().filter(|editor| !editor.is_empty()) {
                     let mut cmd = process::Command::new(programm);
+                    // the other entries are no processed as arguments
                     for arg in iter {
                         if arg == "%p" {
                             // special argument for the user to indicate where to put the path
@@ -271,11 +273,15 @@ impl FileManager {
             })
             // Try the $EDITOR variable
             .or_else(|| {
-                std::env::var("EDITOR").ok().map(|editor| {
-                    let mut cmd = process::Command::new(editor);
-                    cmd.arg(path.canonicalize().as_ref().unwrap_or(path));
-                    cmd
-                })
+                std::env::var("EDITOR")
+                    .ok()
+                    // ensure the environment variable is not present but empty
+                    .filter(|editor| !editor.is_empty())
+                    .map(|editor| {
+                        let mut cmd = process::Command::new(editor);
+                        cmd.arg(path.canonicalize().as_ref().unwrap_or(path));
+                        cmd
+                    })
             })
             // if it was not there, take the default command
             .or_else(|| open::commands(path).pop())
