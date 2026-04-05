@@ -284,7 +284,7 @@ impl FileManager {
                     })
             })
             // if it was not there, take the default command
-            .or_else(|| open::commands(path).pop())
+            .or_else(|| open::commands(path).into_iter().nth(0))
             // if it was also not there, throw an error
             .ok_or(error::RucolaError::ApplicationMissing)
     }
@@ -348,7 +348,7 @@ impl FileManager {
                 }
             })
             // if it was not there, take the default command
-            .or_else(|| open::commands(&path).pop())
+            .or_else(|| open::commands(path).into_iter().nth(0))
             // if it was also not there, throw an error
             .ok_or(error::RucolaError::ApplicationMissing)
     }
