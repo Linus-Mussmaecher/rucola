@@ -1,3 +1,8 @@
+# Version 0.8.3 - Open Changes
+- Rucola now detects when `$EDITOR` or the `editor` configuration option are set to the empty string and ignores them in this case.
+- When falling back to the `open` crate, rucola now uses the first command (`xdg-open`) instead of the last command (`kde-open`).
+  This should reduce the amount of users for whom rucola will crash when running with neither `editor` nor `$EDITOR` set.
+
 # Version 0.8.2 - Basic Tag List
 - Added a pop-up list of all tags in the current vault to the select screen.
 - Moved the option to switch between exact and prefix tag matching to the tag list.
