@@ -82,15 +82,17 @@ pub struct SelectScreen {
     /// UI mode whether to match tags by prefix or exactly.
     tag_match: data::TagMatch,
     /// Default sorting of the note list.
-    default_sorting: data::SortingMode,
+    default_sorting: data::NoteColumn,
     /// Default sorting direction of the note list.
     default_sorting_asc: bool,
     /// Default sorting of the note list.
-    sorting: data::SortingMode,
+    sorting: data::NoteColumn,
     /// Default sorting direction of the note list.
     sorting_asc: bool,
     /// How to display the two stats blocks.
     stats_show: StatsShow,
+    /// What columns to display
+    column_config: Vec<(String, data::NoteColumn)>,
 }
 
 impl SelectScreen {
@@ -122,6 +124,7 @@ impl SelectScreen {
             sorting_asc: config.default_sorting_asc,
             selected: 0,
             stats_show: config.stats_show,
+            column_config: config.select_columns.clone(),
         };
 
         res.local_stats
@@ -226,7 +229,7 @@ impl SelectScreen {
     }
 
     /// Sorts the display according to the current mode
-    fn set_mode_sort(&mut self, sorting: data::SortingMode, sorting_asc: bool) {
+    fn set_mode_sort(&mut self, sorting: data::NoteColumn, sorting_asc: bool) {
         self.sorting = sorting;
         self.sorting_asc = sorting_asc;
         self.local_stats
@@ -249,7 +252,7 @@ impl SelectScreen {
         // actual filtering
         self.local_stats = data::EnvironmentStats::new_with_filter(&self.index, filter);
         // reset sorting
-        self.set_mode_sort(data::SortingMode::Score, false);
+        self.set_mode_sort(data::NoteColumn::Score, false);
     }
 
     /// Re-creates the global and local stats from the index.
@@ -400,14 +403,14 @@ impl super::Screen for SelectScreen {
                         self.mode = SelectMode::Select;
                     }
                     // J: Navigate Down
-                    KeyCode::Char('j' | 'J') => {
+                    KeyCode::Char('j' | 'J') | KeyCode::Down => {
                         let total = self.index.borrow().tags_vec().len();
                         self.mode = SelectMode::TagList(
                             (selected.saturating_add(1)).min(total.saturating_sub(1)),
                         );
                     }
                     // K: Navigate Up
-                    KeyCode::Char('k' | 'K') => {
+                    KeyCode::Char('k' | 'K') | KeyCode::Up => {
                         self.mode = SelectMode::TagList(selected.saturating_sub(1));
                     }
                     // Enter: Find the tag that is selected, then filter by it
@@ -586,34 +589,37 @@ impl super::Screen for SelectScreen {
                 self.mode = SelectMode::Select;
                 match key.code {
                     KeyCode::Char('s' | 'S') => {
-                        self.set_mode_sort(data::SortingMode::Shuffle, true);
+                        self.set_mode_sort(data::NoteColumn::Shuffle, true);
                     }
                     KeyCode::Char('a' | 'A') => {
-                        self.set_mode_sort(data::SortingMode::Name, true);
+                        self.set_mode_sort(data::NoteColumn::Name, true);
                     }
                     KeyCode::Char('w' | 'W') => {
-                        self.set_mode_sort(data::SortingMode::Words, false);
+                        self.set_mode_sort(data::NoteColumn::Words, false);
                     }
                     KeyCode::Char('c' | 'C') => {
-                        self.set_mode_sort(data::SortingMode::Chars, false);
+                        self.set_mode_sort(data::NoteColumn::Chars, false);
                     }
                     KeyCode::Char('o' | 'O') => {
-                        self.set_mode_sort(data::SortingMode::GlobalOutLinks, false);
+                        self.set_mode_sort(data::NoteColumn::GlobalOutLinks, false);
                     }
                     KeyCode::Char('u' | 'U') => {
-                        self.set_mode_sort(data::SortingMode::LocalOutLinks, false);
+                        self.set_mode_sort(data::NoteColumn::LocalOutLinks, false);
                     }
                     KeyCode::Char('i' | 'I') => {
-                        self.set_mode_sort(data::SortingMode::GlobalInLinks, false);
+                        self.set_mode_sort(data::NoteColumn::GlobalInLinks, false);
                     }
                     KeyCode::Char('n' | 'N') => {
-                        self.set_mode_sort(data::SortingMode::LocalInLinks, false);
+                        self.set_mode_sort(data::NoteColumn::LocalInLinks, false);
                     }
                     KeyCode::Char('b' | 'B') => {
-                        self.set_mode_sort(data::SortingMode::Broken, false);
+                        self.set_mode_sort(data::NoteColumn::Broken, false);
                     }
                     KeyCode::Char('m' | 'M') => {
-                        self.set_mode_sort(data::SortingMode::LastModified, false);
+                        self.set_mode_sort(data::NoteColumn::LastModified, false);
+                    }
+                    KeyCode::Char('e' | 'E') => {
+                        self.set_mode_sort(data::NoteColumn::Score, false);
                     }
                     KeyCode::Char('r' | 'R') => {
                         self.local_stats.reverse_order();
@@ -776,44 +782,13 @@ impl super::Screen for SelectScreen {
         // Finally generate the table from the generated row and width data
         let table = self
             .local_stats
-            .to_note_table(self.index.clone(), &self.styles)
+            .to_note_table(self.index.clone(), &self.styles, &self.column_config)
             // Add Headers
-            .header(Row::new(vec![
-                Line::from(vec![
-                    Span::styled("N", self.styles.subtitle_style),
-                    Span::styled("a", table_heading_key_style),
-                    Span::styled("me", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("  ", self.styles.subtitle_style),
-                    Span::styled("W", table_heading_key_style),
-                    Span::styled("ords", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("  ", self.styles.subtitle_style),
-                    Span::styled("C", table_heading_key_style),
-                    Span::styled("hars", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("Global", self.styles.subtitle_style),
-                    Span::styled("O", table_heading_key_style),
-                    Span::styled("ut", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("LocalO", self.styles.subtitle_style),
-                    Span::styled("u", table_heading_key_style),
-                    Span::styled("t", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("Global", self.styles.subtitle_style),
-                    Span::styled("I", table_heading_key_style),
-                    Span::styled("n", self.styles.subtitle_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("LocalI", self.styles.subtitle_style),
-                    Span::styled("n", table_heading_key_style),
-                ]),
-            ]))
+            .header(Row::new(self.column_config.iter().map(
+                |(title, column)| {
+                    column.title_line(title, self.styles.subtitle_style, table_heading_key_style)
+                },
+            )))
             .row_highlight_style(self.styles.selected_style)
             // Add Instructions and a title
             .block(
@@ -856,6 +831,7 @@ impl super::Screen for SelectScreen {
                         ("N", "Sort by local inlinks"),
                         ("B", "Sort by broken links"),
                         ("M", "Sort by last modification"),
+                        ("E", "Sort by score"),
                         ("R", "Reverse sorting"),
                     ]
                 }

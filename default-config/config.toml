@@ -32,7 +32,44 @@ theme = "default_dark"
 # The statistics to show on the main select screen.
 # stats_show = "Both"     # Always show both local and global stats.
 # stats_show = "Local"    # Always show only local stats.
-stats_show = "Relevant"   # Show global stats if there is no filter applied and local if there is.
+stats_show = "Relevant" # Show global stats if there is no filter applied and local if there is.
+
+# The columns to show in the select screen and the names that are displayed.
+# The first entry is the name to be displayed and also determines the size of the column except for the 'name' column, which will always fill the rest of the screen.
+# The second entry is the type of column. Valid options are "Shuffle", "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified".
+# The 'Shuffle' option does not display anything and only exist to be a sorting mode later.
+# The 'Score' option will display '0' unless a filter is active.
+# Columns can be made wider by adding spaces to their names. In particular, the "LastModified" column will require 4 characters to show year, 10 to show year-month-day and 16 characters to also show the time of the last modification.
+# The current default is the same look as before the 0.9.0 update:
+select_columns = [
+  ["Name", "Name"],                #
+  ["   Words", "Words"],           #
+  ["   Chars", "Chars"],           #
+  ["GlobalOut", "GlobalOutLinks"], #
+  ["LocalOut", "LocalOutLinks"],   #
+  ["GlobalIn", "GlobalInLinks"],   #
+  ["LocalIn", "LocalInLinks"],     #
+]
+# Two more examples are given below.
+# Full data:
+# select_columns = [
+#   ["Name", "Name"],                         #
+#   ["Wor", "Words"],                         #
+#   ["Cha", "Chars"],                         #
+#   ["GOu", "GlobalOutLinks"],                #
+#   ["LOu", "LocalOutLinks"],                 #
+#   ["GIn", "GlobalInLinks"],                 #
+#   ["LIn", "LocalInLinks"],                  #
+#   ["Bro", "Broken"],                        #
+#   ["   Last Modified", "LastModified"], #
+#   ["Sco", "Score"],                         #
+# ]
+# Minimal setup showing only year of last modification, name and characters
+# select_columns = [
+#   ["LMY ", "LastModified"], #
+#   ["Name", "Name"],         #
+#   [" CHA", "Chars"],        #
+# ]
 
 # This option controls how tags are matched in the filter menu.
 # Options:
@@ -42,7 +79,7 @@ stats_show = "Relevant"   # Show global stats if there is no filter applied and 
 #   Nested tags, e.g. `#diffgeo/splines`, are still respected and found.
 tag_match = "Exact"
 
-# Default sorting mode for notes on the main select screen.
+# Default column to sort by for notes on the main select screen.
 # Available options: "Shuffle", "Name", "Words", "Chars", "GlobalOutLinks", "LocalOutLinks", 
 # "GlobalInLinks", "LocalInLinks", "Score", "Broken", "LastModified".
 # The "Score"-Option generally only makes sense with a filter applied and should not be chosen.
@@ -102,7 +139,7 @@ html_prepend = """
 """
 
 # Whether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
-katex=true
+katex = true
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]

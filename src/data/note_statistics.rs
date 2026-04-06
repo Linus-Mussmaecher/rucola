@@ -37,28 +37,46 @@ impl NoteEnvStatistics {
         }
     }
 
-    /// Converts this note to a ratatui table row with its stats
-    fn to_row(&self, index: data::NoteIndexContainer, styles: &ui::UiStyles) -> Option<Row<'_>> {
-        // generate the stats row for each element
-        index.borrow().get(&self.id).map(|note| {
-            Row::new(vec![
-                note.display_name.clone(),
-                format!("{:7}", note.words),
-                format!("{:7}", note.characters),
-                format!("{:7}", self.outlinks_global),
-                format!("{:7}", self.outlinks_local),
-                format!("{:7}", self.inlinks_global),
-                format!("{:7}", self.inlinks_local),
-            ])
-            .style(styles.text_style)
-        })
+    /// Extracts a certain data point (given by the entry) from this NoteEnvStatistics and returns a formatted string of the specified length (or possibly longer) that contains it.
+    /// The actual lenght will later be capped by the width of the column ratatui renders this in.
+    fn to_data_string(
+        &self,
+        index: data::NoteIndexContainer,
+        note_entry: NoteColumn,
+        min_width: usize,
+    ) -> String {
+        index
+            .borrow()
+            .get(&self.id)
+            .map(|note| match note_entry {
+                NoteColumn::Shuffle => " ".repeat(min_width),
+                NoteColumn::Name => note.display_name.clone(),
+                NoteColumn::Words => format!("{:min_width$}", note.words),
+                NoteColumn::Chars => format!("{:min_width$}", note.characters),
+                NoteColumn::GlobalOutLinks => format!("{:min_width$}", self.outlinks_global),
+                NoteColumn::LocalOutLinks => format!("{:min_width$}", self.outlinks_local),
+                NoteColumn::GlobalInLinks => format!("{:min_width$}", self.inlinks_global),
+                NoteColumn::LocalInLinks => format!("{:min_width$}", self.inlinks_local),
+                NoteColumn::Score => format!("{:min_width$}", self.match_score),
+                NoteColumn::Broken => format!("{:min_width$}", self.broken_links),
+                NoteColumn::LastModified => format!(
+                    "{:min_width$}",
+                    note.last_modification
+                        .map(
+                            |dt| std::convert::Into::<chrono::DateTime<chrono::Local>>::into(dt)
+                                .format("%Y-%m-%d %H:%M")
+                                .to_string()
+                        )
+                        .unwrap_or_default()
+                ),
+            })
+            .unwrap_or_default()
     }
 }
 
-/// Describes the current sorting mode of the displayed list.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
-pub enum SortingMode {
-    #[default]
+/// Describes a column of the note table. Can be used to sort by it on in the config to specify which columns to show.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum NoteColumn {
     Shuffle,
     Name,
     Words,
@@ -70,6 +88,53 @@ pub enum SortingMode {
     Score,
     Broken,
     LastModified,
+}
+
+impl NoteColumn {
+    /// Given a title for a column containing data of this type, returns a ratatui constraint to specify that columns width.
+    pub fn to_width(self, title: &str) -> Constraint {
+        let l = title.len() as u16;
+        match self {
+            NoteColumn::Name => Constraint::Min(25.max(l)),
+            NoteColumn::Shuffle
+            | NoteColumn::Words
+            | NoteColumn::Chars
+            | NoteColumn::GlobalOutLinks
+            | NoteColumn::LocalOutLinks
+            | NoteColumn::GlobalInLinks
+            | NoteColumn::LocalInLinks
+            | NoteColumn::Score
+            | NoteColumn::Broken
+            | NoteColumn::LastModified => Constraint::Length(l),
+        }
+    }
+
+    /// Takes an aspiring title to a column of this type and converts it a line, where the title is split in such a way that the first appearance of the sorting hotkey is highlighted (if possible)
+    pub fn title_line(self, title: &str, normal_style: Style, hotkey_style: Style) -> Line<'_> {
+        let key = match self {
+            NoteColumn::Shuffle => 'S',
+            NoteColumn::Name => 'A',
+            NoteColumn::Words => 'W',
+            NoteColumn::Chars => 'C',
+            NoteColumn::GlobalOutLinks => 'O',
+            NoteColumn::LocalOutLinks => 'U',
+            NoteColumn::GlobalInLinks => 'I',
+            NoteColumn::LocalInLinks => 'N',
+            NoteColumn::Broken => 'B',
+            NoteColumn::LastModified => 'M',
+            NoteColumn::Score => 'E',
+        };
+        let occ = title.find([key, key.to_ascii_lowercase()]);
+        Line::from(if let Some(occ) = occ {
+            vec![
+                Span::styled(title.split_at(occ).0, normal_style),
+                Span::styled(&title[occ..occ + 1], hotkey_style),
+                Span::styled(title.split_at(occ + 1).1, normal_style),
+            ]
+        } else {
+            vec![Span::styled(title, normal_style)]
+        })
+    }
 }
 
 /// A data struct containing statistical information about a (subset of a) user's notes.
@@ -217,13 +282,13 @@ impl EnvironmentStats {
     }
 
     /// Sorts the underlying vec
-    pub fn sort(&mut self, index: data::NoteIndexContainer, mode: SortingMode, ascending: bool) {
+    pub fn sort(&mut self, index: data::NoteIndexContainer, mode: NoteColumn, ascending: bool) {
         // Always sort by name first
         self.filtered_stats
             .sort_by_cached_key(|env_stats| env_stats.id.clone());
 
-        // If the sorting mode is not name or shuffle, now sort by the actual sorting mode.
-        if mode != SortingMode::Name && mode != SortingMode::Shuffle {
+        // If the column to sort by is not name or shuffle, now sort by the actual column.
+        if mode != NoteColumn::Name && mode != NoteColumn::Shuffle {
             // If sorting in reverse is desired, pre-reverse this, so when reversing again later, the list will still be sub-sorted by name ascendingly.
             if !ascending {
                 self.filtered_stats.reverse();
@@ -233,17 +298,17 @@ impl EnvironmentStats {
                 if let Some(note) = index.borrow().get(&env_stats.id) {
                     match mode {
                         // This should not appear
-                        SortingMode::Shuffle | SortingMode::Name => 0,
+                        NoteColumn::Shuffle | NoteColumn::Name => 0,
                         // These should appear
-                        SortingMode::Words => note.words,
-                        SortingMode::Chars => note.characters,
-                        SortingMode::GlobalOutLinks => env_stats.outlinks_global,
-                        SortingMode::LocalOutLinks => env_stats.outlinks_local,
-                        SortingMode::GlobalInLinks => env_stats.inlinks_global,
-                        SortingMode::LocalInLinks => env_stats.inlinks_local,
-                        SortingMode::Score => env_stats.match_score as usize,
-                        SortingMode::Broken => env_stats.broken_links,
-                        SortingMode::LastModified => {
+                        NoteColumn::Words => note.words,
+                        NoteColumn::Chars => note.characters,
+                        NoteColumn::GlobalOutLinks => env_stats.outlinks_global,
+                        NoteColumn::LocalOutLinks => env_stats.outlinks_local,
+                        NoteColumn::GlobalInLinks => env_stats.inlinks_global,
+                        NoteColumn::LocalInLinks => env_stats.inlinks_local,
+                        NoteColumn::Score => env_stats.match_score as usize,
+                        NoteColumn::Broken => env_stats.broken_links,
+                        NoteColumn::LastModified => {
                             // Get the file's modification time as seconds since epoch
                             note.last_modification
                                 .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
@@ -256,8 +321,8 @@ impl EnvironmentStats {
                     0
                 }
             })
-        // if the sorting mode is shuffle, then shuffle the list
-        } else if mode == SortingMode::Shuffle {
+        // if the column is shuffle, then shuffle the list
+        } else if mode == NoteColumn::Shuffle {
             self.filtered_stats.shuffle(&mut rand::rng());
         }
 
@@ -277,23 +342,23 @@ impl EnvironmentStats {
         &self,
         index: data::NoteIndexContainer,
         styles: &ui::UiStyles,
+        column_config: &[(String, NoteColumn)],
     ) -> Table<'_> {
         // Calculate widths
-        let notes_table_widths = [
-            Constraint::Min(25),
-            Constraint::Length(8),
-            Constraint::Length(8),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
-            Constraint::Length(10),
-        ];
+        let notes_table_widths = column_config
+            .iter()
+            .map(|(title, mode)| mode.to_width(title));
 
         // Construct rows
         let notes_rows = self
             .filtered_stats
             .iter()
-            .flat_map(|note_env| note_env.to_row(index.clone(), styles))
+            .map(|note_env| {
+                Row::new(column_config.iter().map(|(title, mode)| {
+                    note_env.to_data_string(index.clone(), *mode, title.len())
+                }))
+                .style(styles.text_style)
+            })
             .collect::<Vec<Row>>();
 
         Table::new(notes_rows, notes_table_widths).column_spacing(1)

@@ -1,8 +1,12 @@
-# Version 0.8.3 - Open Changes
+# Version 0.9.0 - Column Configuration
+- Added an additional configuration option that allows users to freely customize the columns shown in the select screen and their headers.
+- This also adds the new, optional columns 'Score' and 'LastModified' (and technically 'Shuffle', which doesn't show anyhting).
+- Also added the option to manually sort by score after another sorting option had been chosen with an active filter.
+- The tag list is now also navigable with the arrow keys.
+- Replaced several icons that used to require an installed Nerd font with their unicode counterparts to increase readability.
 - Rucola now detects when `$EDITOR` or the `editor` configuration option are set to the empty string and ignores them in this case.
 - When falling back to the `open` crate, rucola now uses the first command (`xdg-open`) instead of the last command (`kde-open`).
   This should reduce the amount of users for whom rucola will crash when running with neither `editor` nor `$EDITOR` set.
- - Replaced several icons that used to require an installed Nerd font with their unicode counterparts to increase readability.
 
 # Version 0.8.2 - Basic Tag List
 - Added a pop-up list of all tags in the current vault to the select screen.

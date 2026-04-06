@@ -28,13 +28,15 @@ pub struct Config {
     pub(crate) cache_index: bool,
     /// Selected theme
     pub(crate) theme: String,
-    /// When to show the global stats area
+    /// When to show the global stats area on the select screen.
     pub(crate) stats_show: ui::screen::StatsShow,
+    /// What columns to display on the select screen.
+    pub(crate) select_columns: Vec<(String, data::NoteColumn)>,
     /// Whether tags have to match exactly or only by prefix when filtering.
     pub(crate) tag_match: data::TagMatch,
-    /// Default sorting mode for notes
-    pub(crate) default_sorting: data::SortingMode,
-    /// Default sorting direction (true for ascending, false for descending)
+    /// Default column to sort notes by.
+    pub(crate) default_sorting: data::NoteColumn,
+    /// Default sorting direction (true for ascending, false for descending).
     pub(crate) default_sorting_asc: bool,
     /// The editor to use for notes.
     pub(crate) editor: Option<Vec<String>>,
@@ -67,8 +69,17 @@ impl Default for Config {
             cache_index: false,
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
+            select_columns: vec![
+                ("Name".to_string(), data::NoteColumn::Name),
+                ("   Words".to_string(), data::NoteColumn::Words),
+                ("   Chars".to_string(), data::NoteColumn::Chars),
+                ("GlobalOut".to_string(), data::NoteColumn::GlobalOutLinks),
+                ("LocalOut".to_string(), data::NoteColumn::LocalOutLinks),
+                ("GlobalIn".to_string(), data::NoteColumn::GlobalInLinks),
+                ("LocalIn".to_string(), data::NoteColumn::LocalInLinks),
+            ],
             tag_match: data::TagMatch::Exact,
-            default_sorting: data::SortingMode::Name,
+            default_sorting: data::NoteColumn::Name,
             default_sorting_asc: true,
             editor: None,
             viewer_type: Some(ViewerType::Html),
