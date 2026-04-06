@@ -708,17 +708,17 @@ impl super::Screen for SelectScreen {
         let instructions_bot_left = Line::from(vec![
             Span::styled("J", self.styles.hotkey_style),
             Span::styled("/", self.styles.text_style),
-            Span::styled("", self.styles.hotkey_style),
+            Span::styled("↓", self.styles.hotkey_style),
             Span::styled(": Down──", self.styles.text_style),
             Span::styled("K", self.styles.hotkey_style),
             Span::styled("/", self.styles.text_style),
-            Span::styled("", self.styles.hotkey_style),
+            Span::styled("↑", self.styles.hotkey_style),
             Span::styled(": Up──", self.styles.text_style),
             Span::styled("L", self.styles.hotkey_style),
             Span::styled("/", self.styles.text_style),
-            Span::styled("", self.styles.hotkey_style),
+            Span::styled("→", self.styles.hotkey_style),
             Span::styled("/", self.styles.text_style),
-            Span::styled("󰌑", self.styles.hotkey_style),
+            Span::styled("↵", self.styles.hotkey_style),
             Span::styled(": Open──", self.styles.text_style),
         ])
         .left_aligned();
@@ -730,11 +730,11 @@ impl super::Screen for SelectScreen {
             let (untracked, uncommited) = git_manager.changes();
 
             if ahead > 0 {
-                info.push('');
+                info.push('↑');
             }
 
             if behind > 0 {
-                info.push('');
+                info.push('↓');
             }
 
             if untracked {
@@ -947,7 +947,7 @@ impl super::Screen for SelectScreen {
                         ))
                         .title_bottom(
                             Line::from(vec![
-                                Span::styled("󰌑", self.styles.hotkey_style),
+                                Span::styled("↵", self.styles.hotkey_style),
                                 Span::styled(": Confirm──", self.styles.text_style),
                                 Span::styled("Esc", self.styles.hotkey_style),
                                 Span::styled("/", self.styles.text_style),
@@ -985,7 +985,7 @@ impl super::Screen for SelectScreen {
                         Cell::from("Enter the filter text box.").style(self.styles.text_style),
                     ]),
                     Row::new(vec![
-                        Cell::from("󰌑 or Esc").style(self.styles.subtitle_style),
+                        Cell::from("↵ or Esc").style(self.styles.subtitle_style),
                         Cell::from("Exit the filter text box").style(self.styles.text_style),
                     ]),
                     Row::new(vec![Cell::from("").style(self.styles.subtitle_style)]),
@@ -1152,7 +1152,7 @@ impl super::Screen for SelectScreen {
                             )
                             .title_bottom(
                                 Line::from(vec![
-                                    Span::styled("󰌑", self.styles.hotkey_style),
+                                    Span::styled("↵", self.styles.hotkey_style),
                                     Span::styled(": Apply tag filter──", self.styles.text_style),
                                     Span::styled("M", self.styles.hotkey_style),
                                     Span::styled("atch tags ", self.styles.text_style),
