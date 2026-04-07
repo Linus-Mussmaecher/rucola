@@ -44,19 +44,22 @@ impl App {
         // Load configuration
         errors.extend(loading_screen_callback("Loading configuration...").err());
 
-        let config = match crate::Config::load(args) {
+        let mut config: crate::Config = match confy::load("rucola", "config") {
             Ok(config_data) => config_data,
             Err(e) => {
-                errors.push(e);
+                errors.push(e.into());
                 Default::default()
             }
         };
+
+        // Make sure a vault path is set.
+        errors.extend(config.fix_vault_path(args).err());
 
         // Load the style file specified in the configuration
         errors.extend(loading_screen_callback("Loading styles...").err());
 
         let styles = match ui::UiStyles::load(&config) {
-            Ok(config) => config,
+            Ok(styles_data) => styles_data,
             Err(e) => {
                 errors.push(e);
                 Default::default()

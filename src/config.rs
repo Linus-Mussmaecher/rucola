@@ -99,24 +99,20 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Creates a config file and vault path by combining the passed cli arguments with the loaded file from comfy.
-    pub fn load(args: crate::Arguments) -> error::Result<Self> {
-        // === Step 1: Load config file ===
-        let mut config: Config = confy::load("rucola", "config")?;
-
-        // === Step 2: Fix vault path ===
-
-        // Get current dir & extract vault path.
-        let mut full_vault_path = Self::vault_path(std::env::current_dir()?, args, &mut config);
+    /// Ensures the vault path in this configuration struct is set and not `None`.
+    /// If a vault path is given in a command line argument, that one takes precedent over one given in the configuration file.
+    /// If neither the configuration file nor the command line arguments specify a vault path, the current directory is used instead.
+    pub fn fix_vault_path(&mut self, args: crate::Arguments) -> error::Result<()> {
+        let mut full_vault_path = Self::vault_path(std::env::current_dir()?, args, self);
 
         // make sure path is absolute
         if !full_vault_path.is_absolute() {
             full_vault_path = std::env::current_dir()?.join(full_vault_path);
         }
 
-        config.vault_path = Some(full_vault_path);
+        self.vault_path = Some(full_vault_path);
 
-        Ok(config)
+        Ok(())
     }
 
     /// Not expansion on windows
