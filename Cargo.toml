@@ -19,8 +19,8 @@ eula = false
 
 [dependencies]
 # General TUI
-ratatui = {version = "^0.29", features = ["serde"]}
-tui-textarea = "^0.7"
+ratatui = {version = "^0.30", features = ["serde"]}
+tui-textarea = {package = "tui-textarea-2", version = "^0.10"}
 # Command line parsing
 clap = {version = "^4.5", features = ["derive"]}
 # Opening
@@ -29,7 +29,6 @@ notify = "^8.0"
 git2 = "^0.20"
 # Parsing
 comrak = "^0.39"
-# comrak = {git = "https://github.com/kivikakk/comrak.git", rev = "b67d406d3b101b93539c37a1ca75bff81ff8c149"}
 ignore = "^0.4"
 regex = "^1.11"
 yaml-rust = "0.4"

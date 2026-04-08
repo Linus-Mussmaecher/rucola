@@ -34,7 +34,7 @@ impl App {
     ///  - Creating an initial select screen and empty display stack
     ///
     /// Also returns all errors that happened during creation that did not prevent the creation.
-    pub fn new<F: FnMut(&str) -> error::Result<()>>(
+    pub fn new<F: FnMut(&str)>(
         args: crate::Arguments,
         mut loading_screen_callback: F,
     ) -> (Self, Vec<error::RucolaError>) {
@@ -42,7 +42,7 @@ impl App {
         let mut errors = Vec::new();
 
         // Load configuration
-        errors.extend(loading_screen_callback("Loading configuration...").err());
+        loading_screen_callback("Loading configuration...");
 
         let mut config: crate::Config = match confy::load("rucola", "config") {
             Ok(config_data) => config_data,
@@ -56,7 +56,7 @@ impl App {
         errors.extend(config.fix_vault_path(args).err());
 
         // Load the style file specified in the configuration
-        errors.extend(loading_screen_callback("Loading styles...").err());
+        loading_screen_callback("Loading styles...");
 
         let styles = match ui::UiStyles::load(&config) {
             Ok(styles_data) => styles_data,
@@ -67,7 +67,7 @@ impl App {
         };
 
         // Use the config file to create managers & trackers
-        errors.extend(loading_screen_callback("Creating managers & trackers...").err());
+        loading_screen_callback("Creating managers & trackers...");
 
         let builder = io::HtmlBuilder::new(&config);
 
@@ -100,7 +100,7 @@ impl App {
             }
         }
 
-        errors.extend(loading_screen_callback(msg).err());
+        loading_screen_callback(msg);
 
         // Index all files in path
         let (index, index_errors) = data::NoteIndex::new(tracker, builder.clone(), &config);
@@ -109,7 +109,7 @@ impl App {
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
         // Use the config file to create managers & trackers
-        errors.extend(loading_screen_callback("Initiliazing app state...").err());
+        loading_screen_callback("Initiliazing app state...");
 
         // Initialize app state
         (

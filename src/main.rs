@@ -38,21 +38,22 @@ pub struct Arguments {
 }
 
 /// Main function
-fn main() -> error::Result<()> {
+fn main() {
+    // Note: Any terminal errors in this main method are expected (leading to crashing), since they were previously handled by returning an error, which had the same effect.
+
     // === Read command line arguments
     let args = Arguments::parse();
 
     // === Help Notices etc. ===
     if args.license {
         print_license();
-        return Ok(());
     }
 
     // === Actual programm ===
 
     // Initialize hooks & terminal (ratatui boilerplate)
-    init_hooks()?;
-    let mut terminal = init_terminal()?;
+    init_hooks().expect("Error in hook initialization.");
+    let mut terminal = init_terminal().expect("Error in terminal initialization.");
 
     // create a call back for the loading screen
     // Create the app state
@@ -65,45 +66,49 @@ fn main() -> error::Result<()> {
     // Main loop
     'main: loop {
         // Draw the current screen.
-        terminal.draw(|frame: &mut Frame| {
-            let area = frame.area();
-            let buf = frame.buffer_mut();
+        terminal
+            .draw(|frame: &mut Frame| {
+                let area = frame.area();
+                let buf = frame.buffer_mut();
 
-            // Make sure area is large enough or show error
-            if area.width < 90 || area.height < 25 {
-                // area too small and no error -> show area error
-                current_error = Some(error::RucolaError::SmallArea);
-            }
-
-            let app_area = match &current_error {
-                // If there is an error to be displayed
-                Some(e) => {
-                    // Separate the usual app area into a small bottom line for the area and a big area for what can be displayed of the app.
-                    let areas =
-                        Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
-
-                    // Render the error to the bottom.
-                    Widget::render(e.to_ratatui(), areas[1], buf);
-
-                    // Return the rest of the area for the app to render in.
-                    areas[0]
+                // Make sure area is large enough or show error
+                if area.width < 90 || area.height < 25 {
+                    // area too small and no error -> show area error
+                    current_error = Some(error::RucolaError::SmallArea);
                 }
-                // No error => App can render in the entire area.
-                None => area,
-            };
 
-            Widget::render(ratatui::widgets::Clear, app_area, buf);
+                let app_area = match &current_error {
+                    // If there is an error to be displayed
+                    Some(e) => {
+                        // Separate the usual app area into a small bottom line for the area and a big area for what can be displayed of the app.
+                        let areas = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+                            .split(area);
 
-            // Draw the actual application
-            app.draw(app_area, buf);
-        })?;
+                        // Render the error to the bottom.
+                        Widget::render(e.to_ratatui(), areas[1], buf);
+
+                        // Return the rest of the area for the app to render in.
+                        areas[0]
+                    }
+                    // No error => App can render in the entire area.
+                    None => area,
+                };
+
+                Widget::render(ratatui::widgets::Clear, app_area, buf);
+
+                // Draw the actual application
+                app.draw(app_area, buf);
+            })
+            .expect("Error in terminal drawing.");
 
         // Inform the app of events
-        let maybe_keypress = if event::poll(std::time::Duration::from_millis(500))? {
+        let maybe_keypress = if event::poll(std::time::Duration::from_millis(500))
+            .expect("Error in event polling.")
+        {
             // Some event => reset current error
             current_error = None;
             // Check if the event was a keypress
-            match event::read()? {
+            match event::read().expect("Error in event reading.") {
                 event::Event::Key(key) if key.kind == event::KeyEventKind::Press => Some(key),
                 _ => None,
             }
@@ -119,21 +124,18 @@ fn main() -> error::Result<()> {
             Ok(ui::TerminalMessage::None) => {}
             Ok(ui::TerminalMessage::OpenExternalCommand(mut cmd)) => {
                 // Restore the terminal
-                restore_terminal()?;
+                restore_terminal().expect("Error in terminal restoration.");
                 // Execute the given command
-                cmd.status()?;
+                cmd.status().expect("Error in command execution.");
                 // Re-enter the tui state
-                terminal = init_terminal()?;
+                terminal = init_terminal().expect("Error in terminal re-initialization.");
             }
             Err(e) => current_error = Some(e),
         }
     }
 
     //Restore previous terminal state
-    restore_terminal()?;
-
-    // Return the right OK
-    Ok(())
+    restore_terminal().expect("Error in terminal restoration.");
 }
 
 /// Ratatui boilerplate to set up panic hooks
@@ -181,12 +183,10 @@ You should have received a copy of the GNU General Public License along with thi
 
 /// Draws nothing but a loading screen with an indexing message.
 /// Temporary screen while the programm is indexing.
-fn draw_loading_screen(
-    terminal: &mut Terminal<impl ratatui::backend::Backend>,
-    message: &str,
-) -> error::Result<()> {
+fn draw_loading_screen(terminal: &mut Terminal<impl ratatui::backend::Backend>, message: &str) {
     // Draw 'loading' screen
-    terminal.draw(|frame| {
+    // Errors are ignored.
+    let _ = terminal.draw(|frame| {
         frame.render_widget(
             ratatui::widgets::Paragraph::new(message).alignment(Alignment::Center),
             Layout::vertical([
@@ -196,6 +196,5 @@ fn draw_loading_screen(
             ])
             .split(frame.area())[1],
         );
-    })?;
-    Ok(())
+    });
 }

@@ -93,10 +93,7 @@ impl DisplayScreen {
         name_area.set_style(styles.input_style);
         name_area.set_cursor_line_style(styles.input_style);
 
-        let title_top = block::Title::from(Line::from(vec![Span::styled(
-            "Enter note name...",
-            styles.title_style,
-        )]));
+        let title_top = Line::from(vec![Span::styled("Enter note name...", styles.title_style)]);
         name_area.set_block(Block::bordered().title(title_top));
 
         drop(index_b);
@@ -117,10 +114,10 @@ impl DisplayScreen {
 
     /// Sets the title & content of the name_area block
     fn set_name_area(&mut self, title: &str, content: Option<String>) {
-        let title_top = block::Title::from(Line::from(vec![Span::styled(
+        let title_top = Line::from(vec![Span::styled(
             title.to_owned(),
             self.styles.title_style,
-        )]));
+        )]);
 
         self.name_area.set_block(Block::bordered().title(title_top));
         // it is assumed the buffer is empty so far
