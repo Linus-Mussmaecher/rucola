@@ -4,6 +4,8 @@
 - Also added the option to manually sort by score after another sorting option had been chosen with an active filter.
 - The tag list is now also navigable with the arrow keys.
 - Replaced several icons that used to require an installed Nerd font with their unicode counterparts to increase readability.
+- Updated several dependencies to fix security issues.
+- Updated dependencies to allow configuration files to use newer TOML versions.
 - Fixed a bug that caused the vault path to not get corrected when a malformed config file was detected, thus crashing the program instead of displaying an error message.
 - Rucola now detects when `$EDITOR` or the `editor` configuration option are set to the empty string and ignores them in this case.
 - When falling back to the `open` crate, rucola now uses the first command (`xdg-open`) instead of the last command (`kde-open`).

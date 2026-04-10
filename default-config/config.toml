@@ -145,3 +145,11 @@ katex = true
 [math_replacements]
 '\field' = '\mathbb'
 '\liealg' = '\mathfrak'
+
+# WARNING:
+# If you want to put further settings below this one, it may be better to use an inline table for `math_replacements`.
+# This table might not be recognized by some TOML editors or language servers, but will work with rucola.
+# math_replacements = {
+# '\field' = '\mathbb',
+# '\liealg' = '\mathfrak',
+# }
