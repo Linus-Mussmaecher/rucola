@@ -363,7 +363,7 @@ impl super::Screen for SelectScreen {
                     self.selected = self
                         .selected
                         .saturating_add(10)
-                        .min(self.local_stats.len().saturating_sub(10));
+                        .min(self.local_stats.len().saturating_sub(1));
                 }
                 // PageUp
                 KeyCode::PageUp => {
@@ -429,7 +429,7 @@ impl super::Screen for SelectScreen {
                     KeyCode::PageDown => {
                         let total = self.index.borrow().tags_vec().len();
                         self.mode = SelectMode::TagList(
-                            (selected.saturating_add(10)).min(total.saturating_sub(10)),
+                            (selected.saturating_add(10)).min(total.saturating_sub(1)),
                         );
                     }
                     // PageUp
