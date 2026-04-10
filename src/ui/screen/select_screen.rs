@@ -358,6 +358,18 @@ impl super::Screen for SelectScreen {
                 KeyCode::Char('k' | 'K') | KeyCode::Up => {
                     self.selected = self.selected.saturating_sub(1);
                 }
+                // PageDown
+                KeyCode::PageDown => {
+                    self.selected = self
+                        .selected
+                        .saturating_add(10)
+                        .min(self.local_stats.len().saturating_sub(10));
+                }
+                // PageUp
+                KeyCode::PageUp => {
+                    self.selected = self.selected.saturating_sub(10);
+                }
+
                 // To the start
                 KeyCode::Char('0') => {
                     self.selected = 0;
@@ -412,6 +424,17 @@ impl super::Screen for SelectScreen {
                     // K: Navigate Up
                     KeyCode::Char('k' | 'K') | KeyCode::Up => {
                         self.mode = SelectMode::TagList(selected.saturating_sub(1));
+                    }
+                    // PageDown
+                    KeyCode::PageDown => {
+                        let total = self.index.borrow().tags_vec().len();
+                        self.mode = SelectMode::TagList(
+                            (selected.saturating_add(10)).min(total.saturating_sub(10)),
+                        );
+                    }
+                    // PageUp
+                    KeyCode::PageUp => {
+                        self.mode = SelectMode::TagList(selected.saturating_sub(10));
                     }
                     // Enter: Find the tag that is selected, then filter by it
                     KeyCode::Enter => {
