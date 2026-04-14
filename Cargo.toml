@@ -45,7 +45,7 @@ directories = "^6.0"
 confy = "^2.0"
 unicode-normalization = "0.1.24"
 # Shuffling
-rand = "^0.9"
+rand = "^0.9.3"
 
 [target.'cfg(unix)'.dependencies]
 expanduser = "^1.2"
