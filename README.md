@@ -115,6 +115,16 @@ Install for [NetBSD](https://www.netbsd.org/) using `pkgin`:
 
 Install on [NixOS](https://nixos.org/):
 
+```
+ nix profile install github:Linus-Mussmaecher/rucola
+```
+
+Or run `rucola` directly without installing it:
+
+```
+ nix run github:Linus-Mussmaecher/rucola
+```
+
 Rucola is also packaged for some other distributions as seen on the right.
 
 #### Crates.io
