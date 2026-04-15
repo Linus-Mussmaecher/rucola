@@ -113,6 +113,8 @@ Install for [NetBSD](https://www.netbsd.org/) using `pkgin`:
  pkgin install rucola
 ```
 
+Install on [NixOS](https://nixos.org/):
+
 Rucola is also packaged for some other distributions as seen on the right.
 
 #### Crates.io
