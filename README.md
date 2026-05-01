@@ -93,7 +93,7 @@ These installers are generated using [`cargo dist`](https://github.com/axodotdev
     <img src="https://repology.org/badge/vertical-allrepos/rucola.svg" alt="Packaging status" align="right">
 </a>
 
-Install `rucola` from the [official Arch User Repositories](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
+Install `rucola` from the [official Arch Extra Repository](https://archlinux.org/packages/extra/x86_64/rucola/) using [pacman](https://wiki.archlinux.org/title/pacman):
 
 ```
 pacman -S rucola
