@@ -1,4 +1,5 @@
 use crate::{data, error, io, ui};
+use chrono::Local;
 use itertools::Itertools;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
@@ -379,6 +380,24 @@ impl super::Screen for SelectScreen {
                     if let Some(env_stats) = self.local_stats.get_selected(self.selected) {
                         return Ok(ui::Message::DisplayStackPush(env_stats.id.clone()));
                     }
+                }
+                // Shortcut to the diary entry for the current day
+                KeyCode::Char('d' | 'D') => {
+                    // TODO: respect user config choices
+                    // Get the current date
+                    let current_date = Local::now().date_naive();
+                    // Determine the desired note id for today's diary entry
+                    let diary_entry_id = current_date.format("%Y-%m-%d").to_string();
+                    // Create the note if it note yet exists
+                    if self.index.borrow().get(&diary_entry_id).is_none() {
+                        let created_note_path = self.manager.create_note_file(&diary_entry_id)?;
+                        self.index.borrow().poll_file_system();
+                        self.refresh_env_stats();
+                        return Ok(ui::Message::OpenExternalCommand(Box::new(
+                            self.manager.create_edit_command(&created_note_path)?,
+                        )));
+                    }
+                    return Ok(ui::Message::DisplayStackPush(diary_entry_id));
                 }
                 _ => {}
             },
@@ -782,6 +801,8 @@ impl super::Screen for SelectScreen {
         };
 
         let instructions_bot_right = Line::from(vec![
+            Span::styled("D", self.styles.hotkey_style),
+            Span::styled("iary──", self.styles.text_style),
             Span::styled("E", self.styles.hotkey_style),
             Span::styled("dit──", self.styles.text_style),
             Span::styled("V", self.styles.hotkey_style),
