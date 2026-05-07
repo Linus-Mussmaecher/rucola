@@ -1,5 +1,10 @@
 use crate::{config, data, error};
-use std::{fs, io::Write, path, process};
+use std::{
+    fs,
+    io::Write,
+    path::{self, PathBuf},
+    process,
+};
 
 /// Saves configurations to manipulate the file system the notes are stored in.
 #[derive(Debug, Clone)]
@@ -207,7 +212,8 @@ impl FileManager {
 
     /// Creates a note of the given name in the file system (relative to the vault).
     /// Registration in the index is handled centrally by the file watcher of the index itself.
-    pub fn create_note_file(&self, input_path: &str) -> error::Result<()> {
+    /// Returns the path to the newly created note.
+    pub fn create_note_file(&self, input_path: &str) -> error::Result<PathBuf> {
         // Piece together the file path
         let mut path = self.vault_path.clone();
         path.push(input_path);
@@ -232,7 +238,7 @@ impl FileManager {
             crate::data::path_to_name(&path).unwrap_or_else(|_e| "Note".to_owned())
         )?;
 
-        Ok(())
+        Ok(path)
     }
 
     /// Attempts to create a command to open the file at the given path to edit it.
