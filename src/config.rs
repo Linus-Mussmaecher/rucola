@@ -58,6 +58,9 @@ pub struct Config {
     pub(crate) katex: bool,
     /// A list of strings to replace in math mode to mimic latex commands
     pub(crate) math_replacements: HashMap<String, String>,
+    /// When set to true, the diary feature is enabled, allowing to create and jump to the current
+    /// day's diary note via keybind
+    pub(crate) enable_diary: bool,
 }
 
 impl Default for Config {
@@ -94,6 +97,7 @@ impl Default for Config {
                 "\\field".to_string(),
                 "\\mathbb".to_string(),
             )]),
+            enable_diary: false,
         }
     }
 }
