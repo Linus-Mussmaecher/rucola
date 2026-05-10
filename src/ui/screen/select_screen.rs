@@ -63,6 +63,8 @@ pub struct SelectScreen {
     builder: io::HtmlBuilder,
     /// The used styles.
     styles: ui::UiStyles,
+    /// Whether the diary functionality is enabled or not
+    enable_diary: bool,
 
     // === UI ===
     /// The text area to type in filters.
@@ -126,6 +128,7 @@ impl SelectScreen {
             selected: 0,
             stats_show: config.stats_show,
             column_config: config.select_columns.clone(),
+            enable_diary: config.enable_diary,
         };
 
         res.local_stats
@@ -382,8 +385,7 @@ impl super::Screen for SelectScreen {
                     }
                 }
                 // Shortcut to the diary entry for the current day
-                KeyCode::Char('d' | 'D') => {
-                    // TODO: respect user config choices
+                KeyCode::Char('d' | 'D') if self.enable_diary => {
                     // Get the current date
                     let current_date = Local::now().date_naive();
                     // Determine the desired note id for today's diary entry
@@ -800,9 +802,7 @@ impl super::Screen for SelectScreen {
             String::new()
         };
 
-        let instructions_bot_right = Line::from(vec![
-            Span::styled("D", self.styles.hotkey_style),
-            Span::styled("iary──", self.styles.text_style),
+        let mut keybinding_spans = vec![
             Span::styled("E", self.styles.hotkey_style),
             Span::styled("dit──", self.styles.text_style),
             Span::styled("V", self.styles.hotkey_style),
@@ -814,8 +814,12 @@ impl super::Screen for SelectScreen {
             Span::styled("anage Files──", self.styles.text_style),
             Span::styled("Q", self.styles.hotkey_style),
             Span::styled("uit", self.styles.text_style),
-        ])
-        .right_aligned();
+        ];
+        if self.enable_diary {
+            keybinding_spans.insert(0, Span::styled("iary──", self.styles.text_style));
+            keybinding_spans.insert(0, Span::styled("D", self.styles.hotkey_style));
+        }
+        let instructions_bot_right = Line::from(keybinding_spans).right_aligned();
 
         let table_heading_key_style = if self.mode == SelectMode::SubmenuSorting {
             self.styles.hotkey_style
