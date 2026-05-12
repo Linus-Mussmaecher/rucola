@@ -145,6 +145,10 @@ katex = true
 [diary]
 # Whether to turn on the diary feature or not. Turning this on enables an additional keybinding for creating and editing the daily diary note.
 enabled = false
+# The initial content for every newly created diary note
+initial_content = """
+#diary
+"""
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]

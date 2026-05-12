@@ -64,7 +64,10 @@ pub struct Config {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct DiaryConfig {
+    /// Whether the diary feature is enabled or not
     pub enabled: bool,
+    /// The initial content to write into every diary note on creation
+    pub initial_content: Option<String>,
 }
 
 impl Default for Config {
