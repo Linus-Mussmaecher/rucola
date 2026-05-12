@@ -128,7 +128,7 @@ impl SelectScreen {
             selected: 0,
             stats_show: config.stats_show,
             column_config: config.select_columns.clone(),
-            enable_diary: config.enable_diary,
+            enable_diary: config.diary.enabled,
         };
 
         res.local_stats
