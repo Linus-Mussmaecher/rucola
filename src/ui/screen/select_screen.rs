@@ -1,3 +1,4 @@
+use crate::config::DiaryConfig;
 use crate::{data, error, io, ui};
 use chrono::Local;
 use itertools::Itertools;
@@ -64,7 +65,7 @@ pub struct SelectScreen {
     /// The used styles.
     styles: ui::UiStyles,
     /// Whether the diary functionality is enabled or not
-    enable_diary: bool,
+    diary_config: DiaryConfig,
 
     // === UI ===
     /// The text area to type in filters.
@@ -128,7 +129,7 @@ impl SelectScreen {
             selected: 0,
             stats_show: config.stats_show,
             column_config: config.select_columns.clone(),
-            enable_diary: config.diary.enabled,
+            diary_config: config.diary.clone(),
         };
 
         res.local_stats
@@ -385,14 +386,17 @@ impl super::Screen for SelectScreen {
                     }
                 }
                 // Shortcut to the diary entry for the current day
-                KeyCode::Char('d' | 'D') if self.enable_diary => {
+                KeyCode::Char('d' | 'D') if self.diary_config.enabled => {
                     // Get the current date
                     let current_date = Local::now().date_naive();
                     // Determine the desired note id for today's diary entry
                     let diary_entry_id = current_date.format("%Y-%m-%d").to_string();
                     // Create the note if it note yet exists
                     if self.index.borrow().get(&diary_entry_id).is_none() {
-                        let created_note_path = self.manager.create_note_file(&diary_entry_id)?;
+                        let created_note_path = self.manager.create_note_file(
+                            &diary_entry_id,
+                            self.diary_config.initial_content.clone(),
+                        )?;
                         self.index.borrow().poll_file_system();
                         self.refresh_env_stats();
                         return Ok(ui::Message::OpenExternalCommand(Box::new(
@@ -550,6 +554,7 @@ impl super::Screen for SelectScreen {
                                                 "New note may not be empty.",
                                             ))
                                         })?,
+                                    None,
                                 )?;
                                 // if successful, refresh the ui
                                 self.index.borrow().poll_file_system();
@@ -815,7 +820,7 @@ impl super::Screen for SelectScreen {
             Span::styled("Q", self.styles.hotkey_style),
             Span::styled("uit", self.styles.text_style),
         ];
-        if self.enable_diary {
+        if self.diary_config.enabled {
             keybinding_spans.insert(0, Span::styled("iary──", self.styles.text_style));
             keybinding_spans.insert(0, Span::styled("D", self.styles.hotkey_style));
         }

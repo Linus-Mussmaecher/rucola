@@ -213,7 +213,11 @@ impl FileManager {
     /// Creates a note of the given name in the file system (relative to the vault).
     /// Registration in the index is handled centrally by the file watcher of the index itself.
     /// Returns the path to the newly created note.
-    pub fn create_note_file(&self, input_path: &str) -> error::Result<PathBuf> {
+    pub fn create_note_file(
+        &self,
+        input_path: &str,
+        initial_content: Option<String>,
+    ) -> error::Result<PathBuf> {
         // Piece together the file path
         let mut path = self.vault_path.clone();
         path.push(input_path);
@@ -237,6 +241,11 @@ impl FileManager {
             "# {}",
             crate::data::path_to_name(&path).unwrap_or_else(|_e| "Note".to_owned())
         )?;
+
+        // If an initial content is given, write it to the file
+        if let Some(content) = initial_content {
+            write!(file, "\n\n{}", content)?;
+        }
 
         Ok(path)
     }
@@ -411,8 +420,8 @@ mod tests {
 
         let fm = super::FileManager::new(&config);
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
         let at_path = tmp
@@ -438,8 +447,8 @@ mod tests {
             ..Default::default()
         });
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let lg_path = tmp.join(String::from("Lie Group.txt"));
         let at_path = tmp
@@ -464,8 +473,8 @@ mod tests {
         };
         let fm = super::FileManager::new(&config);
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
         let at_path = tmp
@@ -510,8 +519,8 @@ mod tests {
             .join(String::from("Math"))
             .join(String::from("Atlantis.md"));
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let tracker = crate::io::FileTracker::new(&config).unwrap();
         let builder = crate::io::HtmlBuilder::new(&config);
@@ -548,9 +557,9 @@ mod tests {
         let ma_path = tmp.join(String::from("Manifold.md"));
         let to_path = tmp.join(String::from("Topology.md"));
 
-        fm.create_note_file("Atlas").unwrap();
-        fm.create_note_file("Manifold").unwrap();
-        fm.create_note_file("Topology").unwrap();
+        fm.create_note_file("Atlas", None).unwrap();
+        fm.create_note_file("Manifold", None).unwrap();
+        fm.create_note_file("Topology", None).unwrap();
 
         std::fs::copy(
             std::env::current_dir()
@@ -629,8 +638,8 @@ mod tests {
             .join(String::from("Atlantis"))
             .join(String::from("Atlas.md"));
 
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let tracker = crate::io::FileTracker::new(&config).unwrap();
         let builder = crate::io::HtmlBuilder::new(&config);

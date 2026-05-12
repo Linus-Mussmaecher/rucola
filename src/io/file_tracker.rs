@@ -264,8 +264,8 @@ mod tests {
             ..Default::default()
         };
         let fm = crate::io::FileManager::new(&config);
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let tracker = crate::io::FileTracker::new(&config).unwrap();
         let builder = crate::io::HtmlBuilder::new(&config);
@@ -320,8 +320,8 @@ mod tests {
         };
 
         let fm = crate::io::FileManager::new(&config);
-        fm.create_note_file("Lie Group").unwrap();
-        fm.create_note_file("Math/Atlas").unwrap();
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
 
         let tracker = crate::io::FileTracker::new(&config).unwrap();
         let builder = crate::io::HtmlBuilder::new(&config);
