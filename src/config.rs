@@ -68,6 +68,8 @@ pub struct DiaryConfig {
     pub enabled: bool,
     /// The initial content to write into every diary note on creation
     pub initial_content: Option<String>,
+    /// The format of the daily diary note title
+    pub title_format: Option<String>,
 }
 
 impl Default for Config {

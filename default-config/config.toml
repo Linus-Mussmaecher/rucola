@@ -149,6 +149,8 @@ enabled = false
 initial_content = """
 #diary
 """
+# The format of the daily diary note title
+title_format = "{year}-{month}-{day}"
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]
