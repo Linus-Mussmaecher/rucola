@@ -1,6 +1,6 @@
 use crate::config::DiaryConfig;
 use crate::{data, error, io, ui};
-use chrono::{Datelike, Local};
+use chrono::Local;
 use itertools::Itertools;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{prelude::*, widgets::*};
@@ -387,17 +387,14 @@ impl super::Screen for SelectScreen {
                 // Shortcut to the diary entry for the current day
                 KeyCode::Char('d' | 'D') if self.diary_config.enabled => {
                     // Get the current date
-                    let current_date = Local::now().date_naive();
                     let title_format = self
                         .diary_config
                         .title_format
-                        .clone()
-                        .unwrap_or_else(|| "{year}-{month}-{day}".to_string());
+                        .as_deref()
+                        .unwrap_or_else(|| "%F");
+
                     // Determine the desired note id for today's diary entry
-                    let diary_entry_id = title_format
-                        .replace("{year}", &current_date.year().to_string())
-                        .replace("{month}", &current_date.month().to_string())
-                        .replace("{day}", &current_date.day().to_string());
+                    let diary_entry_id = format!("{}", Local::now().format(title_format));
                     // Create the note if it note yet exists
                     if self.index.borrow().get(&diary_entry_id).is_none() {
                         let created_note_path = self.manager.create_note_file(

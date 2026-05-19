@@ -150,7 +150,12 @@ initial_content = """
 #diary
 """
 # The format of the daily diary note title.
-title_format = "{year}-{month}-{day}"
+# Uses the formatting options from the chrono library available here: https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+# Examples:
+# title_format = "daily-note-%d.%m.%Y" # Daily note for 19.05.2026
+# title_format = "Diary %d %B, %Y" # Diary 19 May, 2026
+# title_format = "%Y-%m-%d" # 2026-05-19
+title_format = "%F" # 2026-05-19
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]
