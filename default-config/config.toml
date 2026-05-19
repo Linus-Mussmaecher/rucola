@@ -138,11 +138,15 @@ initial_content = """
 """
 # The format of the daily diary note title.
 # Uses the formatting options from the chrono library available here: https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+# It is also possible to create the note in a subfolder or use a custom file extension. If no file extension is given, the `default_extension` from above will be used.
+# When using a date format containing `.`, it may be necessary to manually re-add the extension.
 # Examples:
-# title_format = "daily-note-%d.%m.%Y" # Daily note for 19.05.2026
 # title_format = "Diary %d %B, %Y" # Diary 19 May, 2026
 # title_format = "%Y-%m-%d" # 2026-05-19
+# title_format = "daily-note-%d.%m.%Y.md" # Daily note for 19.05.2026
 title_format = "%F" # 2026-05-19
+# title_format = "%F.txt" # 2026-05-19 with file extension `.txt`
+# title_format = "diary/%F" # 2026-05-19 in subfolder diary
 
 # When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
 enable_html = true
