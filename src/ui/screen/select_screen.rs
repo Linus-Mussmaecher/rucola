@@ -390,15 +390,24 @@ impl super::Screen for SelectScreen {
                     let title_format = self.diary_config.title_format.as_deref().unwrap_or("%F");
 
                     // Determine the desired note id for today's diary entry
-                    let diary_entry_id = format!("{}", Local::now().format(title_format));
+                    let diary_entry_name = format!("{}", Local::now().format(title_format));
+                    let diary_entry_id = data::name_to_id(&diary_entry_name);
+
                     // Create the note if it note yet exists
                     if self.index.borrow().get(&diary_entry_id).is_none() {
                         let created_note_path = self.manager.create_note_file(
-                            &diary_entry_id,
+                            &diary_entry_name,
                             self.diary_config.initial_content.clone(),
                         )?;
-                        self.index.borrow().poll_file_system();
+
+                        // Directly insert the new note into the index rather than relying on
+                        // the file watcher.
+                        self.index
+                            .borrow_mut()
+                            .insert_note_from_path(&created_note_path)?;
                         self.refresh_env_stats();
+
+                        // Open the new note in an external editor
                         return Ok(ui::Message::OpenExternalCommand(Box::new(
                             self.manager.create_edit_command(&created_note_path)?,
                         )));
@@ -547,7 +556,7 @@ impl super::Screen for SelectScreen {
                         match mode {
                             SelectMode::Create => {
                                 // Create & register the note
-                                self.manager.create_note_file(
+                                let created_note_path = self.manager.create_note_file(
                                     &super::extract_string_and_clear(&mut self.name_area)
                                         .ok_or_else(|| {
                                             error::RucolaError::Input(String::from(
@@ -556,8 +565,11 @@ impl super::Screen for SelectScreen {
                                         })?,
                                     None,
                                 )?;
-                                // if successful, refresh the ui
-                                self.index.borrow().poll_file_system();
+                                // if successful, add to the index and refresh ui
+                                self.index
+                                    .borrow_mut()
+                                    .insert_note_from_path(&created_note_path)?;
+                                self.refresh_env_stats();
                                 self.refresh_env_stats();
                             }
                             SelectMode::Rename => {

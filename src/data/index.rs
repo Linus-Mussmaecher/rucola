@@ -118,6 +118,18 @@ impl NoteIndex {
         self.inner.get(key)
     }
 
+    /// Loads the note at the given path and inserts it into the index.
+    /// Also creates the corresponding HTML file.
+    /// This is used when a note is created programmatically and the file watcher
+    /// may not have had time to pick it up yet (e.g. due to a race condition when
+    /// creating a new subdirectory and a file inside it in quick succession).
+    pub fn insert_note_from_path(&mut self, path: &std::path::Path) -> error::Result<()> {
+        let note = Note::from_path(path)?;
+        self.builder.create_html(&note, false)?;
+        self.inner.insert(super::name_to_id(&note.name), note);
+        Ok(())
+    }
+
     /// Handle all file events on notes, as found by the contained tracker.
     ///  - Renames and moves are tracked
     ///  - new file creations with in the vault folder are checked for notes and added if appropriate

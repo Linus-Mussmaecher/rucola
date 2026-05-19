@@ -35,6 +35,10 @@ pub fn name_to_id(name: &str) -> String {
         .split(['#', '.'])
         .take(1)
         .collect::<String>()
+        .split('/')
+        .rev()
+        .take(1)
+        .collect::<String>()
         .to_lowercase()
         .replace(' ', "-")
         .replace(".md", "")
@@ -57,6 +61,10 @@ mod tests {
         assert_eq!(name_to_id("Lie Theory.md"), "lie-theory");
         assert_eq!(name_to_id("Lie Theory"), "lie-theory");
         assert_eq!(name_to_id("lie-theory"), "lie-theory");
+        assert_eq!(name_to_id("Math/Lie Theory.md"), "lie-theory");
+        assert_eq!(name_to_id("Math/Lie Theory"), "lie-theory");
+        assert_eq!(name_to_id("Math/Algebra/Lie Theory"), "lie-theory");
+        assert_eq!(name_to_id("Math/lie-theory"), "lie-theory");
     }
 
     #[test]
