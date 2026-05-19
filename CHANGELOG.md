@@ -1,3 +1,10 @@
+# Version 0.10.0 - Daily Notes
+- Added a diary option by GitHub user robin-thoene
+  - Added a configuration option to enable the daily diary.
+  - Added a keybinding that creates a diary note and opens it in the editor or display screen.
+  - Added a configuration option to determine the format of the title of the diary note.
+  - Added a configuration option to set the initial content of the diary note.
+
 # Version 0.9.0 - Column Configuration
 - Added an additional configuration option that allows users to freely customize the columns shown in the select screen and their headers.
 - This also adds the new, optional columns 'Score' and 'LastModified' (and technically 'Shuffle', which doesn't show anyhting).
