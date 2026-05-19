@@ -244,7 +244,7 @@ impl FileManager {
 
         // If an initial content is given, write it to the file
         if let Some(content) = initial_content {
-            write!(file, "\n\n{}", content)?;
+            write!(file, "\n{}", content)?;
         }
 
         Ok(path)
