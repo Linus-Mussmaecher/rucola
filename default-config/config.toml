@@ -127,20 +127,6 @@ viewer_type = "Html"
 # If that is also not given, defaults to "Html".
 # secondary_viewer_type = "Html"
 
-
-# When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
-enable_html = true
-
-# The name of the css file to use when creating HTML files. Must be located in your rucola config folder.
-css = "default_dark"
-
-# Any further HTML to prepend to created HTML files, for example special Javascript that you want included.
-html_prepend = """
-"""
-
-# Whether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
-katex = true
-
 # Configuration section for the daily diary feature.
 [diary]
 # This option can be used to turn on the diary feature, enabling an additional keybinding for creating and editing the daily diary note.
@@ -156,6 +142,19 @@ initial_content = """
 # title_format = "Diary %d %B, %Y" # Diary 19 May, 2026
 # title_format = "%Y-%m-%d" # 2026-05-19
 title_format = "%F" # 2026-05-19
+
+# When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
+enable_html = true
+
+# The name of the css file to use when creating HTML files. Must be located in your rucola config folder.
+css = "default_dark"
+
+# Any further HTML to prepend to created HTML files, for example special Javascript that you want included.
+html_prepend = """
+"""
+
+# Whether to include KaTeX headers in files in which math (delimited by single or double $-signs) was detected, causing this math to be rendered as LaTeX.
+katex = true
 
 # Simple LaTeX macro system. See [KaTeX options](https://katex.org/docs/options.html) for details, only as TOML. Example: Typing $\field{R}$ will be transformed into $\mathbb{R}$ before being compiled with KaTeX.
 [math_replacements]
