@@ -63,7 +63,7 @@ pub struct SelectScreen {
     builder: io::HtmlBuilder,
     /// The used styles.
     styles: ui::UiStyles,
-    /// Whether the diary functionality is enabled or not
+    /// Configuration for the daily diary feature.
     diary_config: DiaryConfig,
 
     // === UI ===
