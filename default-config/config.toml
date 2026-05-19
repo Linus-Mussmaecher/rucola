@@ -133,6 +133,7 @@ viewer_type = "Html"
 enabled = false
 # The initial content for every newly created diary note
 initial_content = """
+
 #diary
 """
 # The format of the daily diary note title.
