@@ -387,11 +387,7 @@ impl super::Screen for SelectScreen {
                 // Shortcut to the diary entry for the current day
                 KeyCode::Char('d' | 'D') if self.diary_config.enabled => {
                     // Get the current date
-                    let title_format = self
-                        .diary_config
-                        .title_format
-                        .as_deref()
-                        .unwrap_or_else(|| "%F");
+                    let title_format = self.diary_config.title_format.as_deref().unwrap_or("%F");
 
                     // Determine the desired note id for today's diary entry
                     let diary_entry_id = format!("{}", Local::now().format(title_format));
