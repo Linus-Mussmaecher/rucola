@@ -570,7 +570,6 @@ impl super::Screen for SelectScreen {
                                     .borrow_mut()
                                     .insert_note_from_path(&created_note_path)?;
                                 self.refresh_env_stats();
-                                self.refresh_env_stats();
                             }
                             SelectMode::Rename => {
                                 // Get the id of currently selected, then delegate to note_file::rename.
