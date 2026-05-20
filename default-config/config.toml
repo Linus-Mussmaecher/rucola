@@ -127,27 +127,6 @@ viewer_type = "Html"
 # If that is also not given, defaults to "Html".
 # secondary_viewer_type = "Html"
 
-# Configuration section for the daily diary feature.
-[diary]
-# This option can be used to turn on the diary feature, enabling an additional keybinding for creating and editing the daily diary note.
-enabled = false
-# The initial content for every newly created diary note
-initial_content = """
-
-#diary
-"""
-# The format of the daily diary note title.
-# Uses the formatting options from the chrono library available here: https://docs.rs/chrono/latest/chrono/format/strftime/index.html
-# It is also possible to create the note in a subfolder or use a custom file extension. If no file extension is given, the `default_extension` from above will be used.
-# When using a date format containing `.`, it may be necessary to manually re-add the extension.
-# Examples:
-# title_format = "Diary %d %B, %Y" # Diary 19 May, 2026
-# title_format = "%Y-%m-%d" # 2026-05-19
-# title_format = "daily-note-%d.%m.%Y.md" # Daily note for 19.05.2026
-title_format = "%F" # 2026-05-19
-# title_format = "%F.txt" # 2026-05-19 with file extension `.txt`
-# title_format = "diary/%F" # 2026-05-19 in subfolder diary
-
 # When enabled, HTML versions of your files will be created and updated on launch and continuously in the background. Set this to false if you do not want to use the view-as-HTML-feature.
 enable_html = true
 
@@ -173,3 +152,27 @@ katex = true
 # '\field' = '\mathbb',
 # '\liealg' = '\mathfrak',
 # }
+
+# Configuration section for the daily diary feature.
+[diary]
+# This option can be used to turn on the diary feature, enabling an additional keybinding for creating and editing the daily diary note.
+enabled = false
+# The initial content for every newly created diary note
+initial_content = """
+
+#diary
+"""
+# The format of the daily diary note title.
+# Uses the formatting options from the chrono library available here: https://docs.rs/chrono/latest/chrono/format/strftime/index.html
+# It is also possible to create the note in a subfolder or use a custom file extension. If no file extension is given, the `default_extension` from above will be used.
+# When using a date format containing `.`, it may be necessary to manually re-add the extension.
+# Examples:
+# title_format = "Diary %d %B, %Y" # Diary 19 May, 2026
+# title_format = "%Y-%m-%d" # 2026-05-19
+# title_format = "daily-note-%d.%m.%Y.md" # Daily note for 19.05.2026
+title_format = "%F" # 2026-05-19
+# title_format = "%F.txt" # 2026-05-19 with file extension `.txt`
+# title_format = "diary/%F" # 2026-05-19 in subfolder diary
+
+# WARNING:
+# Putting further configuration options below this one will have them registered in the [diary] table, which may be unintended.
