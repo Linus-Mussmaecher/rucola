@@ -4,6 +4,10 @@
   - Added a keybinding that creates a diary note and opens it in the editor or display screen.
   - Added a configuration option to determine the format of the title of the diary note.
   - Added a configuration option to set the initial content of the diary note.
+- Added an option to copy (i.e. duplicate) notes in the select and display screen
+  - If a note is copied and its filename contains a valid date string (e.g. `%F`), it will be replaced by `chrono` during the copy.
+  - Otherwise, `copy_` will be prepended to the new file name.
+  - This can be used to create templates for e.g. monthly or weekly notes and quickly copy them, in addition to the daily note system outlined above.
 
 # Version 0.9.0 - Column Configuration
 - Added an additional configuration option that allows users to freely customize the columns shown in the select screen and their headers.
