@@ -465,6 +465,71 @@ mod tests {
     }
 
     #[test]
+    fn test_create_other_suffix() {
+        let tmp = testdir::testdir!();
+
+        let fm = super::FileManager::new(&crate::Config {
+            default_extension: String::from("txt"),
+            file_types: vec![String::from("txt")],
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        });
+
+        fm.create_note_file("Lie Group", None).unwrap();
+        fm.create_note_file("Math/Atlas", None).unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.txt"));
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.txt"));
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        // check we can create notes
+        let _lg = crate::data::Note::from_path(&lg_path).unwrap();
+        let _at = crate::data::Note::from_path(&at_path).unwrap();
+    }
+
+    #[test]
+    fn test_create_with_content() {
+        let tmp = testdir::testdir!();
+
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
+
+        let fm = super::FileManager::new(&config);
+
+        fm.create_note_file("Lie Group", Some("#math\nThis is a Lie group.".to_owned()))
+            .unwrap();
+        fm.create_note_file(
+            "Math/Atlas",
+            Some("#mythology/greek #diffgeo\nThe world is on its shoulders.".to_owned()),
+        )
+        .unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.md"));
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.md"));
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
+
+        let lie_group = index.get("lie-group").unwrap();
+        let atlas = index.get("atlas").unwrap();
+
+        assert_eq!(lie_group.characters, 38);
+        assert_eq!(atlas.tags, vec!["#mythology/greek", "#diffgeo"]);
+    }
+
+    #[test]
     fn test_copy() {
         let tmp = testdir::testdir!();
 
@@ -531,33 +596,6 @@ mod tests {
             .unwrap();
         assert!(mn_path.exists());
         assert!(mn_path_c.exists());
-    }
-
-    #[test]
-    fn test_create_other_suffix() {
-        let tmp = testdir::testdir!();
-
-        let fm = super::FileManager::new(&crate::Config {
-            default_extension: String::from("txt"),
-            file_types: vec![String::from("txt")],
-            vault_path: Some(tmp.clone()),
-            ..Default::default()
-        });
-
-        fm.create_note_file("Lie Group", None).unwrap();
-        fm.create_note_file("Math/Atlas", None).unwrap();
-
-        let lg_path = tmp.join(String::from("Lie Group.txt"));
-        let at_path = tmp
-            .join(String::from("Math"))
-            .join(String::from("Atlas.txt"));
-
-        assert!(lg_path.exists());
-        assert!(at_path.exists());
-
-        // check we can create notes
-        let _lg = crate::data::Note::from_path(&lg_path).unwrap();
-        let _at = crate::data::Note::from_path(&at_path).unwrap();
     }
 
     #[test]
