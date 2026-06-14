@@ -310,7 +310,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         assert!(!index.inner.contains_key("booksold"));
 
@@ -340,7 +340,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         assert_eq!(
             index.links_vec("lie-group"),
@@ -374,7 +374,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         assert_eq!(
             index.blinks_vec("lie-group"),
@@ -404,7 +404,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         assert_eq!(
             index.links_vec("windows"),
@@ -435,7 +435,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         index.save();
 
@@ -444,8 +444,8 @@ mod tests {
         let list1 = index.inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
         let list2 = other_inner.into_values().sorted_by(|n1, n2| n1.name.cmp(&n2.name));
 
-        assert_eq!(list1.len(), 12);
-        assert_eq!(list2.len(), 12);
+        assert_eq!(list1.len(), 13);
+        assert_eq!(list2.len(), 13);
 
         for (note1, note2) in list1.zip(list2){
             assert_eq!(note1.display_name, note2.display_name);

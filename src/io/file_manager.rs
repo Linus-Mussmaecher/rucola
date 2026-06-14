@@ -210,6 +210,34 @@ impl FileManager {
         Ok(())
     }
 
+    /// Follows a notes path and copies it in the file system. The new location is next to the old one, with two caveats: If any date strings (e.g. %F) are found in the old title, they are replaced by chrono. If that was not the case, a `copy_` is prepended to the file name.
+    pub fn copy_note_file(&self, index: data::NoteIndexContainer, id: &str) -> error::Result<()> {
+        if let Some(note) = index.borrow().get(id) {
+            // Get the new file name by replacing possible date placeholders in the title.
+            let file_name = format!(
+                "{}",
+                chrono::Local::now().format(
+                    note.path
+                        .file_name()
+                        .and_then(|osstr| osstr.to_str())
+                        .unwrap_or("duplicate-%F")
+                )
+            );
+
+            // Create the new path
+            let mut new_path = note.path.with_file_name(file_name.clone());
+
+            // If the date-replacing changed nothing, than also prepend a `copy_` to the path.
+            if new_path == note.path {
+                new_path = note.path.with_file_name("copy_".to_owned() + &file_name)
+            }
+
+            // Use file system operations to actually copy the file.
+            fs::copy(&note.path, new_path)?;
+        }
+        Ok(())
+    }
+
     /// Creates a note of the given name in the file system (relative to the vault).
     /// Registration in the index is handled centrally by the file watcher of the index itself.
     /// Returns the path to the newly created note.
@@ -434,6 +462,75 @@ mod tests {
         // check we can create notes
         let _lg = crate::data::Note::from_path(&lg_path).unwrap();
         let _at = crate::data::Note::from_path(&at_path).unwrap();
+    }
+
+    #[test]
+    fn test_copy() {
+        let tmp = testdir::testdir!();
+
+        let config = crate::Config {
+            vault_path: Some(tmp.clone()),
+            ..Default::default()
+        };
+
+        let fm = super::FileManager::new(&config);
+
+        fm.create_note_file("Lie Group", Some("This is a Lie group.".to_owned()))
+            .unwrap();
+        fm.create_note_file(
+            "Math/Atlas",
+            Some("The world is on its shoulders.".to_owned()),
+        )
+        .unwrap();
+        fm.create_note_file(
+            "monthlies/monthly-%m-%Y",
+            Some("Monthly summary note.".to_owned()),
+        )
+        .unwrap();
+
+        let lg_path = tmp.join(String::from("Lie Group.md"));
+        let lg_path_c = tmp.join(String::from("copy_Lie Group.md"));
+
+        let at_path = tmp
+            .join(String::from("Math"))
+            .join(String::from("Atlas.md"));
+        let at_path_c = tmp
+            .join(String::from("Math"))
+            .join(String::from("copy_Atlas.md"));
+
+        let mn_path = tmp
+            .join(String::from("monthlies"))
+            .join(String::from("monthly-%m-%Y.md"));
+        let mn_path_c = tmp.join(String::from("monthlies")).join(format!(
+            "{}",
+            chrono::Local::now().format("monthly-%m-%Y.md")
+        ));
+
+        // assert_eq!(
+        //     format!("{}", chrono::Local::now().format("monthly-%m-%Y.md")),
+        //     "".to_owned()
+        // );
+
+        assert!(lg_path.exists());
+        assert!(at_path.exists());
+
+        let tracker = crate::io::FileTracker::new(&config).unwrap();
+        let builder = crate::io::HtmlBuilder::new(&config);
+        let index = crate::data::NoteIndex::new(tracker, builder, &config).0;
+        let index_con = std::rc::Rc::new(std::cell::RefCell::new(index));
+
+        fm.copy_note_file(index_con.clone(), "lie-group").unwrap();
+        assert!(lg_path.exists());
+        assert!(lg_path_c.exists());
+
+        fm.copy_note_file(index_con.clone(), "atlas").unwrap();
+        assert!(at_path.exists());
+        assert!(at_path_c.exists());
+
+        fm.copy_note_file(index_con.clone(), &crate::data::name_to_id("monthly-%m-%Y"))
+            .unwrap();
+        assert!(mn_path.exists());
+        assert!(mn_path_c.exists());
     }
 
     #[test]

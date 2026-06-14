@@ -65,6 +65,8 @@ mod tests {
         assert_eq!(name_to_id("Math/Lie Theory"), "lie-theory");
         assert_eq!(name_to_id("Math/Algebra/Lie Theory"), "lie-theory");
         assert_eq!(name_to_id("Math/lie-theory"), "lie-theory");
+        assert_eq!(name_to_id("Monthlies/monthly-%m-%Y"), "monthly-%m-%y");
+        assert_eq!(name_to_id("Monthlies/monthly-06-26"), "monthly-06-26");
     }
 
     #[test]

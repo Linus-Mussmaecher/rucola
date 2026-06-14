@@ -505,7 +505,22 @@ impl super::Screen for SelectScreen {
                     KeyCode::Char('d' | 'D') => {
                         self.mode = SelectMode::Delete;
                     }
-                    // N: Create note
+                    // C: Copy note
+                    KeyCode::Char('c' | 'C') => {
+                        if let Some(env_stats) = self
+                            // get the selected item in the list for the id
+                            .local_stats
+                            .get_selected(self.selected)
+                        {
+                            // delete it from index & filesystem
+                            self.manager
+                                .copy_note_file(self.index.clone(), &env_stats.id)?;
+                            // if successful, refresh the ui
+                            self.index.borrow().poll_file_system();
+                            self.refresh_env_stats();
+                        }
+                        self.mode = SelectMode::Select;
+                    } // N: Create note
                     KeyCode::Char('n' | 'N') => {
                         self.mode = SelectMode::Create;
                         self.set_name_area("Enter name of new note...", None);
@@ -881,6 +896,7 @@ impl super::Screen for SelectScreen {
                         ("N", "New note"),
                         ("R", "Rename selected note"),
                         ("M", "Move selected note"),
+                        ("C", "Copy selected file"),
                         ("D", "Delete selected note"),
                     ]
                 } else {

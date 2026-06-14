@@ -500,7 +500,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -539,7 +539,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
         // === Filter 2 ===
@@ -587,7 +587,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -622,7 +622,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 
@@ -657,7 +657,7 @@ mod tests {
         let builder = io::HtmlBuilder::new(&config);
         let index = data::NoteIndex::new(tracker, builder, &config).0;
 
-        assert_eq!(index.inner.len(), 12);
+        assert_eq!(index.inner.len(), 13);
 
         let index = std::rc::Rc::new(std::cell::RefCell::new(index));
 

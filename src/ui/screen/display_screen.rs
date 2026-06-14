@@ -165,6 +165,8 @@ impl super::Screen for DisplayScreen {
             Span::styled("ename──", self.styles.text_style),
             Span::styled("M", self.styles.hotkey_style),
             Span::styled("ove──", self.styles.text_style),
+            Span::styled("C", self.styles.hotkey_style),
+            Span::styled("opy──", self.styles.text_style),
             Span::styled("D", self.styles.hotkey_style),
             Span::styled("elete", self.styles.text_style),
         ])
@@ -338,6 +340,12 @@ impl super::Screen for DisplayScreen {
                 // D: Move note
                 KeyCode::Char('d' | 'D') => {
                     self.mode = DisplayMode::Delete;
+                }
+                // C: Copy note
+                KeyCode::Char('c' | 'C') => {
+                    self.manager
+                        .copy_note_file(self.index.clone(), &data::name_to_id(&self.note.name))?;
+                    self.index.borrow().poll_file_system();
                 }
 
                 _ => {}
