@@ -213,27 +213,8 @@ impl FileManager {
     /// Follows a notes path and copies it in the file system. The new location is next to the old one, with two caveats: If any date strings (e.g. %F) are found in the old title, they are replaced by chrono. If that was not the case, a `copy_` is prepended to the file name.
     pub fn copy_note_file(&self, index: data::NoteIndexContainer, id: &str) -> error::Result<()> {
         if let Some(note) = index.borrow().get(id) {
-            // Get the new file name by replacing possible date placeholders in the title.
-            let file_name = format!(
-                "{}",
-                chrono::Local::now().format(
-                    note.path
-                        .file_name()
-                        .and_then(|osstr| osstr.to_str())
-                        .unwrap_or("duplicate-%F")
-                )
-            );
-
-            // Create the new path
-            let mut new_path = note.path.with_file_name(file_name.clone());
-
-            // If the date-replacing changed nothing, than also prepend a `copy_` to the path.
-            if new_path == note.path {
-                new_path = note.path.with_file_name("copy_".to_owned() + &file_name)
-            }
-
             // Use file system operations to actually copy the file.
-            fs::copy(&note.path, new_path)?;
+            fs::copy(&note.path, data::path_to_copy_path(&note.path))?;
         }
         Ok(())
     }
@@ -400,6 +381,8 @@ impl FileManager {
 mod tests {
     use pretty_assertions::assert_eq;
 
+    use crate::data;
+
     #[test]
     fn test_edit() {
         let editor = std::env::var("EDITOR");
@@ -554,22 +537,17 @@ mod tests {
         .unwrap();
 
         let lg_path = tmp.join(String::from("Lie Group.md"));
-        let lg_path_c = tmp.join(String::from("copy_Lie Group.md"));
+        let lg_path_c = data::path_to_copy_path(&lg_path);
 
         let at_path = tmp
             .join(String::from("Math"))
             .join(String::from("Atlas.md"));
-        let at_path_c = tmp
-            .join(String::from("Math"))
-            .join(String::from("copy_Atlas.md"));
+        let at_path_c = data::path_to_copy_path(&at_path);
 
         let mn_path = tmp
             .join(String::from("monthlies"))
             .join(String::from("monthly-%m-%Y.md"));
-        let mn_path_c = tmp.join(String::from("monthlies")).join(format!(
-            "{}",
-            chrono::Local::now().format("monthly-%m-%Y.md")
-        ));
+        let mn_path_c = data::path_to_copy_path(&mn_path);
 
         // assert_eq!(
         //     format!("{}", chrono::Local::now().format("monthly-%m-%Y.md")),
@@ -588,14 +566,32 @@ mod tests {
         assert!(lg_path.exists());
         assert!(lg_path_c.exists());
 
+        let lg_path_cc = data::path_to_copy_path(&lg_path);
+        fm.copy_note_file(index_con.clone(), "lie-group").unwrap();
+        assert!(lg_path_cc.exists());
+
         fm.copy_note_file(index_con.clone(), "atlas").unwrap();
         assert!(at_path.exists());
         assert!(at_path_c.exists());
 
-        fm.copy_note_file(index_con.clone(), &crate::data::name_to_id("monthly-%m-%Y"))
+        let at_path_cc = data::path_to_copy_path(&at_path);
+        fm.copy_note_file(index_con.clone(), "atlas").unwrap();
+        assert!(at_path_cc.exists());
+
+        fm.copy_note_file(index_con.clone(), "monthly-%m-%y")
             .unwrap();
         assert!(mn_path.exists());
         assert!(mn_path_c.exists());
+
+        let mn_path_cc = data::path_to_copy_path(&mn_path);
+        fm.copy_note_file(index_con.clone(), "monthly-%m-%y")
+            .unwrap();
+        assert!(mn_path_cc.exists());
+
+        let mn_path_ccc = data::path_to_copy_path(&mn_path);
+        fm.copy_note_file(index_con.clone(), "monthly-%m-%y")
+            .unwrap();
+        assert!(mn_path_ccc.exists());
     }
 
     #[test]

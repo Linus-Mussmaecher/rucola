@@ -252,8 +252,8 @@ impl NoteIndex {
     /// Returns a map of all tags contained in this index with their number of appearances, sorted in descending order.
     pub fn tags_vec(&self) -> Vec<(String, usize)> {
         self.inner
-            .iter()
-            .flat_map(|(_id, note)| note.tags.iter())
+            .values()
+            .flat_map(|note| note.tags.iter())
             .cloned()
             .counts()
             .into_iter()

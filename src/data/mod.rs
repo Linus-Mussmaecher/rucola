@@ -51,6 +51,36 @@ pub fn path_to_name(path: &std::path::Path) -> Result<String, error::RucolaError
         .ok_or_else(|| error::RucolaError::NoteNameCannotBeRead(path.to_path_buf()))
 }
 
+/// Converts a path to the path where a copy should be written to.
+pub fn path_to_copy_path(path: &std::path::Path) -> std::path::PathBuf {
+    let file_name = format!(
+        "{}",
+        chrono::Local::now().format(
+            path.file_name()
+                .and_then(|osstr| osstr.to_str())
+                .unwrap_or("duplicate-%F")
+        )
+    );
+
+    // Create the new path
+    let mut new_path = path.with_file_name(file_name.clone());
+
+    // If that path exists (either the date replacing changed nothing or the file already existed due to a previous copy), prepend `copy_` until it doesn't or up to 10 times.
+    let mut tries = 0;
+    while new_path.exists() && tries < 10 {
+        new_path = new_path.with_file_name(
+            "copy_".to_owned()
+                + new_path
+                    .file_name()
+                    .and_then(|f| f.to_str())
+                    .unwrap_or_default(),
+        );
+        tries += 1;
+    }
+
+    new_path
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
