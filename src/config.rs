@@ -26,6 +26,8 @@ pub struct Config {
     pub(crate) default_extension: String,
     /// Whether to create a cache file of the index to reload on program start.
     pub(crate) cache_index: bool,
+    /// When set to true, information about the git status of the repository is shown on the select screen.
+    pub(crate) enable_git: bool,
     /// Selected theme
     pub(crate) theme: String,
     /// When to show the global stats area on the select screen.
@@ -79,6 +81,7 @@ impl Default for Config {
             file_types: vec![String::from("markdown")],
             default_extension: String::from("md"),
             cache_index: false,
+            enable_git: true,
             theme: "default_dark".to_string(),
             stats_show: ui::screen::StatsShow::Both,
             select_columns: vec![

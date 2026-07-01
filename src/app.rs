@@ -73,12 +73,17 @@ impl App {
 
         let manager = io::FileManager::new(&config);
 
-        let git_manager = io::GitManager::new(
-            config
-                .vault_path
-                .clone()
-                .expect("Vault path should be set."),
-        );
+        let git_manager = config
+            .enable_git
+            .then(|| {
+                io::GitManager::new(
+                    config
+                        .vault_path
+                        .clone()
+                        .expect("Vault path should be set."),
+                )
+            })
+            .flatten();
 
         let tracker = match io::FileTracker::new(&config) {
             Ok(tracker) => tracker,
