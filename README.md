@@ -30,8 +30,10 @@ Terminal-based markdown note manager to view statistics, explore connections and
  - Allow the user to view and follow links and backlinks of a single note to see connections within their note graph.
  - Allow the user to make small edits such as renaming or moving notes from within the application.
  - Provide easy access to a powerful, external text editor for editing notes.
+ - Proivde access to multiple external viewers to users their notes in an easily readable way.
  - Optionally compile notes to HTML-documents, including LaTeX compilation and code highlighting, on the fly and show them in an external viewer.
  - Provide all of this functionality from within a terminal user interface.
+ - Allow the easy creation of daily, weekly or other regular notes from templates.
 
 ### Images
 

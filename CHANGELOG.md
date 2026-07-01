@@ -1,3 +1,6 @@
+# Version 0.11.0
+- Added an option to disable git information
+
 # Version 0.10.0 - Daily Notes
 - Added a diary option by GitHub user robin-thoene
   - Added a configuration option to enable the daily diary.
