@@ -24,7 +24,7 @@ impl GitManager {
 
         let branch = self
             .git_repo
-            .find_branch(head.shorthand()?, git2::BranchType::Local)
+            .find_branch(head.shorthand().ok()?, git2::BranchType::Local)
             .ok()?;
 
         let upstream = branch.upstream().ok()?;

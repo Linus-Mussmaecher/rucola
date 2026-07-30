@@ -26,7 +26,7 @@ clap = {version = "^4.5", features = ["derive"]}
 # Opening
 open = "^5"
 notify = "^8.0"
-git2 = "^0.20"
+git2 = "^0.21"
 # Parsing
 comrak = "^0.39"
 ignore = "^0.4"
