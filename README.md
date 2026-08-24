@@ -12,7 +12,7 @@
 
 
 
-Terminal-based markdown note manager to view statistics, explore connections and launch editing and viewing applications.
+Terminal-based markdown note manager to view statistics, explore connections, and launch editing/viewing applications.
 
 ## Contents
  - [Features](#features)
